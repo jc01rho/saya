@@ -49,6 +49,7 @@ hinokami-kagura  ──subprocess──>  kanao / kamado  ──>  카카오톡 
 | 파일 | 내용 |
 | --- | --- |
 | [`BRIEF.md`](BRIEF.md) | **무엇을 만들 것인가** — 엔드포인트 매핑, 원본 코드에서 살릴 것/바꿀 것, 플랫폼 함정 |
+| [`PORTING.md`](PORTING.md) | **어떻게 옮길 것인가** — PR #1의 어느 줄이 어디로 가는지, 새로 쓰는 백엔드의 실제 모양, 검증 순서 |
 | [`PROTOCOL.md`](PROTOCOL.md) | 두 CLI가 내는 봉투. 소비자가 의존해도 되는 것과 아닌 것 |
 | [`AGENTS.md`](AGENTS.md) | 이 저장소에서 일하는 규칙 |
 | [`tests/fixtures/envelopes/`](tests/fixtures/envelopes/) | 두 코어의 실제 출력 샘플 16개. 준수 테스트의 근거 |

@@ -3,6 +3,9 @@
 이 문서 하나로 작업을 시작할 수 있게 쓴 것입니다. 원본 코드는 `sanguneo/kanao-cli` PR #1
 (`feat/remote-serve`, 작성자 `jc01rho`, +1595/8파일)에 있습니다.
 
+> **줄 단위로 어디를 어떻게 옮기는지는 [`PORTING.md`](PORTING.md) 에 있습니다.**
+> 이 문서는 무엇을·왜, 저 문서는 어떻게입니다.
+
 ## 1. 목표
 
 `kanao`/`kamado` CLI를 subprocess로 부르고 그 JSON을 HTTP + SSE로 중계하는 단일 프로그램.
