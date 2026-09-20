@@ -1,139 +1,130 @@
-# BRIEF — 무엇을 만들 것인가
+# BRIEF.md — 무엇을 만들 것인가
 
-이 문서 하나로 작업을 시작할 수 있게 쓴 것입니다. 원본 코드는 `sanguneo/kanao-cli` PR #1
-(`feat/remote-serve`, 작성자 `jc01rho`, +1595/8파일)에 있습니다.
+`kanao serve` / `kamado serve` 가 여는 HTTP + SSE 표면을 쓰는 **웹 클라이언트**.
+이 저장소는 서버를 만들지 않고, 코어를 import 하지도 spawn 하지도 않습니다.
+아는 것은 `openapi.json` 하나뿐입니다.
 
-> **줄 단위로 어디를 어떻게 옮기는지는 [`PORTING.md`](PORTING.md) 에 있습니다.**
-> 이 문서는 무엇을·왜, 저 문서는 어떻게입니다.
+## 1. 계약
 
-## 1. 목표
+`openapi.json` 은 두 코어 저장소의 같은 이름 파일과 **바이트 단위로 동일**합니다.
+직접 고치지 마세요. 갱신은 코어 저장소에서 복사해 오는 것이고, 세 파일이 갈라지면
+그것이 곧 결함입니다.
 
-`kanao`/`kamado` CLI를 subprocess로 부르고 그 JSON을 HTTP + SSE로 중계하는 단일 프로그램.
-
-```
-hinokami-kagura serve --host 127.0.0.1 --port 8765 --token <16자+> --cli "python -m kanao"
-```
-
-## 2. 지켜야 할 선
-
-이건 논의로 정해진 것이라 재검토 없이 따르면 됩니다.
-
-- **`kanao`/`kamado` 를 import 하지 않는다. spawn 만 한다.** 이게 이 저장소가 따로 있는 이유
-  전부입니다. 소스에 `import kanao` / `from kamado` 류가 없음을 **테스트로 강제**하세요
-  (소스 파일을 읽어 문자열 검사하는 테스트 하나면 충분합니다).
-- **JSON을 해석하지 않는다. 중계한다.** 자식이 뱉은 봉투를 그대로 HTTP 본문에 싣습니다.
-  그래야 `typeCode` 같은 한쪽에만 있는 키가 문제되지 않습니다.
-- **의존성 0개.** 표준 라이브러리만. `http.server`, `subprocess`, `json`, `shlex` 로 충분합니다.
-- **Python 3.9 이상.** kamado 하한이 3.9라 맞춥니다. 괄호로 묶은 `with (a as x, b as y):` 는
-  3.10 문법이라 못 씁니다 — `ast.parse(src, feature_version=(3, 9))` 로 확인하세요.
-- **원격 쓰기는 이 프로그램 하나뿐이고, 토큰은 계정 비밀번호와 같은 무게입니다.** README와
-  `--help` 에 그렇게 적으세요. 기본 바인딩은 루프백, 와일드카드면 경고.
-
-## 3. 원본 코드에서 — 살릴 것
-
-**`build_handler(...)` (PR #1 `kanao/serve.py` 140–516행) 는 거의 그대로 씁니다.**
-`BaseHTTPRequestHandler` 서브클래스를 돌려주는 팩토리이고, 이미 `send` · `rooms_provider` ·
-`context_provider` · `watcher_factory` 를 **주입**받게 짜여 있어서 백엔드만 갈아끼우면 됩니다.
-
-안에 든 것 (손댈 이유 없음):
-
-- bearer 인증 — `hmac.compare_digest`, 16자 이상, ASCII 제한
-- body framing — `Content-Length` 필수, chunked 거부, 1 MB 상한, 짧은 본문 거부
-- `_RateLimiter` + `threading.Lock` — send 직렬화와 최소 간격 강제
-- SSE 포장, 메서드별 405, `/health` 는 토큰 없이
-- `run()` — `ThreadingHTTPServer` + `daemon_threads`, 루프백 기본, 와일드카드 경고
-
-PR #1의 스텁 기반 테스트(`tests/test_serve.py` 32개)도 핸들러가 그대로면 대부분 살아남습니다.
-
-## 4. 원본 코드에서 — 바꿀 것
-
-| 항목 | 지금 | 여기서 |
-| --- | --- | --- |
-| `make_live_*` 팩토리 (539–625행, ~90줄) | `Reader()` · `winauto` 직접 호출 | **subprocess 로 CLI 호출** (§5) |
-| `build_handler(rooms=...)` | docstring이 *"(tests)"* 라고 적은 테스트용 정적 목록 | **제거.** 테스트는 `rooms_provider` 스텁으로 |
-| `serve.py:557` `from . import cli as cli_module` | 위로 흐르는 순환 import | **제거.** 방 해석·중복 제목 거절은 CLI가 이미 합니다 |
-| `test_serve.py:640` `time.sleep(0.05)` 폴링 | 워처 close 대기 | `threading.Event`. **이 저장소는 sleep 금지** |
-| `cli.py` 훅 | kanao 안 | 이 저장소의 `__main__` |
-| 엔드포인트 | rooms/context/send/stream/health | **`/digest` 추가** (0.9.0부터 양쪽 CLI에 있음) |
-
-1,595줄 중 200줄 안팎입니다. HTTP 처리는 건드리지 않습니다.
-
-## 5. 엔드포인트 → CLI 매핑
-
-| 엔드포인트 | 실행 | 비고 |
-| --- | --- | --- |
-| `GET /health` | (없음) | 토큰 불필요 |
-| `GET /rooms` | `<cli> rooms --readable-only` | 봉투 그대로 |
-| `GET /context?roomId=&limit=` | `<cli> context --room-id … --limit …` | 그대로 |
-| `GET /digest?roomId=&span=&limit=&highlights=` | `<cli> digest --room-id … --span …` | 새로 추가 |
-| `POST /send` `{roomId, text, dryRun?, open?}` | `<cli> send --room-id … <text> [--dry-run] [--open]` | 락·간격은 래퍼가. 방 해석·중복 거절·창 찾기는 CLI가 |
-| `GET /stream?roomId=…&interval=` | `<cli> follow --room-id … --interval …` | **연결당 자식 하나.** NDJSON 한 줄 → SSE 이벤트 하나. 연결 끊기면 자식 kill |
-
-`send` 의 실제 플래그는 `python -m kanao send --help` 로 확인하세요. 현재:
-`(--room ROOM | --room-id ROOM_ID) [--dry-run] [--open] text` — 텍스트는 **위치 인자**입니다.
-
-**백엔드 선택:** `--cli "<명령줄>"` 이 1순위. 없으면 `--backend kanao|kamado|auto`(기본 auto:
-`sys.platform == "win32"` → `kanao`, `"darwin"` → `kamado`)로 PATH에서 찾습니다. 못 찾으면
-`--cli` 를 안내하는 명확한 에러로 죽으세요 — kanao는 `pip install` 없이 저장소 디렉터리에서
-실행하는 게 기본이라 PATH에 없는 게 정상입니다.
-
-**종료 코드:** 0 성공 · 1 처리된 실패(봉투가 stdout에) · 2 잘못된 명령(usage가 **stderr**로,
-stdout은 빔). stdout이 비었거나 JSON이 아니면 `READ_FAILED` 로 감싸되 **자식의 원문을 그대로
-노출하지 마세요.**
-
-**에러 코드 → HTTP 상태**는 원본 `_STATUS_BY_CODE` 를 **두 코어의 합집합**으로 넓히세요.
-`PERMISSION_REQUIRED`(kamado 전용)는 403 권장. 모르는 코드는 default 분기로 500.
-
-## 6. 반드시 반영할 플랫폼 함정
-
-전부 실제로 밟은 것들입니다. 추측 아닙니다.
-
-1. **자식 stdout 인코딩.** 두 CLI는 `ensure_ascii=False` 로 한글을 그대로 냅니다. Windows에서
-   파이프로 받으면 **cp949** 로 옵니다. 자식 env에 `PYTHONIOENCODING=utf-8` 을 넣으세요
-   (파이썬 자식이니 확실합니다). 읽는 쪽도 UTF-8 → 실패 시 `mbcs` 폴백.
-   **`locale.getpreferredencoding` 은 쓰지 마세요** — UTF-8 모드에서 기계 설정과 무관하게
-   `"utf-8"` 을 답해서 폴백이 죽습니다. 이걸로 한 번 당했습니다.
-2. **명령줄 분할.** `--cli "C:\tools\kanao.exe"` 를 `shlex.split(posix=True)` 하면
-   `C:toolskanao.exe` 가 됩니다. **`posix=False`** 로 쪼개고 양끝 따옴표를 직접 제거하세요.
-   (테스트에서 `shlex.quote` 로 만든 문자열은 안쪽 아포스트로피가 `'"'"'` 로 이스케이프돼
-   non-POSIX 분할이 못 풉니다. 테스트용 명령줄은 바깥 홑따옴표·안쪽 쌍따옴표로 직접 쓰세요.)
-3. **stdout과 stderr를 합치지 마세요.** 두 파일 또는 두 파이프로. 실패 이유를 인용할 때는
-   stderr의 **마지막 줄**을 쓰세요 — 길이로 자르면 진단 로그 중간에서 잘립니다.
-4. **프로세스 종료 대기에 sleep 금지.** `Popen.wait()` 또는 `threading.Event`.
-
-## 7. macOS 없이 kamado 호환 검증하기
-
-[`tests/fixtures/envelopes/`](tests/fixtures/envelopes/) 에 두 코어가 자기 **합성 픽스처**로 뽑은
-실제 출력이 각각 8개씩 있습니다. 준수 테스트는 이 파일들을 읽어서, 핸들러가 둘 다 손대지 않고
-중계하는지 확인하면 됩니다.
-
-실제 대조 결과 (이미 측정됨):
-
-```
-context   kamado-only=['room.typeCode']     error_chat_not_found   same
-digest    kamado-only=['room.typeCode']     error_invalid_request  same
-messages  kamado-only=['room.typeCode']     follow_message         same
-rooms     kamado-only=['rooms.typeCode']    follow_watching        same
+```bash
+shasum -a 256 openapi.json ../kanao-cli/openapi.json ../kamado-cli/openapi.json
 ```
 
-8개 전부 키 집합 동일, 차이는 `typeCode` 하나. 에러 코드는 kamado에 `PERMISSION_REQUIRED` 하나 더.
-**맥 실기 확인은 나중에 그 머신을 가진 쪽이 합니다.** 지금은 이 파일들로 충분합니다.
+문서의 `info.version` 은 코어의 릴리즈 번호와 같지 않습니다. 맞추려 들지 말고,
+복사해 온 값을 그대로 두세요.
 
-## 8. 완료 조건
+**타입은 손으로 쓰지 않습니다.** 이 문서에서 생성하세요. 손으로 쓴 인터페이스는
+계약이 움직여도 컴파일이 통과하기 때문에, 틀렸다는 사실이 런타임까지 미뤄집니다.
 
-- [ ] `hinokami-kagura serve --cli "<kanao>" --token …` 로 루프백에서 `/health` `/rooms`
-      `/context` `/digest` `/stream` 이 실제 kanao 를 spawn 해 응답
-- [ ] `/send` 는 **dry-run 까지만** 확인 (실제 전송은 사람이 대상을 확인한 뒤에)
-- [ ] 소스에 `kanao`/`kamado` import 없음을 테스트가 보장
-- [ ] 테스트에 `sleep` 없음
-- [ ] 준수 테스트가 `tests/fixtures/envelopes/` 의 kanao·kamado 샘플을 모두 통과
-- [ ] 전 파일 `ast.parse(feature_version=(3, 9))` 통과
-- [ ] 의존성 0개 (`pyproject.toml` 의 `dependencies = []`)
+## 2. 브라우저가 부딪히는 네 가지
 
-## 9. 남은 것 / 다른 사람 몫
+전부 코어 코드에서 확인한 것입니다. 가정이 아닙니다.
 
-- **맥 실기 확인과 요청당 spawn 비용 측정.** Windows에서는 인터프리터 30 ms + import 90 ms +
-  카탈로그 읽기 0.3–0.6 s 로 측정됐고, SSH 한 홉 건너 오는 요청엔 문제없습니다. macOS는
-  **미측정**입니다. 1초를 크게 넘으면 kamado의 상주 데몬을 백엔드로 쓰는 분기를 논의해야
-  하지만, **그 전까지는 spawn 단일 경로로 짜세요.** 분기를 미리 만들지 마세요.
-- **kanao PR #1 은 이 저장소에 코드가 들어온 뒤 닫습니다.** kanao 에는 머지하지 않습니다.
+### CORS가 없다
+
+`kanao/serve` 와 `kamado/serve` 어디에도 `Access-Control-*` 헤더도, `do_OPTIONS` 도
+없습니다(둘 다 0건). 다른 origin에서 `fetch` 하면 응답이 와도 브라우저가 읽지 못합니다.
+
+선택지는 셋이고, 처음 두 개로 시작합니다.
+
+1. **같은 origin으로 서빙** — 리버스 프록시가 `/api/*` 를 코어로, 나머지를 정적 파일로
+   넘깁니다. 코어는 어차피 loopback 바인딩이 기본이고 평문 HTTP라, 프록시나 터널 뒤에
+   두는 것이 이미 전제입니다.
+2. **개발 서버 프록시** — 개발 중에는 번들러의 프록시가 같은 일을 합니다.
+3. 코어에 CORS를 넣자고 이슈를 올리는 것. 지금은 필요 없습니다 — 1번이 토큰을 브라우저
+   밖에 둘 자리까지 함께 주기 때문입니다.
+
+### `EventSource` 를 쓸 수 없다
+
+인증은 `Authorization: Bearer` **헤더 전용**입니다. `/stream` 은 쿼리에서 `since` 만
+읽고 토큰은 보지 않으며, `EventSource` 는 헤더를 붙이지 못합니다.
+
+그래서 SSE는 `fetch` + `ReadableStream` 으로 직접 파싱합니다. 이때 딸려오는 것들:
+
+- 재접속과 백오프를 직접 구현해야 합니다. `EventSource` 의 자동 재접속이 없습니다.
+- **표준 `Last-Event-ID` 재개를 쓰지 않습니다.** 커서가 방마다 하나라서, 메시지 뒤에
+  오는 `event: cursor` 의 `{방id: logId}` 를 들고 있다가 재접속할 때
+  `?since=방id:logId` 로 **여러 번 반복**해 넘깁니다. 커서가 이름을 대지 않은 방은
+  연결 시점부터 시작합니다 — 그 공백은 `/context` 로 메웁니다.
+- 동시에 열 수 있는 `/stream` 은 **8개**이고 아홉 번째는 `503 BUSY` 입니다. 탭을 여러 개
+  여는 사용자가 이 숫자를 혼자 다 씁니다. 스트림은 한 곳에서만 열고 화면끼리 나눠 쓰세요.
+
+### 식별자는 문자열이다
+
+방 id도 메시지 id도 2^53을 넘습니다. `Number()`, `parseInt`, `JSON.parse` 후의 산술 —
+전부 조용히 틀립니다. 비교도 키도 URL 조립도 문자열로만 하세요.
+
+### 토큰은 비밀번호다
+
+남의 계정으로 **메시지를 보낼 수 있는** 값입니다. 서버는 평문 HTTP이고 TLS가 없습니다.
+
+- 기본은 프록시가 헤더를 주입하고 브라우저는 토큰을 모르는 것입니다.
+- 브라우저가 쥐어야 한다면 메모리에 두고, `localStorage` 에 남기는 것은 사용자가 명시적으로
+  고른 경우로 합니다. XSS 한 번이면 그대로 나갑니다.
+- 화면 어디에도 토큰을 그리지 마세요. 로그에도 남기지 마세요.
+
+## 3. 계약이 이미 정해 둔 한계
+
+클라이언트가 지켜야 하는 것이고, 어기면 `400` 으로 돌아옵니다.
+
+| 무엇 | 값 |
+| --- | --- |
+| `limit` | 1–1000 (`/context` 기본 40, `/digest` 기본 400) |
+| `highlights` | 1–20 (기본 3) |
+| 동시 `/stream` | 8개, 아홉 번째는 `503 BUSY` |
+| 전송 대기열 | 4건(전송 중 포함), 넘치면 `429 RATE_LIMITED` |
+| 요청 데드라인 | 30초, 본문을 약속하고 안 보내면 `408` |
+
+그리고 응답 쪽:
+
+- **모든 응답이 봉투입니다.** `{"ok": true, ...}` 또는
+  `{"ok": false, "error": {"code", "message"}}`.
+- **`error.code` 에는 반드시 기본 분기를 두세요.** 두 빌드의 집합이 같지 않고 둘 다
+  늘어납니다. `PERMISSION_REQUIRED` 는 macOS 전용이고, 사람이 30초면 고치는 실패이므로
+  "권한을 주세요"라고 말해야 하는 화면이 따로 있습니다.
+- **`submitted: true` 는 입력창이 비워졌다는 뜻**이지 전달 확인이 아닙니다. 불확실한 전송을
+  자동으로 재시도하지 마세요 — 같은 말을 두 번 보냅니다. 되읽기는 `/context` 의 새 `fromMe`
+  기록으로 합니다.
+- **쓰다 만 초안은 지워집니다.** 응답의 `clearedDraft` / `wouldClearDraft` 를 사용자에게
+  전하세요. 먼저 `dryRun` 으로 물어보는 화면이 기본값입니다.
+- 메시지는 어디서나 **오래된 것부터**입니다.
+- 해당하지 않는 키는 아예 오지 않습니다(`replyTo`, `mentions`, `mentionsMe` …).
+  **없는 것이 곧 아니라는 뜻**입니다.
+- `x-platform` 으로 표시된 것(`room.typeCode`, `PERMISSION_REQUIRED`)은 있으면 쓰고 없으면
+  없는 대로 둡니다. 없다고 오류로 다루지 마세요.
+
+## 4. 만드는 순서
+
+각 단계는 그 앞 단계 없이는 확인할 수 없어서 이 순서입니다.
+
+1. **계약에서 타입 생성 + `GET /health`** — 토큰이 필요 없는 유일한 라우트라, 프록시와
+   연결이 살아있는지를 인증과 분리해 확인할 수 있습니다.
+2. **토큰 처리와 `GET /rooms`** — 인증 실패(`401`)와 호스트 미준비(`503`)가 서로 다른
+   화면이라는 것을 여기서 정합니다.
+3. **`GET /context` 읽기 화면** — 답장 인용, 멘션, `coverage`. 긴 목록의 가상 스크롤은
+   이 단계가 아닙니다.
+4. **`GET /stream` 구독과 커서 재개** — 끊고, 재접속하고, 빠진 구간이 실제로 메워지는지.
+5. **`POST /send`** — `dryRun` 확인, `clearedDraft` 경고, 되읽기. 마지막인 이유는 하나뿐:
+   여기부터는 틀리면 남의 방에 글이 나갑니다.
+
+## 5. 아직 정하지 않은 것
+
+- **스택.** 제안은 TypeScript + Vite(개발 프록시가 2번 문제를 그대로 해결) + 계약에서
+  타입을 생성하는 도구 하나. UI 프레임워크는 열려 있습니다.
+- **인증 배치.** 프록시가 토큰을 쥐는 형태를 기본으로 보지만, 단일 사용자가 자기 기계에서
+  여는 경우의 절충안은 아직 정하지 않았습니다.
+
+이 둘은 1번 단계를 시작하기 전에 정하면 됩니다. 나머지는 이 문서가 이미 정했습니다.
+
+## 6. 하지 않을 것
+
+- **서버를 다시 만들지 않습니다.** 코어에 `serve` 가 있고, 이 저장소가 그것을 한 겹 더
+  감싸면 계약이 둘이 됩니다.
+- **봉투를 재해석하지 않습니다.** 받은 것을 그대로 그립니다. 한쪽 플랫폼에만 있는 키가
+  사건이 되지 않는 이유가 이것입니다.
+- **코어의 로컬 파일을 직접 읽지 않습니다.** 데이터베이스도, 키도, 캐시도.
+- **읽기 화면이 카카오 서버에 직접 붙지 않습니다.** 코어가 로컬에서 답한 것만 그립니다.

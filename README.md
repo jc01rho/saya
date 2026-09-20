@@ -1,64 +1,71 @@
 # hinokami-kagura
 
-`kanao-cli`(Windows)와 `kamado-cli`(macOS)를 **HTTP + SSE로 감싸는 외부 래퍼**입니다.
-리눅스나 다른 머신에서 카카오톡을 읽고, 요약을 받고, 새 메시지를 스트림으로 따라가고,
-명시적으로 보낼 수 있게 합니다.
+`kanao serve`(Windows)와 `kamado serve`(macOS)가 여는 **HTTP + SSE 표면을 쓰는 웹 클라이언트**입니다.
+브라우저에서 카카오톡 대화를 읽고, 요약을 보고, 새 메시지를 따라가고, 명시적으로 보냅니다.
+
+아직 **구현 전**입니다. 이 저장소에는 무엇을 만들지와 그 근거, 그리고 두 코어가 공유하는
+계약 파일 하나가 들어 있습니다. 시작하려면 [`BRIEF.md`](BRIEF.md) 를 읽으세요.
+
+## 서버는 만들지 않습니다
 
 ```
-hinokami-kagura serve --cli "python -m kanao" --token <16자 이상>
+브라우저 ──HTTP + SSE──> kanao serve / kamado serve ──> 카카오톡 로컬 DB
+(이 저장소)                    (이미 있는 것)
 ```
 
-아직 **구현 전**입니다. 이 저장소에는 무엇을 만들지와 그 근거가 들어 있습니다.
-시작하려면 [`BRIEF.md`](BRIEF.md) 를 읽으세요.
+읽기도 전송도 코어가 이미 합니다. 여기서 만드는 것은 **화면뿐**입니다. 복호화 키도,
+카카오톡 데이터베이스도, 접근성·전체 디스크 접근 권한도 이 저장소의 코드가 만지지
+않습니다. 그래서 이 저장소는 카카오톡이 깔리지 않은 기계에서도 개발할 수 있습니다.
 
-## 한 가지 성질이 이 저장소의 존재 이유입니다
+## 계약은 `openapi.json` 하나입니다
 
-**코어를 import 하지 않고 spawn 만 합니다.**
+두 코어가 **바이트 단위로 같은 파일**을 갖고 있고, 여기 있는 사본도 같은 파일입니다.
 
 ```
-hinokami-kagura  ──subprocess──>  kanao / kamado  ──>  카카오톡 로컬 DB
-     (HTTP)                          (JSON)
+sha256  c741090c54ba0151a52a671ed0d8cb765a43d399ecb6e46c6662c37755606729
 ```
 
-그래서:
+OpenAPI 3.1 문서 하나에 여섯 개의 라우트, 파라미터와 기본값, 요청 본문, 응답 모양,
+상한, 오류 코드가 전부 적혀 있습니다. 플랫폼이 갈리는 멤버는 문서 안에 `x-platform`
+으로 표시돼 있고, 그 밖의 차이는 둘 중 한 빌드의 결함입니다.
 
-- **복호화 키를 이 프로세스가 절대 쥐지 않습니다.** SQLCipher 키는 요청 동안 떴다 죽는
-  자식 프로세스 안에만 있고, 래퍼는 자식이 뱉은 JSON만 봅니다. 원격으로 열어두는 서버가
-  가져야 할 성질이라고 봅니다.
-- **두 코어의 약속이 그대로 유지됩니다.** 두 저장소 모두 "읽기는 네트워크를 쓰지 않는다"를
-  내걸고 있고, 소켓을 여는 코드가 그 안에 들어가면 그 문장이 거짓이 됩니다. 여기 있으면
-  `grep` 으로 검증되는 진술로 남습니다.
-- **하나의 코드가 두 플랫폼을 섬깁니다.** 두 CLI의 봉투를 실제로 대조해 보면 샘플 8개가
-  전부 같은 키를 쓰고 차이는 `room.typeCode` 하나뿐입니다
-  ([`tests/fixtures/envelopes/`](tests/fixtures/envelopes/)). 바이너리 이름만 바꾸면 됩니다.
+| 메서드·경로 | 하는 일 |
+| --- | --- |
+| `GET /health` | 프로세스가 살아있는지 (토큰 불필요) |
+| `GET /rooms` | 방 목록 |
+| `GET /context` | 한 방의 최근 메시지와 `coverage`·`attention` |
+| `GET /digest` | 같은 창을 추출 요약으로 |
+| `GET /stream` | **SSE** — `ready` → `message` → `cursor` → `ping` |
+| `POST /send` | 명시적으로 허락된 텍스트 전송 |
 
-`kanao`/`kamado` 를 import 하지 않는다는 건 **테스트로 강제**할 것입니다(`BRIEF.md` 참고).
+## 브라우저에서 부딪히는 것
 
-## macOS 없이 개발할 수 있습니다
+시작하기 전에 알아야 하는 네 가지입니다. 자세한 근거는 [`BRIEF.md`](BRIEF.md) 에 있습니다.
 
-`kamado` 를 import 하지 않고 spawn 만 하므로, macOS 지원은 "다른 바이너리 이름" 이상이
-아닙니다. 그리고 두 코어가 자기 합성 픽스처로 뽑은 봉투 샘플이
-[`tests/fixtures/envelopes/`](tests/fixtures/envelopes/) 에 커밋돼 있어서, **맥 없이 그 파일들로
-호환성을 검증**할 수 있습니다. 맥 실기 확인(spawn 비용 측정 포함)은 그 머신을 가진 쪽이
-나중에 합니다.
-
-일단 Windows + `kanao` 만 보고 만들어도 됩니다.
+- **CORS가 없습니다.** 두 코어 모두 `Access-Control-*` 헤더를 내지 않고 `OPTIONS`도
+  처리하지 않습니다. 다른 origin에서 그냥 부르면 브라우저가 막습니다 — 같은 origin으로
+  서빙하거나 개발 서버 프록시를 씁니다.
+- **`EventSource`를 쓸 수 없습니다.** 인증이 `Authorization` 헤더 전용이고 `EventSource`는
+  헤더를 붙이지 못합니다. `fetch` + `ReadableStream`으로 SSE를 직접 읽습니다.
+- **식별자는 문자열이고 2^53을 넘습니다.** `Number()`로 바꾸면 조용히 틀립니다.
+- **토큰은 비밀번호입니다.** 남의 계정에 **쓰기**(전송)를 여는 값이고, 서버는 평문 HTTP
+  입니다. SSH 터널·VPN·TLS를 끝내는 리버스 프록시 뒤에 두세요.
 
 ## 문서
 
 | 파일 | 내용 |
 | --- | --- |
-| [`BRIEF.md`](BRIEF.md) | **무엇을 만들 것인가** — 엔드포인트 매핑, 원본 코드에서 살릴 것/바꿀 것, 플랫폼 함정 |
-| [`PORTING.md`](PORTING.md) | **어떻게 옮길 것인가** — PR #1의 어느 줄이 어디로 가는지, 새로 쓰는 백엔드의 실제 모양, 검증 순서 |
-| [`PROTOCOL.md`](PROTOCOL.md) | 두 CLI가 내는 봉투. 소비자가 의존해도 되는 것과 아닌 것 |
+| [`BRIEF.md`](BRIEF.md) | **무엇을 만들 것인가** — 계약, 브라우저 제약, 만드는 순서, 아직 정하지 않은 것 |
 | [`AGENTS.md`](AGENTS.md) | 이 저장소에서 일하는 규칙 |
-| [`tests/fixtures/envelopes/`](tests/fixtures/envelopes/) | 두 코어의 실제 출력 샘플 16개. 준수 테스트의 근거 |
+| [`openapi.json`](openapi.json) | 두 코어가 공유하는 HTTP + SSE 계약 |
 
-## 출처
+## 전에 무엇이었나
 
-HTTP 계층의 원본은 `sanguneo/kanao-cli` PR #1(작성자 `jc01rho`)입니다. 거기서는 kanao 안에
-들어가는 서브커맨드였고, 여기서는 백엔드만 subprocess 호출로 바뀝니다. 그 PR의
-`build_handler` — 인증·body framing·rate limiting·SSE — 는 **거의 그대로 쓰입니다.**
+`0.0.0`까지 이 저장소는 두 CLI를 **spawn 하는 HTTP 래퍼**였습니다(`kanao-cli` PR #1의
+이식 계획). 구현은 없었고 문서만 있었으며, 그 방향은 폐기했습니다 — 코어 안에 `serve`가
+들어간 뒤로 래퍼는 같은 표면을 한 겹 더 감싸는 일이 됐고, 정작 없는 것은 그 표면을 쓰는
+**화면**이었기 때문입니다. 폐기한 문서들(`BRIEF`·`PORTING`·`PROTOCOL`의 옛 내용)은 git
+이력 `8a5d251`에 그대로 남아 있습니다.
 
 ## 라이선스
 
