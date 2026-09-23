@@ -154,7 +154,15 @@ export class ContextWindows {
         path: "/context",
         signal: controller.signal,
         generationKey: `context:${roomId}`,
-        query: new URLSearchParams({ roomId, limit: String(limit) }),
+        // `open=true` always: a room whose key is not in memory answers 503
+        // otherwise, and there is no way to know in advance which one that is.
+        // The cost is real and stated in DESIGN.md G2 — the core opens the room
+        // in the desktop client, which marks it read there.
+        query: new URLSearchParams({
+          roomId,
+          limit: String(limit),
+          open: "true",
+        }),
       })
       .then(
         (outcome) => {

@@ -112,6 +112,8 @@ export interface paths {
                      * @example 18491246151592761
                      */
                     roomId: components["parameters"]["RoomId"];
+                    /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
+                    open?: components["parameters"]["OpenRoom"];
                     /** @description How many of the newest messages to return. Bounded because `limit` reaches SQLite, where a negative number means *no limit at all* and one observed room holds 445,714 messages. */
                     limit?: number;
                 };
@@ -165,6 +167,8 @@ export interface paths {
                      * @example 18491246151592761
                      */
                     roomId: components["parameters"]["RoomId"];
+                    /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
+                    open?: components["parameters"]["OpenRoom"];
                     /** @description How long a slice covers, as a duration such as `30m`, `2h` or `1d`. A span the slicer cannot take is a 400. */
                     span?: string;
                     /** @description How many of the newest messages to consider before slicing. */
@@ -748,7 +752,7 @@ export interface components {
                 "application/json": components["schemas"]["ErrorEnvelope"];
             };
         };
-        /** @description The machine is not in a state to answer: the client is closed (`KAKAO_NOT_RUNNING`), it has not opened that room this session so its key is not in memory (`KEY_UNAVAILABLE`), there is no signed-in profile (`NO_USER_DATA`), the server is shutting down or already holds as many streams as it will (`BUSY`), or — macOS only — the permissions it needs have not been granted (`PERMISSION_REQUIRED`). */
+        /** @description The machine is not in a state to answer: the client is closed (`KAKAO_NOT_RUNNING`), it has not opened that room this session so its key is not in memory (`KEY_UNAVAILABLE`; ask again with `open=true`), there is no signed-in profile (`NO_USER_DATA`), the server is shutting down or already holds as many streams as it will (`BUSY`), or — macOS only — the permissions it needs have not been granted (`PERMISSION_REQUIRED`). */
         NotReady: {
             headers: {
                 [name: string]: unknown;
@@ -773,6 +777,8 @@ export interface components {
          * @example 18491246151592761
          */
         RoomId: string;
+        /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
+        OpenRoom: boolean;
     };
     requestBodies: never;
     headers: never;
