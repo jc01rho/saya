@@ -68,8 +68,17 @@ export const scenario: Scenario = {
       replacementStart: 0,
       replacementEnd: 0,
     });
-    // Chromium can report the committing key after compositionend; consume it too.
-    await page.keyboard.press("Enter");
+    // A committing key can also be reported after compositionend. It carries
+    // the IME's own keyCode wherever it lands, and is not a send either. A
+    // plain Enter here would be the person's, and the fill below proves that
+    // one still reaches /send.
+    await session.send("Input.dispatchKeyEvent", {
+      type: "keyDown",
+      key: "Enter",
+      code: "Enter",
+      windowsVirtualKeyCode: 229,
+      nativeVirtualKeyCode: 229,
+    });
     await session.detach();
     assert(
       bridge.requests.filter((request) => request.path === "/send").length ===

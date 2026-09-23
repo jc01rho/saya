@@ -98,36 +98,36 @@ export class ComposerState {
   }
 }
 
+/** Every engine still marks a key its IME swallowed with the legacy 229. */
+const IME_KEY_CODE = 229;
+
 /**
  * Browsers disagree on whether the committing Enter reports isComposing before
- * or after compositionend. Consume both forms and the first Enter after end;
- * a later non-Enter key releases that one-key guard.
+ * or after compositionend, so the key itself decides rather than its position
+ * in that order: an IME-consumed key carries keyCode 229 everywhere, and
+ * Firefox, which does not use 229, reports isComposing on it instead.
+ *
+ * Arming a one-key guard at compositionend cannot tell the committing Enter
+ * from the send that follows an ordinary Hangul word — every composition ends,
+ * including the one a space finished — so the person's next Enter was eaten.
  */
 export class ImeEnterGuard {
   private composing = false;
-  private consumeNextEnter = false;
 
   start(): void {
     this.composing = true;
-    this.consumeNextEnter = false;
   }
 
   end(): void {
     this.composing = false;
-    this.consumeNextEnter = true;
   }
 
   decide(
-    event: Pick<KeyboardEvent, "key" | "shiftKey" | "isComposing">,
+    event: Pick<KeyboardEvent, "key" | "shiftKey" | "isComposing" | "keyCode">,
   ): "send" | "newline" | "ignore" | "none" {
-    if (event.key !== "Enter") {
-      this.consumeNextEnter = false;
-      return "none";
-    }
-    if (this.composing || event.isComposing || this.consumeNextEnter) {
-      this.consumeNextEnter = false;
+    if (event.key !== "Enter") return "none";
+    if (this.composing || event.isComposing || event.keyCode === IME_KEY_CODE)
       return "ignore";
-    }
     return event.shiftKey ? "newline" : "send";
   }
 }

@@ -40,21 +40,70 @@ describe("composer consent state", () => {
 
   test("does not turn Hangul composition Enter into a send, including after compositionend", () => {
     const ime = new ImeEnterGuard();
-    const composingEnter = { key: "Enter", shiftKey: false, isComposing: true };
+    const composingEnter = {
+      key: "Enter",
+      shiftKey: false,
+      isComposing: true,
+      keyCode: 229,
+    };
 
     ime.start();
     expect(ime.decide(composingEnter)).toBe("ignore");
     ime.end();
+    // WebKit reports the committing key after compositionend; it is still the
+    // IME's key, and says so with 229.
     expect(
-      ime.decide({ key: "Enter", shiftKey: false, isComposing: false }),
+      ime.decide({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: false,
+        keyCode: 229,
+      }),
     ).toBe("ignore");
     expect(
-      ime.decide({ key: "Enter", shiftKey: false, isComposing: false }),
+      ime.decide({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: false,
+        keyCode: 13,
+      }),
     ).toBe("send");
 
     expect(
-      ime.decide({ key: "Enter", shiftKey: true, isComposing: false }),
+      ime.decide({
+        key: "Enter",
+        shiftKey: true,
+        isComposing: false,
+        keyCode: 13,
+      }),
     ).toBe("newline");
+  });
+
+  test("the Enter after a committed Hangul word sends it", () => {
+    const ime = new ImeEnterGuard();
+
+    // 한글 typed, then a space: the IME takes the space and ends the
+    // composition. Nothing here is the send's Enter.
+    ime.start();
+    expect(
+      ime.decide({
+        key: " ",
+        shiftKey: false,
+        isComposing: true,
+        keyCode: 229,
+      }),
+    ).toBe("none");
+    ime.end();
+
+    // This one is the person's, and it must not be swallowed as the IME's.
+    expect(
+      ime.decide({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: false,
+        keyCode: 13,
+      }),
+    ).toBe("send");
   });
 
   test("keeps each room draft exactly and gives changes a new revision", () => {
