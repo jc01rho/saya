@@ -253,7 +253,7 @@ preferred family as pending.
 
 | Role | Preferred | Fallback stack | Size / line-height / weight |
 | --- | --- | --- | --- |
-| Message body | Pretendard *(pending verification)* | `Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif` | 16px / 1.7 / 400 |
+| Message body | Pretendard *(pending verification)* | `Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif` | 15px / 1.6 / 400 |
 | Room title | same | same | 15px / 1.4 / 500; active row 600 |
 | Preview, speaker, time, coverage, state words | same | same | 13px / 1.45 / 400, `--ink-muted` |
 | Unread numeral | same | same | 12px / 1 / 600, tabular figures |

@@ -70,8 +70,8 @@
   --font-sans:
     "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic",
     system-ui, sans-serif;
-  --text-body: 16px;
-  --leading-body: 1.7;
+  --text-body: 15px;
+  --leading-body: 1.6;
   --text-title: 15px;
   --leading-title: 1.4;
   --text-meta: 13px;

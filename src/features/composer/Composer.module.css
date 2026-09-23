@@ -96,8 +96,8 @@
   min-width: 0;
   min-height: var(--composer-height);
   max-height: 200px;
-  /* 16px × 1.7 line + 9px twice + the 1px border = the shared height exactly. */
-  padding: 9px var(--space-16);
+  /* 15px × 1.6 line + 11px twice + the 1px border = the shared height exactly. */
+  padding: 11px var(--space-16);
   resize: none;
   border: 1px solid color-mix(in srgb, var(--rule) 30%, transparent);
   border-radius: 22px;
