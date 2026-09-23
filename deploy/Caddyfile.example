@@ -15,7 +15,10 @@ http://127.0.0.1:8080 {
     # The default covers index.html and SPA fallbacks. Hashed assets and /api
     # override it below.
     header Cache-Control "no-cache"
-    header Content-Security-Policy "default-src 'self'; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'; style-src 'self'"
+    # img-src allows https: because a photo on a message is an address on the
+    # client's own CDN, which the contract says the browser may use directly.
+    # Scripts and styles stay 'self'; nothing else is widened.
+    header Content-Security-Policy "default-src 'self'; img-src 'self' https: data:; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'; style-src 'self'"
 
     @api path /api/*
     header @api Cache-Control "no-store"

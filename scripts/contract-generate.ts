@@ -9,7 +9,7 @@ import openapiTS, { astToString } from "openapi-typescript";
 export const contractDirectory = new URL("../src/contract/", import.meta.url);
 const root = new URL("../", import.meta.url);
 const canonicalHash =
-  "ad7704b60b1d3bb5459700cf69d2ebcdc80ea371ed6ded2ae508bba1f8487535";
+  "38349622ba697449ffe0078c3fd756b7c027b513e8e84a416e68f9e22108e1a7";
 const header =
   "// Generated from openapi.json by bun run contract:generate. Do not edit.\n";
 type Schema = Record<string, unknown>;
@@ -120,7 +120,8 @@ export async function generateContract(): Promise<Map<string, string>> {
     code: { source: true, esm: true },
     inlineRefs: false,
   });
-  addFormats(ajv, { formats: ["date-time"], mode: "full" });
+  // `uri` arrives with Photo: a picture's address carries format: uri.
+  addFormats(ajv, { formats: ["date-time", "uri"], mode: "full" });
   // Register each schema separately so refs still point at the canonical names,
   // without admitting arbitrary OpenAPI keywords into Ajv's JSON Schema dialect.
   for (const [name, schema] of Object.entries(schemas)) {

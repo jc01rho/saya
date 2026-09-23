@@ -7,6 +7,8 @@ export const validateErrorEnvelope: ValidateFunction<components["schemas"]["Erro
 export const validateRoom: ValidateFunction<components["schemas"]["Room"]>;
 export const validateMention: ValidateFunction<components["schemas"]["Mention"]>;
 export const validateReplySource: ValidateFunction<components["schemas"]["ReplySource"]>;
+export const validatePhoto: ValidateFunction<components["schemas"]["Photo"]>;
+export const validatePhotoImage: ValidateFunction<components["schemas"]["PhotoImage"]>;
 export const validateMessage: ValidateFunction<components["schemas"]["Message"]>;
 export const validateAttention: ValidateFunction<components["schemas"]["Attention"]>;
 export const validateCoverage: ValidateFunction<components["schemas"]["Coverage"]>;

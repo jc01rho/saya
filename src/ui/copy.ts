@@ -23,6 +23,11 @@ export const COPY = {
   gap: "연결이 끊긴 동안의 일부 대화는 아래에 없을 수 있습니다",
   cat: "고양이",
   catWalking: "연결 중인 고양이",
+  photoOpenAt: (position: number) => `${position}번째 사진 크게 보기`,
+  photoGone: "사진을 불러올 수 없습니다",
+  photoPrev: "이전 사진",
+  photoNext: "다음 사진",
+  photoClose: "닫기",
 } as const;
 
 /** The desktop's count belongs in the row's accessible name, exact even past 99. */

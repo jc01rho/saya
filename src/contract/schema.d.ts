@@ -466,6 +466,23 @@ export interface components {
             text: string | null;
             kind: string | null;
         };
+        /** @description Where a picture lives and how large it was sent. Present only on a message that carries one. The client stores an address on its own CDN rather than the picture, so this is the address — the server fetches nothing; a browser can use `url` directly. An album carries its first picture as `url`, how many there are in `count`, and every one of them in `images`. The size is the one the client stored, which a rotated photo can disagree with. */
+        Photo: {
+            /** Format: uri */
+            url: string;
+            width: number;
+            height: number;
+            count: number;
+            /** @description Every picture the message carried, in order: one for a single photo, one per picture for an album. `url`, `width` and `height` above repeat the first. A size the client did not store is 0. */
+            images: components["schemas"]["PhotoImage"][];
+        };
+        /** @description One picture of a message: its address on the client's CDN and the size stored beside it. */
+        PhotoImage: {
+            /** Format: uri */
+            url: string;
+            width: number;
+            height: number;
+        };
         /**
          * @description One message, already attributed to a named sender.
          *
@@ -507,6 +524,7 @@ export interface components {
             replyTo?: components["schemas"]["ReplySource"];
             /** @constant */
             repliesToMe?: true;
+            photo?: components["schemas"]["Photo"];
         };
         /** @description The same facts the per-message keys carry, gathered once so a caller can ask "was I addressed" without walking the window. */
         Attention: {

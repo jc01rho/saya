@@ -8,6 +8,7 @@ import { formatTime } from "./format";
 import { firstUrl, linkify } from "./linkify";
 import { Mention } from "./Mention";
 import styles from "./MessageBubble.module.css";
+import { Photo } from "./Photo";
 import { QuoteBlock } from "./QuoteBlock";
 
 type Message = components["schemas"]["Message"];
@@ -59,6 +60,12 @@ export function MessageBubble({
   // One card per turn, for the first address: a body full of links is a body,
   // not a wall of cards.
   const linked = message.text ? firstUrl(message.text) : null;
+  // The body is the kind's own word and nothing else: 사진 for a photo. It says
+  // no more than the label does, so it never renders twice; and when the
+  // picture itself is here, it says less than the picture and goes entirely.
+  const duplicate = Boolean(kind) && kind === message.text?.trim();
+  const showLabel = Boolean(kind) && !(duplicate && message.photo);
+  const showText = Boolean(message.text) && !duplicate;
 
   return (
     <article
@@ -86,20 +93,21 @@ export function MessageBubble({
           )}
           {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
           {/*
-            The core sends a photo as kind `photo` with the body text 사진, so
-            drawing both prints the same word twice. The label is what survives:
-            it is the one the kind table owns.
+            The core sends a photo as kind `photo` with the body text 사진. That
+            word is a placeholder for the picture, so once the picture itself is
+            on screen neither the label nor the body should repeat it.
           */}
-          {kind && kind !== message.text?.trim() ? (
+          {showLabel ? (
             <span className={styles.kind} data-ui="kind-label">
               {kind}
             </span>
           ) : null}
-          {message.text ? (
-            <p className={styles.text}>{linkify(message.text)}</p>
-          ) : kind ? null : (
+          {showText ? (
+            <p className={styles.text}>{linkify(message.text as string)}</p>
+          ) : showLabel || message.photo ? null : (
             <span className={styles.kind}>{COPY.emptyBody}</span>
           )}
+          {message.photo ? <Photo photo={message.photo} /> : null}
           {linked ? <LinkCard url={linked} /> : null}
           {/* The stamp rides the last line, as it does in every messenger. */}
           <time

@@ -1,0 +1,145 @@
+/*
+ * Pictures on a message. Every box is reserved before its bytes arrive — a
+ * single picture from its stored size, a grid from square tiles — so a photo
+ * loading never moves the line someone is reading.
+ */
+.grid {
+  display: grid;
+  width: 100%;
+  max-width: 320px;
+  margin-block-start: var(--space-4);
+  gap: 2px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--rule) 12%, transparent);
+}
+
+.tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+/* Two across, square tiles: the shape a mixed album can always be drawn in. */
+.album {
+  grid-template-columns: 1fr 1fr;
+}
+
+.album .tile {
+  aspect-ratio: 1 / 1;
+}
+
+/* Three: one across the top, two beneath, as every messenger draws it. */
+.grid[data-count="3"] .tile:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 9;
+}
+
+.tile:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-offset));
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Pictures the grid did not draw. */
+.more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 18, 16, 0.55);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* A signed address that has expired is an ordinary end, not a broken image. */
+.gone {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: var(--space-48);
+  padding: var(--space-8);
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: var(--leading-meta);
+  text-align: center;
+}
+
+.lightbox {
+  max-width: 100vw;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.lightbox::backdrop {
+  background: rgba(20, 18, 16, 0.88);
+}
+
+.large {
+  display: block;
+  max-width: min(94vw, 1400px);
+  max-height: 84dvh;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  margin-block-start: var(--space-12);
+}
+
+.step,
+.close {
+  min-height: var(--touch-min);
+  border: var(--rule-width) solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.step {
+  min-width: var(--touch-min);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.close {
+  padding: var(--space-4) var(--space-24);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.step:hover,
+.close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.counter {
+  color: #ffffff;
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}

@@ -19,6 +19,7 @@ export {
   type MessageBubbleProps,
   type SendState,
 } from "./MessageBubble";
+export { Photo } from "./Photo";
 export { QuoteBlock, type QuoteBlockProps } from "./QuoteBlock";
 export { RoomRow, type RoomRowProps } from "./RoomRow";
 export { SendDoor, type SendDoorProps, type SendDoorState } from "./SendDoor";
