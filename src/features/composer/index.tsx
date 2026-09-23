@@ -28,6 +28,7 @@ type Status =
 const OPEN_ROOM = true;
 const COPY = {
   input: "메시지 작성",
+  placeholder: "메시지 입력",
   send: "보내기",
   empty: "빈 메시지는 보낼 수 없습니다.",
   previewing: "전송 내용을 확인하고 있습니다.",
@@ -310,6 +311,7 @@ export const Composer = memo(function Composer({
           className={styles.input}
           data-ui="composer-input"
           aria-label={COPY.input}
+          placeholder={COPY.placeholder}
           value={draft.text}
           rows={1}
           onChange={(event) =>

@@ -44,6 +44,13 @@
   --radius-badge: 999px;
   --radius-door: 0px;
 
+  /*
+   * Seam: the line where two regions meet. The fields on either side already
+   * differ, so the seam only has to settle the edge — a full-strength rule
+   * there reads as a black bar drawn across the screen.
+   */
+  --seam: color-mix(in srgb, var(--rule) 22%, transparent);
+
   /* Rules: 1px everywhere; the quote rule and focus ring are the two allowed 2px exceptions. */
   --rule-width: 1px;
   --quote-rule-width: 2px;
@@ -100,4 +107,7 @@
 
   --bubble-other: #493630;
   --bubble-self: #57402f;
+
+  /* The warm dark fields sit closer together, so the seam needs a little more. */
+  --seam: color-mix(in srgb, var(--rule) 30%, transparent);
 }
