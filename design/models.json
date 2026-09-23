@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "host": "OmO, 2026-09-21. Session model Opus 5. Capability re-read on this date; names age faster than the capability rules.",
+  "s3_fallback": "ask-owner",
+  "s3_channel": "image-tool",
+  "stages": {
+    "S0": {
+      "model": "the session model (Opus 5)",
+      "effort": "high",
+      "note": "Reference interpretation. Verified: this session has real image input - all five originals were rendered and inspected directly, not described. No delegation; a child cannot see what the owner showed this session."
+    },
+    "S1": {
+      "model": "the session model (Opus 5)",
+      "effort": "medium",
+      "note": "Owner interview. Bounded by the owner's answers. Delegation would remove the owner from the loop."
+    },
+    "S2": {
+      "model": "claude-fable-5 via the artistry category",
+      "effort": "xhigh",
+      "note": "Art direction: one call, no tools. LIMITATION RECORDED: artistry accepts text only on this host, so the S0+S2 merge recommended in model-plan.md is unavailable and the S0 observations must be relayed as text. That relay is lossy. The economical S2 protocol (one-sentence design law per direction, causal mechanism over adjectives, inherited exclusions, two recorded rejections, separate critique pass) is applied regardless of model, per the 2026-09-09 bench finding that wording outweighed model choice."
+    },
+    "S3": {
+      "model": "gpt-image-2.5-sunburst via the host generate_image tool",
+      "effort": "not-applicable",
+      "note": "Generation. Effort is not a parameter. Channel is image-tool: the host tool is called directly with the compiled prompt and sends {model, prompt, size, quality, n, output_format} with no system prompt or hidden template. Preset default was plain-chat, but this host exposes the image tool directly; the substitution is recorded here rather than made quietly. Sunburst is the most capable of the three offered models. Quota, not reasoning budget, is the limit: settle the direction before generating a wide grid."
+    },
+    "S4": {
+      "model": "the session model (Opus 5)",
+      "effort": "high",
+      "note": "Implementation contract. Needs image input to read the selected concept and already holds the four records warm; a per-token premium child with file tools is the shape model-plan.md forbids."
+    },
+    "S5": {
+      "model": "gpt-6-astra via the deep category",
+      "effort": "high",
+      "note": "Implementation and real-surface QA against the kanao/kamado HTTP+SSE surface. Plan-metered, so its tool-heavy token volume is not billed per token. Not started by this design run."
+    }
+  }
+}
