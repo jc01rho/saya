@@ -10,6 +10,14 @@ where a working record and this file disagree, **this file wins**.
 
 ## Status and authority
 
+- Contract revision: r3, 2026-09-23. r3 moves the layout to the messenger
+  arrangement the owner asked for, taking Telegram Web as the reference:
+  a monogram circle on every room row and in the thread header, the speaker and
+  the stamp inside the bubble, own messages right-aligned, a pill composer with
+  a round send button, and one pane divider instead of per-row divider slices.
+  **Colours are unchanged** — the owner asked for layout only, and every token
+  below still holds. The ledge law and every contract truth are unchanged.
+  Superseded r2 rulings are listed in "Selected concept" below.
 - Contract revision: r2, 2026-09-21. r2 adds the "Contract gaps" rulings, the
   saya name, and fixes the badge, 429 and scroll wording. Colours, layout and the
   ledge law are unchanged from r1.
@@ -67,6 +75,10 @@ These are correctness requirements, not style. Violating one is a defect.
    was actually read back via `/context` or `/stream`; it describes that row, not
    the request. A pending item reads 입력됨 · 전달 미확인 and sits below the ledge
    until the user links it to an observed row (see "Contract gaps", G4).
+   **r3: on a read-back row the word is in the accessible name only.** Its
+   position above the ledge already carries the claim on screen; the word still
+   ships for a reader to whom position carries nothing. The below-ledge states
+   (입력됨 · 전달 미확인, 결과 확인 필요, the 429 refusal) stay visible.
 3. **Never auto-retry an uncertain send.** `SEND_FAILED` means *unknown*, not
    *not sent*. Retry is a deliberate user action, always.
 4. **Warn before destroying a draft.** `dryRun` first; surface `wouldClearDraft`
@@ -82,8 +94,11 @@ These are correctness requirements, not style. Violating one is a defect.
    `{roomId: logId}` and resume with repeated `?since=roomId:logId`. A room the
    cursor does not name starts at connection time — that gap is disclosed in the
    UI and filled with `/context`.
-8. **Unreadable rooms are listed, never hidden and never dimmed.**
-   `readable: false` means the key is not in memory. Full ink, stated reason.
+8. **Unreadable rooms are listed, never hidden and never dimmed.** Full ink.
+   **r3: the row no longer states a reason.** `readable: false` still means the
+   key is not in memory, but the core now opens the room on demand to get it,
+   so the row is an ordinary row under the ordinary preview rule (G1). The
+   thread side keeps its instructional copy for a room that still refuses.
 9. **Coverage is not emptiness.** Surface `storedLocally`, `hasEarlier` and
    `reachesLatestKnown` so an empty window is never read as "this conversation
    never happened".
@@ -111,7 +126,8 @@ above.
 
 | # | What the contract lacks | Ruling |
 | --- | --- | --- |
-| G1 | `Room` has no preview text. Its members are id, title, kind, type, memberCount, unread, lastMessageId, lastActivityAt, readable (and `typeCode` on macOS). | A room row shows a preview **only** from a message body this client already observed through `/context` or `/stream`. If none was observed the row reads 미리보기 없음. Fetching `/context` per row to fabricate previews is forbidden. |
+| G1 | `Room` has no preview text. Its members are id, title, kind, type, memberCount, unread, lastMessageId, lastActivityAt, readable (and `typeCode` on macOS). | A room row shows a preview **only** from a message body this client already observed through `/context` or `/stream`. If none was observed the row reads 미리보기 없음. Fetching `/context` per row to fabricate previews is forbidden. **r3: this rule now applies to every row, `readable` or not.** |
+| G10 | `Room` and `Message` have no avatar, photo or image member of any kind. | The circle on a room row, in the thread header and beside a bubble is a **monogram**: the name's first grapheme on one of eight tones hashed from that name. It is `aria-hidden`, because the name it stands for is already in the row. No image is ever fetched, and no identity is implied beyond the name already shown. |
 | G2 | No mark-read route. `Room.unread` is the desktop client's count and nothing on the wire changes it. | The badge is the **desktop's** count: accessible name 데스크톱 기준 안 읽음 N개. Opening a room in the web client never clears it, decrements it or hides it. It changes only when a fresh `/rooms` says so. |
 | G3 | `/context` takes `roomId` and a newest-N `limit` (1..1000, default 40). There is no offset, no before-id, no older-than cursor. | There is **no older-history pagination**. 더 불러오기 widens the newest window 40 → 200 → 1000 and then stops, showing the ceiling. Anything older than the 1000 newest is shown as out of reach, not silently absent, and the coverage line still states `hasEarlier`. |
 | G4 | `/send` returns `submitted`, `dryRun`, `room`, `roomId`, `length` and the draft flags. No message id, no nonce, no delivery receipt. | A later `fromMe` row with equal text and a newer id is **observed evidence**, never causal proof: a duplicate line, a send typed on the desktop, or normalisation all break the match. The row appears above the ledge at once because it was read; the pending item stays below until the user presses 이 기록으로 확인. The request's own status never becomes "delivered". |
@@ -130,12 +146,13 @@ above.
 | Unreadable 공지 | Full ink, 읽을 수 없음 (키 없음), no badge | Keep | — |
 | Coverage line | First row of the thread, hairline beneath | Keep | — |
 | Room list | Own cream field, full height to the bottom edge | Keep | — |
-| Bubbles | Flat, tail-less, unoutlined, left-aligned both parties | Keep | — |
+| Bubbles | Flat, tail-less, unoutlined, left-aligned both parties | **r3: own messages right-aligned, 14px radius, speaker and stamp inside the bubble, monogram circle beside it** | **Yes — r3 layout** |
 | Unread badge | Red badge, white numeral | Keep the form; **change the red** | **Yes — contrast** |
 | Ledge colour | Warm-white #FAF6EE seam | **1px slate #4E5D69** | **Yes — contrast** |
 | List divider | Warm-white seam | **1px slate #4E5D69** | **Yes — contrast** |
-| Send door | Square-cornered upright rectangle | Keep; enforce square corners | — |
-| Doorway gap | Not legible in the render | Specify explicitly below | Corrected |
+| Send door | Square-cornered upright rectangle | **r3: a circle beside the pill composer.** Still the only saturated surface and the only shadow | **Yes — r3 layout** |
+| Doorway gap | Not legible in the render | **r3: removed with the per-row divider slices; the active row is a filled, rounded field** | **Yes — r3 layout** |
+| List divider | Per-row slices, broken by the active row | **r3: one divider on the list pane's trailing edge; the scrollbar gutter sits inside the list** | **Yes — r3 layout** |
 | Column measure | Ran wider than intended | Cap at `62ch` | Corrected |
 | Generated Hangul | Typos (화면어, 다서, 어변 주, 업에) | **Never product copy.** Use the strings in this file | Artifact |
 | Black mass | Alpha hole, diagnosed | Not a design element. Ignore | Artifact |
@@ -160,7 +177,8 @@ luminance, computed 2026-09-21).
 | `--badge-unread` | `#BB3322` | unread badge fill only | **white on it: 5.82 (AA pass)** |
 | `--badge-unread-ink` | `#FFFFFF` | the unread numeral | — |
 | Spacing scale | `4 8 12 16 24 32 48 64` px | — | — |
-| Radius | `bubble 8px` · `badge 999px` · **`door 0px`** | the door is square, always | — |
+| Radius | `bubble 14px` · `badge 999px` · **`door 50%`** · `room row 10px` · `composer 22px` | r3: the door is a circle | — |
+| Avatar | monogram on one of eight tones, hashed from the name | **never a photograph** — no image member exists on `Room` or `Message` | — |
 | Border width | `1px` everywhere | no 2px rules | — |
 | Elevation | exactly one: `0 2px 6px rgba(42,39,36,.18)` on the send door only | — | — |
 | Motion | `--dur-cross 300ms` · `--dur-fade 160ms` · `--ease cubic-bezier(.2,.0,.2,1)` | — | — |

@@ -25,19 +25,23 @@ export const scenario: Scenario = {
       await page.waitForSelector("nav a", { timeout: 15_000 });
       await screenshot(`lead-${label}-rooms`);
 
-      // 1. The unreadable room must be LISTED and stated, not hidden.
-      const body = await page.evaluate(() => document.body.innerText);
-      if (!/읽을 수 없음/.test(body))
-        throw new Error(
-          `${label}: no unreadable room reason in the rendered text`,
-        );
+      // 1. The unreadable room must be LISTED, not hidden. It no longer states
+      //    a reason: the core opens the room on demand for its key, so the row
+      //    is an ordinary row and carries the ordinary preview rule.
+      const listedUnreadable = await page.evaluate(
+        () =>
+          document.querySelectorAll(
+            '[data-ui="room-row"][data-readable="false"]',
+          ).length,
+      );
+      if (listedUnreadable === 0)
+        throw new Error(`${label}: no unreadable room row is listed`);
 
       // 2. "full ink" as a MEASUREMENT, not an impression: walk the ancestor chain of the
-      //    element carrying that reason and require the minimum computed opacity >= 0.95.
+      //    unreadable row and require the minimum computed opacity >= 0.95.
       const minOpacity = await page.evaluate(() => {
-        const el = [...document.querySelectorAll<HTMLElement>("*")].find(
-          (e) =>
-            e.children.length === 0 && /읽을 수 없음/.test(e.textContent ?? ""),
+        const el = document.querySelector<HTMLElement>(
+          '[data-ui="room-row"][data-readable="false"]',
         );
         if (!el) return null;
         let node: HTMLElement | null = el;
