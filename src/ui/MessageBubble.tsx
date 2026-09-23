@@ -4,6 +4,7 @@ import { Avatar } from "./Avatar";
 import { COPY, kindLabel } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
+import { linkify } from "./linkify";
 import { Mention } from "./Mention";
 import styles from "./MessageBubble.module.css";
 import { QuoteBlock } from "./QuoteBlock";
@@ -86,7 +87,7 @@ export function MessageBubble({
             </span>
           ) : null}
           {message.text ? (
-            <p className={styles.text}>{message.text}</p>
+            <p className={styles.text}>{linkify(message.text)}</p>
           ) : kind ? null : (
             <span className={styles.kind}>{COPY.emptyBody}</span>
           )}

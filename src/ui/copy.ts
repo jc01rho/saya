@@ -4,7 +4,6 @@
  */
 export const COPY = {
   me: "나",
-  noPreview: "미리보기 없음",
   unreadable: "읽을 수 없음 (키 없음)",
   unknownTime: "시간 미상",
   quoteMissing: "인용 정보 없음",

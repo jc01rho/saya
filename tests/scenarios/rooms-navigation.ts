@@ -7,8 +7,7 @@ import type { Scenario } from "../harness/runner";
 const INK = "rgb(42, 39, 36)";
 const BADGE = "rgb(187, 51, 34)";
 const BADGE_INK = "rgb(255, 255, 255)";
-const NO_PREVIEW = "미리보기 없음";
-const UNREADABLE = "읽을 수 없음 (키 없음)";
+
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
 
@@ -221,8 +220,9 @@ export const scenario: Scenario = {
     const previews = rows.filter((row) => row.readable);
     if (previews.length !== readable.length)
       fail(`${previews.length} readable rows for ${readable.length} rooms`);
+    // An unobserved room shows no preview line at all; the absence is the state.
     for (const row of previews)
-      if (row.preview !== NO_PREVIEW)
+      if (row.preview.trim() !== "")
         fail(`readable row ${row.title} previews "${row.preview}"`);
     // Must match the CURRENT generated body marker in tests/fixtures/data.ts ("가상 등불 N번, ...").
     // If the fixture wording changes, update this too: a guard that can no longer match is a
@@ -230,17 +230,16 @@ export const scenario: Scenario = {
     if (rows.some((row) => /가상 등불/.test(row.text)))
       fail("a row shows a message body that was never observed");
 
-    // Unreadable rooms: full ink, reason stated, no badge.
+    // Unreadable rooms: listed at full ink. The core opens a room on demand for
+    // its key, so the row states no reason and is an ordinary row.
     const unreadableRows = rows.filter((row) => !row.readable);
     if (unreadableRows.length !== unreadable.length)
       fail(
         `${unreadableRows.length} unreadable rows for ${unreadable.length} rooms`,
       );
     for (const row of unreadableRows) {
-      if (row.preview !== UNREADABLE)
+      if (row.preview.trim() !== "")
         fail(`unreadable row ${row.title} reads "${row.preview}"`);
-      if (row.badge !== null)
-        fail(`unreadable row ${row.title} carries a badge ${row.badge}`);
       if (
         row.color !== INK ||
         row.titleColor !== INK ||

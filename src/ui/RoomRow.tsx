@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 import type { components } from "../contract/decoded";
 import { Avatar } from "./Avatar";
-import { COPY, unreadName } from "./copy";
+import { unreadName } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
 import styles from "./RoomRow.module.css";
@@ -37,9 +37,8 @@ export function RoomRow({
 }: RoomRowProps) {
   const time = formatTime(room.lastActivityAt, now);
   // `readable: false` no longer means the room cannot be read: the core opens
-  // it on demand for the key. The row therefore states no reason, and the
-  // second line is the ordinary observed-preview rule (G1).
-  const secondLine = preview ?? COPY.noPreview;
+  // it on demand for the key. The row states no reason, and an unobserved room
+  // shows no second line at all rather than a sentence about its absence (G1).
   const showBadge = room.unread > 0;
   return (
     <li
@@ -67,7 +66,11 @@ export function RoomRow({
             )}
           </div>
           <div className={styles.sub}>
-            <span className={styles.preview}>{secondLine}</span>
+            {preview ? (
+              <span className={styles.preview}>{preview}</span>
+            ) : (
+              <span className={styles.preview} />
+            )}
             {showBadge ? (
               <span className={styles.badge}>
                 <UnreadBadge count={room.unread} />
