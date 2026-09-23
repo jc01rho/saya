@@ -9,20 +9,18 @@
   color: var(--ink);
 }
 
-/* Two panes: the scrollbar gutter sits right of the divider and reads as the wall. */
+/*
+ * Two panes: one divider on the pane's own trailing edge, so the scroller and
+ * its gutter both stay inside the list field instead of straddling a seam.
+ */
 @media (min-width: 768px) {
   .pane {
-    background: var(--field-wall);
+    border-inline-end: var(--rule-width) solid var(--rule);
   }
 }
 
-/*
- * Head, scroller and foot reserve the same scrollbar gutter, so the divider
- * slices their inner boxes carry line up with the slices the rows carry.
- */
-.head,
-.scroller,
-.foot {
+/* Only the scroller reserves a gutter, and it reserves it inside the list. */
+.scroller {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
@@ -49,7 +47,6 @@
 .status,
 .filler {
   background: var(--field-list);
-  border-inline-end: var(--rule-width) solid var(--rule);
 }
 
 .headInner {
@@ -164,16 +161,9 @@
   padding: 0 var(--space-16) var(--space-8);
 }
 
-/* One pane has nothing to divide: the divider slices lose their width here. */
+/* One pane has nothing to divide, and no gutter to reserve beside it. */
 @media (max-width: 767.98px) {
-  .scroller,
-  .filler,
-  .footInner,
-  .status {
-    --rule-width: 0px;
-  }
-
-  .headInner {
-    border-inline-end: 0;
+  .scroller {
+    scrollbar-gutter: auto;
   }
 }

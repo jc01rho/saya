@@ -311,7 +311,7 @@ export const Composer = memo(function Composer({
           data-ui="composer-input"
           aria-label={COPY.input}
           value={draft.text}
-          rows={2}
+          rows={1}
           onChange={(event) =>
             changed(
               event.currentTarget.value,
@@ -336,7 +336,10 @@ export const Composer = memo(function Composer({
           type="submit"
           disabled={status.kind === "previewing" || status.kind === "posting"}
         >
-          {COPY.send}
+          <span className="sr-only">{COPY.send}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 11.5 20.5 4l-7.5 17.5-2.2-7.3z" fill="currentColor" />
+          </svg>
         </button>
       </div>
     </form>

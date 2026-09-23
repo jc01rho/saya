@@ -1,5 +1,6 @@
 import type { MouseEvent } from "react";
 import type { components } from "../contract/decoded";
+import { Avatar } from "./Avatar";
 import { COPY, unreadName } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
@@ -21,10 +22,10 @@ export interface RoomRowProps {
 }
 
 /**
- * One catalog row: title and time, then the observed preview or its honest
- * absence, then the desktop's unread count. Unreadable rooms keep full ink and
- * state their reason. The active row breaks the list divider: the doorway gap.
- * The parent list continues the divider below the last row.
+ * One catalog row: a monogram circle, then title and time, then the observed
+ * preview or its honest absence, then the desktop's unread count. Unreadable
+ * rooms keep full ink and state their reason. The active row is a filled,
+ * rounded field; rows carry no divider between them.
  */
 export function RoomRow({
   room,
@@ -35,16 +36,14 @@ export function RoomRow({
   onSelect,
 }: RoomRowProps) {
   const time = formatTime(room.lastActivityAt, now);
-  const unreadable = !room.readable;
-  const secondLine = unreadable ? COPY.unreadable : (preview ?? COPY.noPreview);
-  const showBadge = !unreadable && room.unread > 0;
+  // `readable: false` no longer means the room cannot be read: the core opens
+  // it on demand for the key. The row therefore states no reason, and the
+  // second line is the ordinary observed-preview rule (G1).
+  const secondLine = preview ?? COPY.noPreview;
+  const showBadge = room.unread > 0;
   return (
     <li
-      className={cx(
-        styles.row,
-        active && styles.active,
-        unreadable && styles.unreadable,
-      )}
+      className={cx(styles.row, active && styles.active)}
       data-ui="room-row"
       data-active={active || undefined}
       data-readable={room.readable}
@@ -55,9 +54,7 @@ export function RoomRow({
         aria-current={active ? "page" : undefined}
         onClick={onSelect}
       >
-        <span className={styles.prefix} aria-hidden="true">
-          #
-        </span>
+        <Avatar name={room.title} size={48} />
         <div className={styles.body}>
           <div className={styles.header}>
             <span className={styles.title}>{room.title}</span>

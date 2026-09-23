@@ -1,6 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
+import type { components } from "../contract/decoded";
+import { Coordinator } from "../coordination/coordinator";
+import { browserPlatform } from "../coordination/platform";
 import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
+import { Reconciler } from "../core/reconcile";
 import type { ClientStores } from "../core/stores";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
@@ -8,7 +12,7 @@ import { DigestEntry } from "../features/digest";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
-import { Cat } from "../ui";
+import { Avatar, Cat, COPY } from "../ui";
 import styles from "./App.module.css";
 import { ROOMS_HASH, useRoute } from "./routes";
 
@@ -19,16 +23,52 @@ export type Session = {
   stores: ClientStores;
   /** Per-room newest windows: which limit each room asks for and what is in flight. */
   windows: ContextWindows;
+  /** Orders `/context` replies against live `/stream` records for the same room. */
+  reconciler: Reconciler;
+  /**
+   * Builds the `/stream` subscription: one connection for the whole browser,
+   * elected across tabs. A `Coordinator` holds a Web Lock and its `stop()` is
+   * terminal, so each mount gets a fresh one rather than restarting a dead one.
+   */
+  createCoordinator: () => Coordinator;
 };
 
 export function createSession(): Session {
   const http = new HttpClient();
   const cache = new BoundedCache();
+  // Windows load through the reconciler so a context reply can never overwrite
+  // a newer row the stream already delivered.
+  const reconciler = new Reconciler(cache, { http });
+  const createCoordinator = () =>
+    new Coordinator({
+      platform: browserPlatform(),
+      apply(records) {
+        for (const { event } of records)
+          reconciler.accept(
+            event.type === "oversize-gap"
+              ? // A record the ring could not carry is a discarded frame by any
+                // other name: the following cursor turns it into a stated gap.
+                { type: "discarded-frame", bytes: event.bytes }
+              : event,
+          );
+      },
+      // Resume by cursor, never Last-Event-ID: one `since=roomId:logId` per room.
+      query() {
+        const params = new URLSearchParams();
+        for (const [roomId, logId] of Object.entries(
+          reconciler.resume().cursor,
+        ))
+          params.append("since", `${roomId}:${logId}`);
+        return params;
+      },
+    });
   return {
     http,
     cache,
     stores: cache.stores,
-    windows: new ContextWindows(http, cache),
+    windows: new ContextWindows(reconciler, cache),
+    reconciler,
+    createCoordinator,
   };
 }
 
@@ -36,6 +76,8 @@ const APP_COPY = {
   pick: "대화를 선택하세요",
   back: "목록으로",
   untitled: "대화",
+  direct: "1:1 대화",
+  members: (count: number) => `멤버 ${count}명`,
   retry: "다시 확인",
   networkTitle: "브리지에 연결할 수 없습니다",
   networkBody:
@@ -47,6 +89,21 @@ const APP_COPY = {
   capacityBody: (limit: string) =>
     `카탈로그 응답이 이 클라이언트의 ${limit} 정책을 넘어 표시하지 않았습니다.`,
 } as const;
+
+/**
+ * The line under the room title. Every word comes from a member the contract
+ * actually carries — `readable`, `kind`, `memberCount` — and the line is absent
+ * when none of them applies rather than filled with a guess.
+ */
+function roomSubtitle(
+  room: components["schemas"]["Room"] | undefined,
+): string | null {
+  if (!room) return null;
+  if (!room.readable) return COPY.unreadable;
+  if (room.kind === "direct") return APP_COPY.direct;
+  if (room.memberCount > 0) return APP_COPY.members(room.memberCount);
+  return null;
+}
 
 function Notice({ children }: { children: ReactNode }) {
   return (
@@ -81,6 +138,7 @@ function RoomOutlet({
   roomId: string;
 }) {
   const snapshot = useSlice(stores, `room.${roomId}`);
+  const subtitle = roomSubtitle(snapshot?.room);
   return (
     <>
       <header className={styles.threadHead}>
@@ -97,12 +155,13 @@ function RoomOutlet({
             />
           </svg>
         </a>
-        <h1 className={styles.title}>
-          <span className={styles.titlePrefix} aria-hidden="true">
-            #
-          </span>
-          {snapshot?.room.title ?? APP_COPY.untitled}
-        </h1>
+        <Avatar name={snapshot?.room.title ?? APP_COPY.untitled} size={40} />
+        <div className={styles.identity}>
+          <h1 className={styles.title}>
+            {snapshot?.room.title ?? APP_COPY.untitled}
+          </h1>
+          {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
+        </div>
         <DigestEntry stores={stores} http={http} roomId={roomId} />
       </header>
       <ThreadPane stores={stores} windows={windows} roomId={roomId} />
@@ -126,6 +185,16 @@ export function App({ session }: { session?: Session }) {
   useEffect(() => {
     own.cache.selectRoom(roomId);
   }, [own, roomId]);
+
+  // One `/stream` per browser, elected across tabs. Without this the screen
+  // only ever shows what a `/context` request happened to fetch.
+  useEffect(() => {
+    const coordinator = own.createCoordinator();
+    void coordinator.start();
+    return () => {
+      void coordinator.stop();
+    };
+  }, [own]);
 
   if (phase.kind === "failed")
     return (

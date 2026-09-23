@@ -14,35 +14,61 @@
   margin-inline-start: auto;
 }
 
-.meta,
-.footer {
+/*
+ * Avatar beside the bubble, both sitting on the same baseline foot.
+ *
+ * A turn is capped at the golden section of the column, so a long message
+ * leaves the reciprocal share as visible margin and never reads as the whole
+ * wall. Below the two-pane break the column is already narrow, so the cap
+ * relaxes rather than squeezing Hangul into a ribbon.
+ */
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+  max-width: 61.8%;
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  .row {
+    max-width: 85%;
+  }
+}
+
+.self .row {
+  flex-direction: row-reverse;
+}
+
+.bubble {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--space-8) var(--space-12);
+  border-radius: 14px;
+  background: var(--bubble-other);
+  color: var(--ink);
+}
+
+.self .bubble {
+  background: var(--bubble-self);
+  border-bottom-right-radius: 4px;
+}
+
+.other .bubble {
+  border-bottom-left-radius: 4px;
+}
+
+/* Speaker name and the addressed-me chips, above the body inside the bubble. */
+.meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-8);
-  max-width: 100%;
+  margin-bottom: 2px;
   color: var(--ink-muted);
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
-}
-
-.self .meta,
-.self .footer {
-  justify-content: flex-end;
-}
-
-.avatar {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 11px;
-  user-select: none;
 }
 
 .speaker {
@@ -51,29 +77,20 @@
   color: var(--ink);
 }
 
+/*
+ * The stamp rides the last line: it floats to the trailing edge and reserves
+ * its own width there, so a long final word wraps around it instead of
+ * colliding with it.
+ */
 .time {
-  font-size: 11px;
+  float: inline-end;
+  margin-block-start: var(--space-8);
+  margin-inline-start: var(--space-12);
   color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-}
-
-.bubble {
-  display: grid;
-  gap: var(--space-4);
-  max-width: 100%;
-  padding: var(--space-8) var(--space-12);
-  border-radius: var(--radius-bubble);
-  background: var(--bubble-other);
-  color: var(--ink);
-}
-
-.self .bubble {
-  background: var(--bubble-self);
-  border-bottom-right-radius: 2px;
-}
-
-.other .bubble {
-  border-bottom-left-radius: 2px;
+  white-space: nowrap;
 }
 
 .text {
@@ -88,6 +105,21 @@
   color: var(--ink-muted);
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: 100%;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.self .footer {
+  justify-content: flex-end;
 }
 
 .state {

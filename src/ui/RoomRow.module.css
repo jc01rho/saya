@@ -1,25 +1,24 @@
+/*
+ * A catalog row in the messenger rhythm: one circle, then two lines that each
+ * run title-to-time and preview-to-badge. Rows carry no divider; the active row
+ * is a filled, rounded field rather than a break in a rule.
+ */
 .row {
   position: relative;
+  padding-inline: var(--space-8);
   background: var(--field-list);
-  /* Each row carries its slice of the list divider so the active row can break it. */
-  border-inline-end: var(--rule-width) solid var(--rule);
-  transition: background-color var(--dur-fade) var(--ease);
-}
-
-/* The doorway gap: an actual break in the rule, not a lighter segment. */
-.active {
-  border-inline-end-color: transparent;
-  background: color-mix(in srgb, var(--field-list) 82%, var(--ink));
 }
 
 .link {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
-  min-height: var(--doorway-gap);
-  padding: var(--space-8) var(--space-12);
+  gap: var(--space-12);
+  min-height: 64px;
+  padding: var(--space-8);
+  border-radius: 10px;
   color: var(--ink);
   text-decoration: none;
+  transition: background-color var(--dur-fade) var(--ease);
 }
 
 /* Hover changes background tone only, never layout. */
@@ -27,23 +26,15 @@
   background: color-mix(in srgb, var(--field-list) 92%, var(--ink));
 }
 
+.active .link,
+.active .link:hover {
+  background: color-mix(in srgb, var(--field-list) 80%, var(--ink));
+}
+
 /* Rows live inside a scrolling column, so the ring sits inside the row. */
 .link:focus-visible {
   outline: var(--focus-ring);
   outline-offset: calc(-1 * var(--focus-offset));
-}
-
-.prefix {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--ink-muted);
-  flex-shrink: 0;
-  width: 18px;
-  text-align: center;
-}
-
-.active .prefix {
-  color: var(--ink);
 }
 
 .body {
@@ -98,11 +89,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   flex: 1;
-}
-
-/* Unreadable rooms are listed in full ink with their reason; never dimmed. */
-.unreadable .preview {
-  color: var(--ink);
 }
 
 .badge {

@@ -1,3 +1,4 @@
+export { Avatar, type AvatarProps } from "./Avatar";
 export { Cat, type CatProps } from "./Cat";
 export { CoverageLine, type CoverageLineProps } from "./CoverageLine";
 export { COPY, kindLabel, unreadName } from "./copy";

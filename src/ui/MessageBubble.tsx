@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { components } from "../contract/decoded";
+import { Avatar } from "./Avatar";
 import { COPY, kindLabel } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
@@ -17,26 +18,6 @@ const STATE_WORDS: Record<SendState, string> = {
   unknown: COPY.unknown,
   rejected: COPY.rejected,
 };
-
-const AVATAR_COLORS = [
-  "#5865F2", // Discord Blurple
-  "#57F287", // Green
-  "#FEE75C", // Yellow
-  "#EB459E", // Fuchsia
-  "#ED4245", // Red
-  "#00A8FC", // Cyan
-  "#F47B67", // Coral
-  "#1ABC9C", // Teal
-];
-
-function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash << 5) - hash + name.charCodeAt(i);
-    hash |= 0;
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? "#5865F2";
-}
 
 export interface MessageBubbleProps {
   message: Message;
@@ -71,8 +52,8 @@ export function MessageBubble({
       ? COPY.sent
       : null;
   const speakerName = (message.fromMe ? COPY.me : message.sender) || "?";
-  const avatarLetter = speakerName.trim().slice(0, 1).toUpperCase();
-  const avatarBg = getAvatarColor(speakerName);
+  const mentioned =
+    message.mentionsAll === true || (message.mentions?.length ?? 0) > 0;
 
   return (
     <article
@@ -81,49 +62,56 @@ export function MessageBubble({
       data-side={message.fromMe ? "self" : "other"}
       data-state={state ?? (message.fromMe ? "read" : undefined)}
     >
-      <div className={styles.meta}>
-        {!message.fromMe ? (
-          <div
-            className={styles.avatar}
-            style={{ backgroundColor: avatarBg }}
-            aria-hidden="true"
+      <div className={styles.row}>
+        {message.fromMe ? null : <Avatar name={speakerName} size={36} />}
+        <div className={styles.bubble}>
+          {message.fromMe && !mentioned ? null : (
+            <div className={styles.meta}>
+              {message.fromMe ? null : (
+                <span className={styles.speaker}>{speakerName}</span>
+              )}
+              {message.mentionsAll ? <Mention name={null} all /> : null}
+              {message.mentions?.map((mention) => (
+                <Mention
+                  key={`${mention.userId}:${mention.at.join(",")}:${mention.length}`}
+                  name={mention.name}
+                />
+              ))}
+            </div>
+          )}
+          {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
+          {kind ? (
+            <span className={styles.kind} data-ui="kind-label">
+              {kind}
+            </span>
+          ) : null}
+          {message.text ? (
+            <p className={styles.text}>{message.text}</p>
+          ) : kind ? null : (
+            <span className={styles.kind}>{COPY.emptyBody}</span>
+          )}
+          {/* The stamp rides the last line, as it does in every messenger. */}
+          <time
+            className={styles.time}
+            {...(time.dateTime ? { dateTime: time.dateTime } : {})}
           >
-            {avatarLetter}
-          </div>
-        ) : null}
-        <span className={styles.speaker}>{speakerName}</span>
-        {time.dateTime ? (
-          <time className={styles.time} dateTime={time.dateTime}>
             {time.label}
           </time>
-        ) : (
-          <span className={styles.time}>{time.label}</span>
-        )}
-        {message.mentionsAll ? <Mention name={null} all /> : null}
-        {message.mentions?.map((mention) => (
-          <Mention
-            key={`${mention.userId}:${mention.at.join(",")}:${mention.length}`}
-            name={mention.name}
-          />
-        ))}
-      </div>
-      <div className={styles.bubble}>
-        {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
-        {kind ? (
-          <span className={styles.kind} data-ui="kind-label">
-            {kind}
-          </span>
-        ) : null}
-        {message.text ? (
-          <p className={styles.text}>{message.text}</p>
-        ) : kind ? null : (
-          <span className={styles.kind}>{COPY.emptyBody}</span>
-        )}
+        </div>
       </div>
       {stateWord || actions ? (
         <div className={styles.footer}>
           {stateWord ? (
-            <span className={styles.state} data-ui="state-word">
+            <span
+              /*
+               * A row that was read back needs no word repeated under every
+               * line: its presence on the wall, above the ledge, already says
+               * it. The word stays in the accessible name, where the ledge's
+               * position carries nothing.
+               */
+              className={state ? styles.state : "sr-only"}
+              data-ui="state-word"
+            >
               {stateWord}
             </span>
           ) : null}

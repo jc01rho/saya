@@ -1,0 +1,19 @@
+/*
+ * A monogram, never a photograph. The contract carries no avatar image for a
+ * room or a sender, so the circle is drawn from the name the wire already gave
+ * us and nothing else is implied by it.
+ */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--tone);
+  color: var(--tone-ink);
+  font-size: calc(var(--size) * 0.4);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}

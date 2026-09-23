@@ -48,7 +48,7 @@
 .threadHead {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
+  gap: var(--space-12);
   min-height: var(--space-48);
   padding: var(--space-12) var(--space-24);
   border-bottom: var(--rule-width) solid var(--rule);
@@ -79,10 +79,14 @@
   }
 }
 
+/* Title over subtitle, both clipped to one line so the header never grows. */
+.identity {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
 .title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   overflow: hidden;
   font-size: var(--text-title);
   font-weight: 600;
@@ -91,10 +95,14 @@
   text-overflow: ellipsis;
 }
 
-.titlePrefix {
-  font-size: 18px;
-  font-weight: 600;
+/* Only members the contract carries: readable, kind, memberCount. */
+.subtitle {
+  overflow: hidden;
   color: var(--ink-muted);
+  font-size: 12px;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* No room chosen: the cat and one line, centred in the conversation pane. */
