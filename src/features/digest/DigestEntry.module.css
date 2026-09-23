@@ -1,0 +1,31 @@
+/* The header's quiet control: rule-outlined, transparent, pushed to the pane's right edge. */
+.open {
+  flex: none;
+  margin-inline-start: auto;
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+/* Hover changes background tone only, never layout. */
+.open:hover {
+  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+}
+
+/* Touch targets grow below 768px. */
+@media (max-width: 767.98px) {
+  .open {
+    min-height: var(--touch-min);
+  }
+}
+
+.unavailable {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}

@@ -1,0 +1,188 @@
+import { type ReactNode, useEffect, useState } from "react";
+import { BoundedCache } from "../core/cache";
+import { ContextWindows } from "../core/context";
+import type { ClientStores } from "../core/stores";
+import { Composer } from "../features/composer";
+import { ConnectionScreen } from "../features/connection";
+import { DigestEntry } from "../features/digest";
+import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
+import { ThreadPane } from "../features/thread";
+import { HttpClient } from "../transport/http";
+import { Cat } from "../ui";
+import styles from "./App.module.css";
+import { ROOMS_HASH, useRoute } from "./routes";
+
+/** Everything a tab holds in memory. Nothing here touches disk. */
+export type Session = {
+  http: HttpClient;
+  cache: BoundedCache;
+  stores: ClientStores;
+  /** Per-room newest windows: which limit each room asks for and what is in flight. */
+  windows: ContextWindows;
+};
+
+export function createSession(): Session {
+  const http = new HttpClient();
+  const cache = new BoundedCache();
+  return {
+    http,
+    cache,
+    stores: cache.stores,
+    windows: new ContextWindows(http, cache),
+  };
+}
+
+const APP_COPY = {
+  pick: "대화를 선택하세요",
+  back: "목록으로",
+  untitled: "대화",
+  retry: "다시 확인",
+  networkTitle: "브리지에 연결할 수 없습니다",
+  networkBody:
+    "프록시가 응답하지 않습니다. 프록시와 코어가 실행 중인지 확인하세요.",
+  protocolTitle: "브리지 응답을 해석할 수 없습니다",
+  protocolBody:
+    "프록시 뒤의 응답이 계약과 다릅니다. 프록시 대상과 코어 버전을 확인하세요.",
+  capacityTitle: "목록이 표시 가능한 범위를 넘었습니다",
+  capacityBody: (limit: string) =>
+    `카탈로그 응답이 이 클라이언트의 ${limit} 정책을 넘어 표시하지 않았습니다.`,
+} as const;
+
+function Notice({ children }: { children: ReactNode }) {
+  return (
+    <main className={styles.notice} data-ui="app-notice">
+      {children}
+    </main>
+  );
+}
+
+function EmptyOutlet() {
+  return (
+    <div className={styles.empty}>
+      <Cat height={48} />
+      <p>{APP_COPY.pick}</p>
+    </div>
+  );
+}
+
+/**
+ * Where the thread mounts: the header the mobile view needs (a way back and
+ * the room title as the h1) above the conversation wall, which owns its scroll.
+ */
+function RoomOutlet({
+  stores,
+  windows,
+  http,
+  roomId,
+}: {
+  stores: ClientStores;
+  windows: ContextWindows;
+  http: HttpClient;
+  roomId: string;
+}) {
+  const snapshot = useSlice(stores, `room.${roomId}`);
+  return (
+    <>
+      <header className={styles.threadHead}>
+        <a className={styles.back} href={ROOMS_HASH}>
+          <span className="sr-only">{APP_COPY.back}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M15 5l-7 7 7 7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </a>
+        <h1 className={styles.title}>
+          <span className={styles.titlePrefix} aria-hidden="true">
+            #
+          </span>
+          {snapshot?.room.title ?? APP_COPY.untitled}
+        </h1>
+        <DigestEntry stores={stores} http={http} roomId={roomId} />
+      </header>
+      <ThreadPane stores={stores} windows={windows} roomId={roomId} />
+      <Composer http={http} roomId={roomId} />
+    </>
+  );
+}
+
+/**
+ * The composition root: one session, the hash route, the catalog request, and
+ * the two panes. The shell is 100dvh and never scrolls; the list and, later,
+ * the conversation wall own their own scrolling.
+ */
+export function App({ session }: { session?: Session }) {
+  const [own] = useState(() => session ?? createSession());
+  const route = useRoute();
+  const { phase, reload } = useCatalog(own.http, own.cache);
+  const roomId = route.kind === "room" ? route.roomId : null;
+
+  // The active room is pinned against eviction and keeps the larger window.
+  useEffect(() => {
+    own.cache.selectRoom(roomId);
+  }, [own, roomId]);
+
+  if (phase.kind === "failed")
+    return (
+      <Notice>
+        <ConnectionScreen state={phase.state} onRetry={reload} />
+      </Notice>
+    );
+  if (phase.kind === "unreachable" || phase.kind === "over-capacity") {
+    const protocol =
+      phase.kind === "unreachable" && phase.reason === "protocol";
+    const title =
+      phase.kind === "over-capacity"
+        ? APP_COPY.capacityTitle
+        : protocol
+          ? APP_COPY.protocolTitle
+          : APP_COPY.networkTitle;
+    const body =
+      phase.kind === "over-capacity"
+        ? APP_COPY.capacityBody(
+            `${own.cache.limits.catalogBytes / (1024 * 1024)} MiB`,
+          )
+        : protocol
+          ? APP_COPY.protocolBody
+          : APP_COPY.networkBody;
+    return (
+      <Notice>
+        <section aria-labelledby="catalog-heading">
+          <h1 id="catalog-heading">{title}</h1>
+          <p>{body}</p>
+          <button type="button" onClick={reload}>
+            {APP_COPY.retry}
+          </button>
+        </section>
+      </Notice>
+    );
+  }
+
+  return (
+    <div className={styles.shell} data-ui="app" data-route={route.kind}>
+      <RoomsPane
+        className={styles.list}
+        stores={own.stores}
+        activeRoomId={roomId}
+        loading={phase.kind === "loading"}
+      />
+      <main className={styles.thread} data-ui="thread-outlet">
+        {roomId === null ? (
+          <EmptyOutlet />
+        ) : (
+          <RoomOutlet
+            stores={own.stores}
+            windows={own.windows}
+            http={own.http}
+            roomId={roomId}
+          />
+        )}
+      </main>
+    </div>
+  );
+}

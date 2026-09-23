@@ -1,0 +1,299 @@
+/*
+ * The digest sheet: a modal reading surface over the conversation pane. Its
+ * highlights are wall messages, so it stands on the wall's own field and the
+ * bubbles keep the grammar they have below it; the 1px rule and the scrim set
+ * it apart. It is the one transient layer in the product, so it carries no
+ * shadow and no radius. Only its body scrolls; the shell beneath keeps its own
+ * two scroll owners.
+ */
+.sheet[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  /* The reading measure plus the body's gutters, or the viewport minus a 16px margin each side. */
+  width: min(100% - var(--space-32), calc(var(--measure) + var(--space-48)));
+  max-width: none;
+  max-height: calc(100dvh - 2 * var(--space-32));
+  margin: auto;
+  padding: 0;
+  border: var(--rule-width) solid var(--rule);
+  background: var(--field-wall);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* A flat scrim in the ink: the pane behind is inert while the sheet is open. */
+.sheet::backdrop {
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+/* One pane wide: the sheet is the view, edge to edge, like the mobile list. */
+@media (max-width: 767.98px) {
+  .sheet[open] {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border: 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  min-height: var(--space-48);
+  padding: var(--space-12) var(--space-24);
+  border-block-end: var(--rule-width) solid var(--rule);
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-12);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--leading-title);
+}
+
+.room {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.close {
+  margin-inline-start: auto;
+}
+
+/* The sheet's scroll owner: one column at the reading measure. */
+.body {
+  display: grid;
+  align-content: start;
+  gap: var(--space-16);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  padding: var(--space-16) var(--space-24) var(--space-24);
+}
+
+@media (max-width: 767.98px) {
+  .head,
+  .body {
+    padding-inline: var(--space-16);
+  }
+}
+
+.lead,
+.status,
+.note,
+.scope,
+.count,
+.facetLabel,
+.none,
+.unloaded,
+.hint {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.hint {
+  font-weight: 400;
+}
+
+/* Parameters: hairline-underlined inputs, like the composer's, and one quiet control. */
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-12) var(--space-24);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.fieldLabel {
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.input {
+  width: 10ch;
+  padding: var(--space-4) 0;
+  border: 0;
+  border-block-end: var(--rule-width) solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-body);
+  line-height: var(--leading-title);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A quiet control: rule-outlined, transparent, hugging its label. Only the send door is coloured. */
+.action {
+  flex: none;
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+/* Hover changes background tone only, never layout. */
+.action:hover,
+.jump:hover {
+  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+}
+
+/* Refused fields, named in full ink: the sentence carries the meaning, never a colour. */
+.problems {
+  display: grid;
+  gap: var(--space-4);
+  padding-inline-start: var(--space-16);
+  list-style: disc;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+/* A refused digest: the design's words and the bridge's code, with one manual retry. */
+.notice {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.notice code {
+  font: inherit;
+  color: var(--ink-muted);
+}
+
+/* Nothing to pick from: the cat and one sentence, centred in the column. */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-16);
+  padding: var(--space-48) var(--space-24);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  text-align: center;
+}
+
+.slices {
+  display: grid;
+  gap: var(--space-24);
+}
+
+.slice {
+  display: grid;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+/* Slices are separated by the hairline, the same rule the coverage line draws. */
+.slice + .slice {
+  padding-block-start: var(--space-24);
+  border-block-start: var(--rule-width) solid var(--rule);
+}
+
+.sliceHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-12);
+}
+
+.range {
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--leading-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.facet {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-4) var(--space-12);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-12);
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.num {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.highlights {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.highlight {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* The signed-in user's bubble is indented one gutter; the line beneath it follows. */
+.highlight[data-side="self"] > :not([data-ui="message"]) {
+  margin-inline-start: var(--space-24);
+}
+
+/* Into the conversation: a text control that reads as a link and acts on the wall. */
+.jump {
+  padding: 0 var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Touch targets grow below 768px; the controls stay square and quiet. */
+@media (max-width: 767.98px) {
+  .action,
+  .jump {
+    min-height: var(--touch-min);
+  }
+}

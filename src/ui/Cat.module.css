@@ -1,0 +1,128 @@
+.cat {
+  display: inline-block;
+  height: var(--cat-height);
+  color: var(--ink);
+  line-height: 0;
+  vertical-align: bottom;
+}
+
+.svg {
+  display: block;
+  height: 100%;
+  width: auto;
+  overflow: visible;
+  fill: currentColor;
+}
+
+.tail {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+/* Pose selection is CSS only, so React never re-renders to animate. */
+.walkPose {
+  display: none;
+}
+
+.sitPose {
+  display: inline;
+}
+
+.walking .walkPose {
+  display: inline;
+}
+
+.walking .sitPose {
+  display: none;
+}
+
+/* Walk cycle, transform only: the span paces the track, the body bobs, the legs step. */
+.walking {
+  animation: cat-walk calc(var(--dur-cat) * 2) linear infinite alternate;
+}
+
+.walking .facing {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cat-face calc(var(--dur-cat) * 4) steps(1, end) infinite;
+}
+
+.walking .body {
+  animation: cat-bob calc(var(--dur-cat) / 2) ease-in-out infinite;
+}
+
+.walking .leg {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: cat-step var(--dur-cat) ease-in-out infinite;
+}
+
+.walking .legB {
+  animation-delay: calc(var(--dur-cat) / -2);
+}
+
+@keyframes cat-walk {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(var(--cat-track));
+  }
+}
+
+@keyframes cat-face {
+  0% {
+    transform: scaleX(1);
+  }
+
+  50% {
+    transform: scaleX(-1);
+  }
+
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes cat-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-0.6px);
+  }
+}
+
+@keyframes cat-step {
+  0%,
+  100% {
+    transform: rotate(-16deg);
+  }
+
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+/* The cat stops and sits; a static mark remains visible. */
+@media (prefers-reduced-motion: reduce) {
+  .walking,
+  .walking .facing,
+  .walking .body,
+  .walking .leg {
+    animation: none;
+  }
+
+  .walking .walkPose {
+    display: none;
+  }
+
+  .walking .sitPose {
+    display: inline;
+  }
+}

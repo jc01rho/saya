@@ -1,0 +1,29 @@
+/*
+ * The crossing overlay: a fixed, inert layer at the document root where the one
+ * visual clone flies from below the ledge to the observed row above it. It sits
+ * outside both scroll containers, so neither clips the flight; it takes no
+ * pointer events and is hidden from assistive technology, because the meaning
+ * (the pending item is gone, the observed row was read back) is already in the
+ * real DOM before the first frame of motion.
+ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--ink);
+}
+
+/*
+ * The clone keeps the classes of the bubble it copies, so it looks like that
+ * bubble; this layer only places it. Where it starts is per-flight geometry,
+ * set inline; how far it travels, how long (--dur-cross) and how it eases
+ * (--ease) are given to its animation from the tokens when the flight starts.
+ * Only transform and opacity move, so no layout is written while it flies.
+ */
+.clone {
+  position: absolute;
+  margin: 0;
+  transform-origin: top left;
+  will-change: transform, opacity;
+}

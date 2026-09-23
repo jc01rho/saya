@@ -1,0 +1,179 @@
+/* The list column: its own cream field, full height, the one scroll owner on its side. */
+.pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--field-list);
+  color: var(--ink);
+}
+
+/* Two panes: the scrollbar gutter sits right of the divider and reads as the wall. */
+@media (min-width: 768px) {
+  .pane {
+    background: var(--field-wall);
+  }
+}
+
+/*
+ * Head, scroller and foot reserve the same scrollbar gutter, so the divider
+ * slices their inner boxes carry line up with the slices the rows carry.
+ */
+.head,
+.scroller,
+.foot {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+/*
+ * Each region is a containing block, so the rows' visually hidden count spans
+ * (position: absolute) stay inside the clipped list instead of stretching the
+ * document to the height of every row.
+ */
+.head,
+.scroller,
+.foot {
+  position: relative;
+}
+
+.head,
+.foot {
+  overflow: hidden;
+}
+
+.headInner,
+.footInner,
+.status,
+.filler {
+  background: var(--field-list);
+  border-inline-end: var(--rule-width) solid var(--rule);
+}
+
+.headInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  min-height: var(--space-48);
+  padding: 0 var(--space-16);
+}
+
+.brand {
+  overflow: hidden;
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--leading-title);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.filter {
+  display: flex;
+  flex: none;
+  gap: var(--space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--space-48);
+  height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border-bottom: var(--rule-width) solid transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Hover changes background tone only, never layout. */
+.chip:hover {
+  background: color-mix(in srgb, var(--field-list) 94%, var(--ink));
+}
+
+/* Selected: weight and a rule together, never colour alone. */
+.chip:has(> input:checked) {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--rule);
+}
+
+/* The head clips overflow, so the ring sits inside the chip like a row's does. */
+.chip:has(> input:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-offset));
+}
+
+.scroller {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.list {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+}
+
+/* Over 100 rooms keep real <li> rows but recycle only the visible range. */
+.virtualList {
+  position: relative;
+  display: block;
+}
+
+.virtualList > [data-ui="room-row"] {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 100%;
+  transform: translateY(var(--room-virtual-start));
+}
+
+/* Continues the field and the divider below the last row to the bottom edge. */
+.filler {
+  flex: 1 1 auto;
+  min-height: var(--space-24);
+}
+
+.status {
+  padding: var(--space-16);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+/* The cat walks in the list's footer while connecting. */
+.footInner {
+  display: flex;
+  align-items: flex-end;
+  height: var(--space-48);
+  padding: 0 var(--space-16) var(--space-8);
+}
+
+/* One pane has nothing to divide: the divider slices lose their width here. */
+@media (max-width: 767.98px) {
+  .scroller,
+  .filler,
+  .footInner,
+  .status {
+    --rule-width: 0px;
+  }
+
+  .headInner {
+    border-inline-end: 0;
+  }
+}

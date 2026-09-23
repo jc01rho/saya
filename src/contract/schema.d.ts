@@ -1,0 +1,782 @@
+// Generated from openapi.json by bun run contract:generate. Do not edit.
+export interface paths {
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether the server is up
+         * @description Deliberately unauthenticated: a probe that needs the secret cannot tell a wrong token from a dead process.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The server is answering. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "ok": true
+                         *     }
+                         */
+                        "application/json": {
+                            /** @constant */
+                            ok: true;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the conversations the catalog knows
+         * @description Every room in the client's catalog, most recently active first — including the ones whose messages cannot be read, which say so through `readable` rather than being hidden.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The catalog. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @constant */
+                            ok: true;
+                            rooms: components["schemas"]["Room"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One room's recent messages, with what they say about attention
+         * @description The single call an agent makes to catch up on a conversation: the room, a window of messages oldest-first, who was addressed, and how far the local copy reaches.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /**
+                     * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+                     * @example 18491246151592761
+                     */
+                    roomId: components["parameters"]["RoomId"];
+                    /** @description How many of the newest messages to return. Bounded because `limit` reaches SQLite, where a negative number means *no limit at all* and one observed room holds 445,714 messages. */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The window. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Context"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Ambiguous"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The same window, extracted rather than quoted whole
+         * @description Counts, participants, keywords and representative lines per time slice. Nothing is invented and nothing is summarised by a model: a highlight is a message that was really sent, id and all. Measured on one live room, the same newest 400 messages were 116,269 bytes through `/context` and 3,989 through `/digest` — over a link, that gap is the point.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /**
+                     * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+                     * @example 18491246151592761
+                     */
+                    roomId: components["parameters"]["RoomId"];
+                    /** @description How long a slice covers, as a duration such as `30m`, `2h` or `1d`. A span the slicer cannot take is a 400. */
+                    span?: string;
+                    /** @description How many of the newest messages to consider before slicing. */
+                    limit?: number;
+                    /** @description Representative lines per slice. */
+                    highlights?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The digest. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Digest"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Ambiguous"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * New messages as they arrive, as Server-Sent Events
+         * @description Holds the connection open and emits an event per poll. SSE rather than WebSockets because this is a one-way push of small JSON payloads: `curl -N` is a complete client and neither side needs a dependency.
+         *
+         *     **Resuming is by cursor, not by `Last-Event-ID`.** The stream covers every readable room, so the newest message says nothing about where the *other* rooms had reached — one id resuming all of them would silently skip. After the messages it covers, the server emits `event: cursor` carrying `{roomId: logId}`; hand that back as repeated `since=<roomId>:<logId>` and each named room is paged forward from there before going live. A room the cursor does not name starts from the moment of connection: that is a gap, and it is documented rather than papered over. Fill it with `/context` if it matters.
+         *
+         *     At most `MAX_STREAMS` (8) connections may be open at once, because each one owns a reader and a watcher for its whole life; the ninth is refused with `503 BUSY` so the eight keep working.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /**
+                     * @description Where to resume each room, as `roomId:logId`. Repeat the parameter once per room.
+                     * @example [
+                     *       "1001:5300",
+                     *       "1002:412"
+                     *     ]
+                     */
+                    since?: string[];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The stream. Events are `ready`, `message`, `cursor`, `ping` and `error`; `error` is always last, because the status line is long gone by the time a poll fails. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example event: ready
+                         *     data: {"ok": true, "resumed": false, "cursor": {}}
+                         *
+                         *     event: message
+                         *     data: {"ok": true, "message": {"id": "5301", "roomId": "1001", "senderId": "42", "sender": "Peer", "text": "hi", "kind": "text", "sentAt": "2026-09-18T00:21:30+00:00", "fromMe": false}}
+                         *
+                         *     event: cursor
+                         *     data: {"ok": true, "cursor": {"1001": "5301"}}
+                         *
+                         *     event: ping
+                         *     data: {"ok": true}
+                         */
+                        "text/event-stream": string;
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Not allowed
+         * @description `PUT`, `DELETE` and `PATCH` are answered `405` once the token checks out.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                401: components["responses"]["Unauthorized"];
+                405: components["responses"]["MethodNotAllowed"];
+            };
+        };
+        /**
+         * Put text in the client's own input box and press Enter
+         * @description The one write in this API. It drives the desktop client rather than any protocol: the room must resolve to exactly one catalog entry, and the client must have that conversation in a window (`openRoom` lets the server open it).
+         *
+         *     **Sends are serialized and paced.** One lock, and a minimum interval between two of them, because the composer is a single shared resource. A send that arrives early **waits its turn and then goes** — it is not refused. `429 RATE_LIMITED` means the queue itself is full (`MAX_QUEUED_SENDS`, 4, counting the one being sent), which is the only case where refusing is better than a queue that never ends.
+         *
+         *     **`submitted: true` is queue acceptance, not delivery.** A caller that needs proof reads the room back and looks for a new `fromMe` message. Never retry an uncertain send automatically: the client may have sent it already.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SendRequest"];
+                };
+            };
+            responses: {
+                /** @description The client accepted the text (or, for a dry run, would have). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SendResult"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                /** @description The caller promised a body in `Content-Length` and then went quiet. The connection is given up on after `--request-timeout` seconds (30 by default) rather than holding a thread for as long as the caller likes. */
+                408: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+                409: components["responses"]["Ambiguous"];
+                /** @description The send queue is full. Retry once the sends already in line have gone through. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "ok": false,
+                         *       "error": {
+                         *         "code": "RATE_LIMITED",
+                         *         "message": "the send queue is full (4 already in line); retry once they have gone through"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        /** Not allowed */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                401: components["responses"]["Unauthorized"];
+                405: components["responses"]["MethodNotAllowed"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Not allowed */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                401: components["responses"]["Unauthorized"];
+                405: components["responses"]["MethodNotAllowed"];
+            };
+        };
+        trace?: never;
+    };
+}
+export type webhooks = Record<string, never>;
+export interface components {
+    schemas: {
+        /**
+         * @description What went wrong, as something a program can branch on. A consumer must have a default branch: the two builds' sets are not identical and both may grow.
+         * @enum {string}
+         */
+        ErrorCode: "KAKAO_NOT_RUNNING" | "NO_USER_DATA" | "KEY_UNAVAILABLE" | "CHAT_NOT_FOUND" | "AMBIGUOUS_CHAT" | "BUSY" | "READ_FAILED" | "INVALID_REQUEST" | "WINDOW_NOT_FOUND" | "INPUT_NOT_FOUND" | "SEND_FAILED" | "UNAUTHORIZED" | "RATE_LIMITED" | "PERMISSION_REQUIRED";
+        ErrorEnvelope: {
+            /** @constant */
+            ok: false;
+            error: {
+                code: components["schemas"]["ErrorCode"];
+                /** @description For a person reading a log. Do not branch on it; branch on `code`. */
+                message: string;
+            };
+            /** @description Attached to `AMBIGUOUS_CHAT`: the rooms that matched, so the caller can choose rather than being guessed at. */
+            candidates?: components["schemas"]["Room"][];
+        };
+        /** @description One conversation as the client's catalog describes it. */
+        Room: {
+            /** @description Carried as a string: ids exceed 2^53. */
+            id: string;
+            /** @description What this reader composes for the room, which is not always what the client's window is titled. */
+            title: string;
+            /** @description A stable name an agent can branch on. */
+            kind: string;
+            /**
+             * @description The client's own word for it, passed through.
+             * @example DirectChat
+             * @example MultiChat
+             * @example MemoChat
+             * @example PlusChat
+             * @example OM
+             * @example OD
+             */
+            type: string;
+            memberCount: number;
+            unread: number;
+            lastMessageId: string | null;
+            /**
+             * Format: date-time
+             * @description An explicit UTC instant.
+             */
+            lastActivityAt: string | null;
+            /** @description Whether this room's messages can be decrypted right now. A room the client has never opened has no key in memory, and is listed rather than hidden. */
+            readable: boolean;
+            /** @description The client's own integer type, passed through without interpretation. */
+            typeCode?: number;
+        };
+        /** @description One @name, kept as the account it points at rather than as the name. The text carries only a name, and anyone can wear a name; the id is the mention. */
+        Mention: {
+            userId: string;
+            /** @description Who that id is *now*, or null when this profile has never seen them. */
+            name: string | null;
+            /** @description Where the name sits in the message text, as the client recorded it. */
+            at: number[];
+            length: number;
+        };
+        /** @description The message a reply was written against, as the reply itself recorded it. This is the client's own copy taken when the reply was sent, so it survives the original being deleted and may disagree with what the original row says now. */
+        ReplySource: {
+            messageId: string | null;
+            senderId: string | null;
+            sender: string | null;
+            text: string | null;
+            kind: string | null;
+        };
+        /**
+         * @description One message, already attributed to a named sender.
+         *
+         *     **The name is the one that account carries now.** The client overwrites its profile tables in place, so a message sent under an old nickname is shown under the new one; `senderId` never changes and is the only safe way to say "same person".
+         *
+         *     The keys that report being addressed appear **only when they apply**. A window is forty of these, and denying five things per line would triple the answer.
+         */
+        Message: {
+            id: string;
+            roomId: string;
+            senderId: string;
+            sender: string;
+            /** @description Empty for kinds that carry no text, such as `feed`, whose stored value is the client's own JSON bookkeeping and is deliberately dropped. */
+            text: string;
+            /**
+             * @description The confirmed kinds are named; anything else is left self-describing.
+             * @example text
+             * @example photo
+             * @example video
+             * @example file
+             * @example reply
+             * @example feed
+             */
+            kind: string;
+            /** Format: date-time */
+            sentAt: string | null;
+            fromMe: boolean;
+            mentions?: components["schemas"]["Mention"][];
+            /**
+             * @description Present only when the message carried an @전체 rather than naming anybody.
+             * @constant
+             */
+            mentionsAll?: true;
+            /**
+             * @description Present only when the signed-in account is one of the ids this message named.
+             * @constant
+             */
+            mentionsMe?: true;
+            replyTo?: components["schemas"]["ReplySource"];
+            /** @constant */
+            repliesToMe?: true;
+        };
+        /** @description The same facts the per-message keys carry, gathered once so a caller can ask "was I addressed" without walking the window. */
+        Attention: {
+            mentionsMe: string[];
+            repliesToMe: string[];
+            mentionsEveryone: string[];
+        };
+        /** @description How far the local copy reaches, so an empty answer is never mistaken for an empty conversation. */
+        Coverage: {
+            /**
+             * @description Always true: this server reads what the client already stored and fetches nothing.
+             * @constant
+             */
+            localOnly: true;
+            reachesLatestKnown: boolean;
+            catalogLatestMessageId: string | null;
+            newestReadMessageId: string | null;
+            hasEarlier: boolean;
+            /** @description How many messages of this room are on this machine. One observed room held 445,714. */
+            storedLocally: number;
+        };
+        Context: {
+            /** @constant */
+            ok: true;
+            room: components["schemas"]["Room"];
+            /** @description Oldest first, everywhere in this API. */
+            messages: components["schemas"]["Message"][];
+            lastMessageFromMe: boolean | null;
+            attention: components["schemas"]["Attention"];
+            coverage: components["schemas"]["Coverage"];
+        };
+        DigestSlice: {
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+            count: number;
+            speakers: {
+                name: string;
+                count: number;
+            }[];
+            /** @description The client's placeholder words for attachments are filtered out, or they dominate every slice. */
+            keywords: {
+                word: string;
+                count: number;
+            }[];
+            /** @description Real messages, id and all. Nothing here is generated. */
+            highlights: components["schemas"]["Message"][];
+        };
+        Digest: {
+            /** @constant */
+            ok: true;
+            room: components["schemas"]["Room"];
+            span: string;
+            /** @description How many messages the slicing looked at. */
+            considered: number;
+            slices: components["schemas"]["DigestSlice"][];
+            /** @description Says in words that this is extractive: no model ran, and nothing was summarised. */
+            note: string;
+        };
+        SendRequest: {
+            /** @description The room's title, or its id as a string. Must resolve to exactly one catalog room; duplicates are refused with `AMBIGUOUS_CHAT` rather than guessed at. */
+            room: string;
+            /** @description What to type. Newlines are allowed. */
+            text: string;
+            /**
+             * @description Resolve the room and the window, report what would happen, and type nothing. Skips the send queue entirely, so it costs no quota.
+             * @default false
+             */
+            dryRun: boolean;
+            /**
+             * @description Let the server open the conversation if it has no window, and put the desktop back as it found it afterwards.
+             * @default false
+             */
+            openRoom: boolean;
+        };
+        SendResult: {
+            /** @constant */
+            ok: true;
+            /** @description The client accepted the text. **Queue acceptance, not delivery** — read the room back and look for a new `fromMe` message before claiming it arrived. */
+            submitted: boolean;
+            dryRun: boolean;
+            /** @description The window title the text was given to. */
+            room: string;
+            roomId: string;
+            /** @description Characters handed over. */
+            length: number;
+            /** @description An unfinished line was in the box and is now gone. Reported rather than refused, because losing somebody's half-typed sentence silently is the indefensible part. */
+            clearedDraft?: boolean;
+            /** @description The dry-run form of `clearedDraft`. */
+            wouldClearDraft?: boolean;
+        };
+        StreamReady: {
+            /** @constant */
+            ok: true;
+            resumed: boolean;
+            cursor: components["schemas"]["Cursor"];
+        };
+        StreamMessage: {
+            /** @constant */
+            ok: true;
+            message: components["schemas"]["Message"];
+        };
+        StreamCursor: {
+            /** @constant */
+            ok: true;
+            cursor: components["schemas"]["Cursor"];
+        };
+        StreamPing: {
+            /** @constant */
+            ok: true;
+        };
+        /**
+         * @description Room id to the newest log id the stream has sent for it. Hand it back as repeated `since=<roomId>:<logId>`.
+         * @example {
+         *       "1001": "5301",
+         *       "1002": "412"
+         *     }
+         */
+        Cursor: {
+            [key: string]: string;
+        };
+    };
+    responses: {
+        /** @description The bearer token was missing or wrong. */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "UNAUTHORIZED",
+                 *         "message": "missing or invalid token"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The arguments were understood and unusable: a count outside its range, a non-numeric room id, a body that is not JSON, or a span the slicer cannot take. Refused before any database is opened. */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "INVALID_REQUEST",
+                 *         "message": "limit must be between 1 and 1000"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description Nothing by that name: no such route, no room with that title, no open window for it, or a window whose input box was not there (`CHAT_NOT_FOUND`, `WINDOW_NOT_FOUND`, `INPUT_NOT_FOUND`, `INVALID_REQUEST`). */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "WINDOW_NOT_FOUND",
+                 *         "message": "that room has no open chat window"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description Several rooms matched. The candidates are attached rather than one being picked. */
+        Ambiguous: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "AMBIGUOUS_CHAT",
+                 *         "message": "multiple catalog rooms share this window title; give the target a unique title"
+                 *       },
+                 *       "candidates": [
+                 *         {
+                 *           "id": "1001",
+                 *           "title": "가족",
+                 *           "kind": "group",
+                 *           "type": "MultiChat",
+                 *           "memberCount": 4,
+                 *           "unread": 0,
+                 *           "lastMessageId": "5300",
+                 *           "lastActivityAt": "2026-09-18T00:21:30+00:00",
+                 *           "readable": true
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The route exists and the method does not. */
+        MethodNotAllowed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "INVALID_REQUEST",
+                 *         "message": "method not allowed"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The request was fine and this server could not carry it out: a database that would not decrypt or read (`READ_FAILED`), a send the client refused or that could not be verified (`SEND_FAILED`), or a stream asked to resume by a watcher that cannot. */
+        ServerFailure: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "READ_FAILED",
+                 *         "message": "the catalog could not be read"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The machine is not in a state to answer: the client is closed (`KAKAO_NOT_RUNNING`), it has not opened that room this session so its key is not in memory (`KEY_UNAVAILABLE`), there is no signed-in profile (`NO_USER_DATA`), the server is shutting down or already holds as many streams as it will (`BUSY`), or — macOS only — the permissions it needs have not been granted (`PERMISSION_REQUIRED`). */
+        NotReady: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ok": false,
+                 *       "error": {
+                 *         "code": "KEY_UNAVAILABLE",
+                 *         "message": "KakaoTalk has not opened that room this session"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+    };
+    parameters: {
+        /**
+         * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+         * @example 18491246151592761
+         */
+        RoomId: string;
+    };
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
+}
+export type $defs = Record<string, never>;
+export type operations = Record<string, never>;

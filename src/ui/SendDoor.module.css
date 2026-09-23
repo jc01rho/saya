@@ -1,0 +1,60 @@
+.door {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--door-width);
+  height: var(--door-height);
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-door);
+  background: var(--accent-send);
+  color: var(--door-ink);
+  font-size: var(--text-door);
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: var(--elevation-door);
+  cursor: pointer;
+}
+
+/* The inset line: one thin darker rectangle traced inside the door. */
+.door::before {
+  content: "";
+  position: absolute;
+  inset: var(--door-inset);
+  border: var(--rule-width) solid var(--accent-send-inset);
+  border-radius: var(--radius-door);
+  pointer-events: none;
+}
+
+.door:hover {
+  background: color-mix(in srgb, var(--accent-send) 92%, var(--door-ink));
+}
+
+.door:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* An unavailable door gives up its colour and its shadow; the label stays. */
+.inert {
+  background: var(--bubble-self);
+  color: var(--ink-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.inert::before {
+  border-color: var(--rule);
+}
+
+.inert:hover {
+  background: var(--bubble-self);
+}
+
+.label {
+  position: relative;
+  white-space: nowrap;
+}

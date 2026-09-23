@@ -1,0 +1,103 @@
+/*
+ * saya design tokens. Light values are DESIGN.md r2 "Embedded tokens" verbatim;
+ * the warm dark theme is the plan's measured palette and is opt-in through
+ * data-theme="dark" on any ancestor. Only these variables may carry colour.
+ */
+:root {
+  color-scheme: light;
+
+  /* Fields */
+  --field-wall: #cbdde9;
+  --field-list: #efe7d9;
+  --field-ground: #e3d7c0;
+
+  /* Ink */
+  --ink: #2a2724;
+  --ink-muted: #4e5d69;
+  --rule: #4e5d69;
+
+  /* Bubbles: flat, tail-less, unoutlined */
+  --bubble-other: #faf6ee;
+  --bubble-self: #f4ebda;
+
+  /* The one accent: the send door and nothing else. Fixed in both themes. */
+  --accent-send: #f3b41b;
+  --accent-send-inset: #c98e0e;
+  --door-ink: #2a2724;
+
+  /* Unread badge: the desktop's count. Fixed in both themes. */
+  --badge-unread: #bb3322;
+  --badge-unread-ink: #ffffff;
+
+  /* Spacing */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+
+  /* Radius. The door is square, always. */
+  --radius-bubble: 8px;
+  --radius-badge: 999px;
+  --radius-door: 0px;
+
+  /* Rules: 1px everywhere; the quote rule and focus ring are the two allowed 2px exceptions. */
+  --rule-width: 1px;
+  --quote-rule-width: 2px;
+  --focus-ring: 2px solid var(--ink);
+  --focus-offset: 2px;
+
+  /* Elevation: exactly one, on the send door only. */
+  --elevation-door: 0 2px 6px rgba(42, 39, 36, 0.18);
+
+  /* Motion */
+  --dur-cross: 300ms;
+  --dur-fade: 160ms;
+  --dur-cat: 1.2s;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* Type */
+  --font-sans:
+    "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic",
+    system-ui, sans-serif;
+  --text-body: 16px;
+  --leading-body: 1.7;
+  --text-title: 15px;
+  --leading-title: 1.4;
+  --text-meta: 13px;
+  --leading-meta: 1.45;
+  --text-badge: 12px;
+  --text-door: 15px;
+
+  /* Component geometry */
+  --measure: 62ch;
+  --badge-size: 20px;
+  --door-width: 64px;
+  --door-height: 72px;
+  --door-inset: 6px;
+  --touch-min: 44px;
+  --doorway-gap: 24px;
+  --list-width: clamp(240px, 25%, 320px);
+  --ground-cap: 40dvh;
+  --wall-min: 30dvh;
+  --cat-height: 24px;
+  --cat-track: 96px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --field-wall: #332622;
+  --field-list: #291f1c;
+  --field-ground: #241a17;
+
+  --ink: #f6eee4;
+  --ink-muted: #cdbdb0;
+  --rule: #ad9380;
+
+  --bubble-other: #493630;
+  --bubble-self: #57402f;
+}

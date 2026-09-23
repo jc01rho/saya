@@ -1,0 +1,16 @@
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-8);
+  max-width: var(--measure);
+  padding-block: var(--space-8);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+/* Only the coverage line brackets the proven region with a hairline. */
+.line[data-kind="coverage"] {
+  border-block-end: var(--rule-width) solid var(--rule);
+}

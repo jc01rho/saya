@@ -1,0 +1,138 @@
+/* The floating discord-style composer bar */
+.composer {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: 0;
+  border-top: 0;
+  background: transparent;
+}
+
+.confirmation {
+  display: grid;
+  gap: var(--space-8);
+  max-width: var(--measure);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-16);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--field-wall) 85%, var(--ink));
+  border: var(--rule-width) solid var(--rule);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.confirming,
+.label {
+  font-weight: 600;
+}
+
+.warning,
+.status {
+  max-width: var(--measure);
+  width: 100%;
+  margin: 0 auto;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.quiet,
+.confirm {
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+.confirm {
+  border-color: var(--accent-send-inset);
+  background: var(--accent-send);
+  box-shadow: var(--elevation-door);
+}
+
+.quiet:hover {
+  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+}
+
+.confirm:hover {
+  background: color-mix(in srgb, var(--accent-send) 90%, var(--ink));
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-12);
+  align-items: center;
+  max-width: var(--measure);
+  width: 100%;
+  margin: 0 auto;
+  background: color-mix(in srgb, var(--field-wall) 90%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--rule) 30%, transparent);
+  border-radius: 8px;
+  padding: var(--space-6) var(--space-8) var(--space-6) var(--space-16);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.input {
+  min-width: 0;
+  min-height: 38px;
+  max-height: 200px;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  outline: none;
+}
+
+.door {
+  min-height: 36px;
+  padding: 0 var(--space-16);
+  border: var(--rule-width) solid var(--accent-send-inset);
+  border-radius: var(--radius-door);
+  background: var(--accent-send);
+  box-shadow: var(--elevation-door);
+  color: var(--door-ink);
+  font-size: var(--text-door);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.door:disabled,
+.confirm:disabled {
+  cursor: progress;
+}
+
+@media (max-width: 767.98px) {
+  .composer {
+    padding-inline: var(--space-16);
+  }
+
+  .entry {
+    grid-template-columns: minmax(0, 1fr) var(--door-width);
+  }
+
+  .door {
+    min-height: var(--touch-min);
+  }
+
+  .quiet,
+  .confirm {
+    min-height: var(--touch-min);
+  }
+}

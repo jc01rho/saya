@@ -1,0 +1,84 @@
+/*
+ * The conversation pane below the room header: the wall above, the ledge, the
+ * ground below. THE DESIGN LAW: one horizontal line crosses the conversation
+ * pane; what the bridge has read back sits above it, what has only been
+ * submitted sits below it. The wall is the only scroll owner up here; the
+ * ground is pinned and only its pending sub-stack scrolls, inside the 40dvh cap
+ * the pending list sets for itself.
+ */
+.conversation {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  min-height: 0;
+  min-width: 0;
+  background: var(--field-wall);
+  color: var(--ink);
+}
+
+/* THE LEDGE: 1px subtle rule across conversation pane */
+.ledge {
+  height: 0;
+  margin: 0;
+  border: 0;
+  border-top: var(--rule-width) solid
+    color-mix(in srgb, var(--rule) 50%, transparent);
+}
+
+/* Ground: seamless background matching conversation wall, padding around floating bar */
+.ground {
+  display: grid;
+  grid-auto-rows: auto;
+  min-height: 0;
+  min-width: 0;
+  background: var(--field-wall);
+  padding: var(--space-8) var(--space-24) var(--space-16);
+}
+
+/*
+ * Inside the ground there is exactly one rule, the ledge above it. A composer
+ * standing alone draws its own top rule as the boundary; composed here it
+ * drops it, or the boundary would read as two lines.
+ */
+.ground .pinned > * {
+  border-top: 0;
+}
+
+/* The linked row is out of view: a quiet line under the ledge, never an automatic scroll. */
+.indicator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: var(--measure);
+  padding: var(--space-8) var(--space-24) 0;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+/* A quiet control: rule-outlined, transparent, hugging its label. Only the send door is coloured. */
+.quiet {
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+/* Hover changes background tone only, never layout. */
+.quiet:hover {
+  background: color-mix(in srgb, var(--field-ground) 94%, var(--ink));
+}
+
+@media (max-width: 767.98px) {
+  .indicator {
+    padding-inline: var(--space-16);
+  }
+
+  .quiet {
+    min-height: var(--touch-min);
+  }
+}
