@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import type { components } from "../contract/decoded";
+import { LinkCard } from "../features/linkcard";
 import { Avatar } from "./Avatar";
 import { COPY, kindLabel } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
-import { linkify } from "./linkify";
+import { firstUrl, linkify } from "./linkify";
 import { Mention } from "./Mention";
 import styles from "./MessageBubble.module.css";
 import { QuoteBlock } from "./QuoteBlock";
@@ -55,6 +56,9 @@ export function MessageBubble({
   const speakerName = (message.fromMe ? COPY.me : message.sender) || "?";
   const mentioned =
     message.mentionsAll === true || (message.mentions?.length ?? 0) > 0;
+  // One card per turn, for the first address: a body full of links is a body,
+  // not a wall of cards.
+  const linked = message.text ? firstUrl(message.text) : null;
 
   return (
     <article
@@ -81,7 +85,12 @@ export function MessageBubble({
             </div>
           )}
           {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
-          {kind ? (
+          {/*
+            The core sends a photo as kind `photo` with the body text 사진, so
+            drawing both prints the same word twice. The label is what survives:
+            it is the one the kind table owns.
+          */}
+          {kind && kind !== message.text?.trim() ? (
             <span className={styles.kind} data-ui="kind-label">
               {kind}
             </span>
@@ -91,6 +100,7 @@ export function MessageBubble({
           ) : kind ? null : (
             <span className={styles.kind}>{COPY.emptyBody}</span>
           )}
+          {linked ? <LinkCard url={linked} /> : null}
           {/* The stamp rides the last line, as it does in every messenger. */}
           <time
             className={styles.time}

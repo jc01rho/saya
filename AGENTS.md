@@ -49,10 +49,19 @@ bun test tests/contract/generation.test.ts
 
 ## The line that cannot move
 
-**This repository has no server and no core.** It draws screens over a contract
-that already exists. It does not import, spawn, or reimplement `kanao` or
-`kamado`; it does not open their databases, hold their keys, or need their
-permissions. Everything else here follows from that.
+**This repository has no core, and nothing here answers the contract.** It draws
+screens over a contract that already exists. It does not import, spawn, or
+reimplement `kanao` or `kamado`; it does not open their databases, hold their
+keys, or need their permissions. Everything else here follows from that.
+
+One exception, added deliberately by the owner on 2026-09-23: `server/` is a
+link-preview facility (`/unfurl`). It is optional, it is not in `openapi.json`,
+it never contacts a core, holds no token and reads no KakaoTalk data, and the
+client works without it. It is not a second contract and must never grow into
+one — a feature the cores should expose is still an issue on the core repos.
+Because it fetches an address chosen by whoever wrote a message, `server/guard.ts`
+is security-critical: read `docs/deployment.md` and `tests/server/guard.test.ts`
+before touching it.
 
 - A machine with no KakaoTalk can develop and test the whole client.
 - The only thing this repository knows about the two platforms is one JSON file.
@@ -114,7 +123,8 @@ request says plainly whether it was.
 
 ## Deliberately absent
 
-A server of its own, a second contract, an in-process plugin API, and any path
-that reaches KakaoTalk without going through a core. Login automation, protocol
-reimplementation and history harvesting are absent here for the same reasons
-they are absent there.
+A second contract, an in-process plugin API, and any path that reaches KakaoTalk
+without going through a core. Login automation, protocol reimplementation and
+history harvesting are absent here for the same reasons they are absent there.
+`server/` is the single, optional exception described above; it answers two
+routes about public web pages and knows nothing about KakaoTalk.

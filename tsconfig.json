@@ -18,6 +18,6 @@
     "noEmit": true,
     "types": ["bun"]
   },
-  "include": ["src", "scripts", "tests", "vite.config.ts"],
+  "include": ["src", "scripts", "server", "tests", "vite.config.ts"],
   "exclude": ["node_modules", "dist", "design", "assets", ".omo"]
 }

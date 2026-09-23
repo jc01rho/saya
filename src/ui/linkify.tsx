@@ -55,6 +55,16 @@ function trimTail(url: string): string {
  * was written — never a title, a favicon or anything else fetched from the site,
  * because nothing here contacts it. Following the link is the reader's own act.
  */
+/** The first address in a body, which is the one a card is drawn for. */
+export function firstUrl(text: string): string | null {
+  URL_PATTERN.lastIndex = 0;
+  for (const match of text.matchAll(URL_PATTERN)) {
+    const href = trimTail(match[0]);
+    if (href) return href;
+  }
+  return null;
+}
+
 export function linkify(text: string): ReactNode {
   URL_PATTERN.lastIndex = 0;
   const out: ReactNode[] = [];

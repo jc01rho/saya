@@ -59,6 +59,38 @@ its environment or secret store, `proxy_buffering off` for SSE, no short
 read/idle timeout, and the same fail-closed Origin, Fetch-Metadata, and JSON
 write checks before proxying.
 
+## The link-preview endpoint
+
+`/unfurl` is optional. It is **not** part of `openapi.json` and never reaches a
+core: it fetches the page at a URL that appeared in a message and returns the
+few Open Graph fields a card needs. Omit it and the client draws plain links.
+
+```sh
+SAYA_UNFURL_PORT=8791 bun server/serve.ts
+```
+
+It binds loopback and has no authentication of its own; the site's proxy is what
+fronts it, which is why `deploy/Caddyfile.example` routes `/unfurl*` to it rather
+than exposing it. Keep it on loopback.
+
+Two properties are not optional if you run it:
+
+- **The address is attacker-chosen.** Whoever wrote the message picked it, and
+  the fetch runs from inside your network. `server/guard.ts` refuses non-HTTP
+  schemes, credentials in the URL, ports other than 80/443, and every private,
+  loopback, link-local, CGNAT, unique-local and v4-mapped address — re-checking
+  on **each** redirect hop, because one public answer does not bind the next.
+  `tests/server/guard.test.ts` is that boundary's test; read it before changing
+  the guard.
+- **The browser never contacts the linked site.** Card images are relayed
+  through `/unfurl/image`, so the CSP below stays `default-src 'self'`, the
+  reader's address is not disclosed to the site, and an `image/svg+xml` answer
+  is refused rather than rendered.
+
+Bodies are capped (512 KiB for a page, 2 MiB for an image), the deadline is six
+seconds, redirects stop at three, and results are cached in memory for thirty
+minutes. Nothing is written to disk.
+
 ## Response and log policy
 
 The proxy contract is:

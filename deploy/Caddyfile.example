@@ -20,6 +20,16 @@ http://127.0.0.1:8080 {
     @api path /api/*
     header @api Cache-Control "no-store"
 
+    # The link-preview endpoint. It is NOT the cores' contract, which is why it
+    # lives outside /api, holds no token and never reaches a core. Run it with
+    # `SAYA_UNFURL_PORT=8791 bun server/serve.ts`, bound to loopback: it has no
+    # authentication of its own and this listener is what fronts it. Omit this
+    # block entirely and the client simply draws plain links.
+    @unfurl path /unfurl /unfurl/*
+    handle @unfurl {
+        reverse_proxy 127.0.0.1:8791
+    }
+
     # Browser writes must be JSON and demonstrably originate at this site. The
     # inverse match fails closed when Origin or Fetch Metadata is absent.
     @blocked_write {

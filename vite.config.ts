@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
+import { unfurlPlugin } from "./server/plugin";
 
 export default defineConfig(({ mode }) => {
   // These server-only variables must never use Vite's browser-exposed prefix.
@@ -7,7 +8,9 @@ export default defineConfig(({ mode }) => {
   const token = env.SAYA_CORE_TOKEN;
 
   return {
-    plugins: [react()],
+    // The unfurl endpoint lives on /unfurl, deliberately outside /api: it is a
+    // facility of the proxy, never part of the contract the cores answer.
+    plugins: [react(), unfurlPlugin()],
     server: {
       host: "127.0.0.1",
       proxy: {
