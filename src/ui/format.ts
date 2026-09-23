@@ -31,11 +31,15 @@ export function formatTime(
       dateTime: iso,
     };
   const sameYear = date.getFullYear() === now.getFullYear();
-  const monthDay = `${date.getMonth() + 1}월 ${date.getDate()}일`;
-  return {
-    label: sameYear ? monthDay : `${date.getFullYear()}년 ${monthDay}`,
-    dateTime: iso,
-  };
+  // A row is a title beside its time, and the time takes what it needs first.
+  // Spelled out, an older year took a third of a 262px list and left the title
+  // six characters; the numeric form is what the rest of the year gives back.
+  const label = sameYear
+    ? `${date.getMonth() + 1}월 ${date.getDate()}일`
+    : `${pad(date.getFullYear() % 100)}.${pad(date.getMonth() + 1)}.${pad(
+        date.getDate(),
+      )}`;
+  return { label, dateTime: iso };
 }
 
 /** Exact 1..99, then 99+; zero draws nothing. */
