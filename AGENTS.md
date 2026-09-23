@@ -1,11 +1,51 @@
-# AGENTS.md — working on hinokami-kagura
+# AGENTS.md — working on saya
 
 A web client for the HTTP + SSE surface that `kanao serve` (Windows) and
 `kamado serve` (macOS) both answer. `BRIEF.md` is what to build and why; this
 file is how to work here.
 
-Nothing is implemented yet. The stack is not chosen — when it is, add its
-commands to this file in the same breath.
+The frontend toolchain is React + TypeScript + Vite, with Bun for dependency
+installation, contract generation and tests. Product features are built on this
+foundation; a successful bootstrap build is not a completed client.
+
+## Commands
+
+Run these from the repository root (Node 24.17.0; verified with Bun 1.4.2):
+
+```sh
+bun install --frozen-lockfile
+bun run dev
+bun run contract:generate
+bun run contract:check
+bun run typecheck
+bun run lint
+bun run build
+bun run test
+bun test tests/contract/generation.test.ts
+```
+
+- `contract:generate` is the only writer of `src/contract/`. It derives raw
+  `schema.d.ts`, consumer `decoded.d.ts`, standalone validators and the SSE map
+  from `openapi.json`. Consumer error codes are strings; known required fields
+  remain mandatory and unknown object members remain accepted.
+- `contract:check` verifies the canonical SHA-256 and byte-for-byte generated
+  artifact equality without changing files. `.gitattributes` preserves the
+  canonical OpenAPI bytes on Windows. Do not format or edit that file.
+- `typecheck` is strict and includes the app, generated declarations, scripts,
+  tests and Vite config, without `skipLibCheck`. Bun ambient types cover the
+  tooling; do not combine incompatible Bun and `vite/client` ambient globals in
+  the same TypeScript program.
+- `lint` is `biome check .`. Generated contracts, immutable OpenAPI, lockfiles,
+  external design/assets and historical evidence are deliberately excluded;
+  generated artifacts are verified by `contract:check` instead.
+- `build` creates the static `dist/` entry. Vite's development proxy strips
+  `/api` and forwards to `SAYA_CORE_URL` (default `http://127.0.0.1:8765`), injecting
+  `SAYA_CORE_TOKEN` only in the server. Never rename these to `VITE_*`, put a token
+  in client code or treat this development proxy as production deployment.
+- All direct package versions are exact. `ajv-formats` supplies date validation;
+  extra Redocly declaration dependencies are explicit so full type checking does
+  not need suppression. No Ajv schema compiler is included in generated browser
+  validators.
 
 ## The line that cannot move
 

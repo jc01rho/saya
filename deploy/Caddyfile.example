@@ -1,0 +1,51 @@
+{
+    # Do not emit request headers, bodies, or message text to access or error logs.
+    log default {
+        output discard
+    }
+}
+
+# Loopback-only default. For remote use, replace both this site address and the
+# Origin matcher below with the same HTTPS public origin after adding separate
+# user authentication. Do not expose the core or this listener directly.
+http://127.0.0.1:8080 {
+    root * dist
+    encode zstd gzip
+
+    # The default covers index.html and SPA fallbacks. Hashed assets and /api
+    # override it below.
+    header Cache-Control "no-cache"
+    header Content-Security-Policy "default-src 'self'; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'; style-src 'self'"
+
+    @api path /api/*
+    header @api Cache-Control "no-store"
+
+    # Browser writes must be JSON and demonstrably originate at this site. The
+    # inverse match fails closed when Origin or Fetch Metadata is absent.
+    @blocked_write {
+        method POST PUT PATCH DELETE
+        not {
+            header Origin http://127.0.0.1:8080
+            header Sec-Fetch-Site same-origin
+            header Content-Type application/json*
+        }
+    }
+    respond @blocked_write 403
+
+    handle @api {
+        uri strip_prefix /api
+        reverse_proxy {env.SAYA_CORE_URL} {
+            # This process expands the secret; the static files and browser do not.
+            header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
+            # Send each SSE chunk immediately. Do not add a stream/idle timeout:
+            # the upstream contract does not specify a ping cadence.
+            flush_interval -1
+        }
+    }
+
+    @hashed_assets path_regexp hashed ^/assets/.+\.[a-zA-Z0-9_-]{8,}\.(?:css|js|mjs|woff2?|svg|png|jpe?g|webp|gif)$
+    header @hashed_assets Cache-Control "public, max-age=31536000, immutable"
+
+    try_files {path} /index.html
+    file_server
+}

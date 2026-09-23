@@ -1,0 +1,427 @@
+# DESIGN.md: saya implementation contract
+
+The product is **saya**. Its visible label is さや (saya): in the document title,
+the app heading and the first line of every introduction. The compact mark is さや
+alone. The repository was called hinokami-kagura before this revision; past
+evidence under `design/`, old prompts and images keep that name as history.
+
+This is the sole implementation contract. Working evidence lives under `design/`;
+where a working record and this file disagree, **this file wins**.
+
+## Status and authority
+
+- Contract revision: r2, 2026-09-21. r2 adds the "Contract gaps" rulings, the
+  saya name, and fixes the badge, 429 and scroll wording. Colours, layout and the
+  ledge law are unchanged from r1.
+- Owner approval: **APPROVED by the owner on 2026-09-21**, in conversation,
+  explicitly including the two measured departures from the concept (the slate
+  ledge and the darker badge red). Structural check `validate.ts`: EXIT=0,
+  "Structurally complete" — which is not, and is not presented as, visual approval.
+- Approved brief / direction / seeds: `design/BRIEF.md` r2, `design/DIRECTION.md`
+  r3, `design/SEEDS.md` r1. All owner-confirmed in conversation on 2026-09-21.
+- Selected concept, inspected: `design/seeds/C4-flat-wall.png` (1672×941).
+- Selection evidence: the owner chose C3's composition, then required four
+  changes; C4 implements them and the owner responded "많이 좋아진거같은데".
+- Direction authored by Claude Fable 5.1 via `artistry`; concepts by
+  gpt-image-2.5-sunburst. Stage plan and substitutions: `design/models.json`.
+
+## Intent, scope and invariants
+
+**Purpose.** A browser client for reading and replying to KakaoTalk conversations
+through `kanao serve` (Windows) or `kamado serve` (macOS). This repository builds
+no server and imports no core. The only contract with the outside world is
+`openapi.json` 0.14.0.
+
+**Audience.** One technical owner, running the bridge on their own machine,
+catching up on missed conversation and occasionally replying.
+
+**The conviction the interface must express.** The screen never claims more than
+the contract proved, and it makes that honesty look *calm* rather than alarming.
+Uncertainty here is a normal permanent resting state, not an error.
+
+**Ranked priorities.** 1 truthfulness of state · 2 reading comfort for long
+Korean text · 3 calm and distinctiveness · 4 speed of reply · 5 feature breadth.
+
+**Anti-goals.** Not a KakaoTalk skin. Not a dashboard. No automatic retry of an
+uncertain send. No token drawn, logged or screenshotted. No real nickname, room
+title or message in any committed artifact.
+
+**Scope of this contract.** `app` — the composed two-pane main screen
+(SCR-ROOMS + SCR-THREAD + the composer). SCR-DIGEST, SCR-CONNECT and the stream
+reconnection UI are specified here in behaviour but were deliberately not drawn.
+
+**THE DESIGN LAW, which nothing may violate.** *One horizontal line, the ledge,
+crosses the conversation pane. What the bridge has read back sits above it. What
+has only been submitted sits below it. Nothing crosses until it is read back.*
+
+### Contract truths — non-negotiable, derived from `openapi.json` 0.14.0
+
+These are correctness requirements, not style. Violating one is a defect.
+
+1. **Identifiers are strings.** Room and message ids exceed 2^53. Never
+   `Number()`, `parseInt`, or arithmetic after `JSON.parse`. Comparison, React
+   keys and URL assembly are string-only. Never render an id to the user.
+2. **`submitted` is not delivered.** `SendResult.submitted` is queue acceptance.
+   The response carries no message id, no nonce and no receipt, so nothing in it
+   can name the row it produced. 보냈습니다 is the label of a `fromMe` row that
+   was actually read back via `/context` or `/stream`; it describes that row, not
+   the request. A pending item reads 입력됨 · 전달 미확인 and sits below the ledge
+   until the user links it to an observed row (see "Contract gaps", G4).
+3. **Never auto-retry an uncertain send.** `SEND_FAILED` means *unknown*, not
+   *not sent*. Retry is a deliberate user action, always.
+4. **Warn before destroying a draft.** `dryRun` first; surface `wouldClearDraft`
+   in the confirmation. `clearedDraft` is reported after the fact. `dryRun` skips
+   the send queue and costs no quota.
+5. **`error.code` needs a default branch.** Fourteen codes today; the two builds'
+   sets differ and both grow. Never branch on `error.message`.
+   `PERMISSION_REQUIRED` is macOS-only and is a 30-second human fix — it gets its
+   own instructional screen, not a toast.
+6. **One `/stream` per client.** The cap is 8 *for the whole machine*; the ninth
+   is `503 BUSY`. Open exactly one connection and fan it out to every view.
+7. **Resume by cursor, not `Last-Event-ID`.** Hold the `cursor` event's
+   `{roomId: logId}` and resume with repeated `?since=roomId:logId`. A room the
+   cursor does not name starts at connection time — that gap is disclosed in the
+   UI and filled with `/context`.
+8. **Unreadable rooms are listed, never hidden and never dimmed.**
+   `readable: false` means the key is not in memory. Full ink, stated reason.
+9. **Coverage is not emptiness.** Surface `storedLocally`, `hasEarlier` and
+   `reachesLatestKnown` so an empty window is never read as "this conversation
+   never happened".
+10. **Ambiguity is refused with candidates.** `409 AMBIGUOUS_CHAT` carries
+    `candidates: Room[]`. Present the choice; never pick the first match.
+11. **Messages are oldest-first everywhere.**
+12. **An absent key is the negative.** `replyTo`, `mentions`, `mentionsMe`,
+    `mentionsAll`, `repliesToMe` appear only when they apply — never render a "no
+    mentions" state. `x-platform` members (`Room.typeCode`,
+    `PERMISSION_REQUIRED`) are used when present, ignored when absent, never an error.
+13. **Limits that return 400.** `limit` 1–1000 (`/context` 40, `/digest` 400);
+    `highlights` 1–20 (3); send queue 4 then `429`; request deadline 30s then `408`.
+14. **The token is a password.** Never drawn, never logged. Default posture: a
+    proxy injects the header and the browser never holds it. If the browser must,
+    memory only; `localStorage` solely on explicit user choice.
+15. **`/digest` is extractive, not AI.** Its `note` says so. The UI must never
+    imply a model summarised anything.
+
+### Contract gaps: settled rulings
+
+`openapi.json` 0.14.0 leaves several things out, and the screen must not paper
+over them. Each ruling below states what the wire actually gives us and what the
+UI is therefore allowed to say. These are correctness rules, same as the truths
+above.
+
+| # | What the contract lacks | Ruling |
+| --- | --- | --- |
+| G1 | `Room` has no preview text. Its members are id, title, kind, type, memberCount, unread, lastMessageId, lastActivityAt, readable (and `typeCode` on macOS). | A room row shows a preview **only** from a message body this client already observed through `/context` or `/stream`. If none was observed the row reads 미리보기 없음. Fetching `/context` per row to fabricate previews is forbidden. |
+| G2 | No mark-read route. `Room.unread` is the desktop client's count and nothing on the wire changes it. | The badge is the **desktop's** count: accessible name 데스크톱 기준 안 읽음 N개. Opening a room in the web client never clears it, decrements it or hides it. It changes only when a fresh `/rooms` says so. |
+| G3 | `/context` takes `roomId` and a newest-N `limit` (1..1000, default 40). There is no offset, no before-id, no older-than cursor. | There is **no older-history pagination**. 더 불러오기 widens the newest window 40 → 200 → 1000 and then stops, showing the ceiling. Anything older than the 1000 newest is shown as out of reach, not silently absent, and the coverage line still states `hasEarlier`. |
+| G4 | `/send` returns `submitted`, `dryRun`, `room`, `roomId`, `length` and the draft flags. No message id, no nonce, no delivery receipt. | A later `fromMe` row with equal text and a newer id is **observed evidence**, never causal proof: a duplicate line, a send typed on the desktop, or normalisation all break the match. The row appears above the ledge at once because it was read; the pending item stays below until the user presses 이 기록으로 확인. The request's own status never becomes "delivered". |
+| G5 | `429 RATE_LIMITED` reports a full send queue (4). There is no queue-depth or drain signal. | The attempt is rejected and stays below the ledge. The UI never says or implies the queue emptied. Recovery is a fresh, explicit user attempt that passes `dryRun` and consent again. No timer re-enables the door. |
+| G6 | `dryRun` and the real send are separate requests. | The draft may change between them. The confirmation is always phrased conservatively; the UI never claims the dry run locked anything. |
+| G7 | `Mention.offset` units are unstated. | Mentions are shown from metadata (weight + underline on the name) and the full text is preserved. No character range is highlighted on a guess. |
+| G8 | `Message.kind` is an open string; media carries no URL. | photo/video/file/feed show a kind label. No download or thumbnail is invented. |
+| G9 | Time and reply fields are nullable. | 시간 미상 and 인용 정보 없음 are shown explicitly. Never `Invalid Date`, never a crash. |
+
+## Selected concept: what to keep, what to correct
+
+| Area | Visible in concept | Contract rule | Departure? |
+| --- | --- | --- | --- |
+| Ledge law | Ledge spans the conversation pane; 보냈습니다 above, 입력됨 below | Keep exactly | — |
+| Accent | Yellow only on the send door | Keep. One accent, one job | — |
+| Unreadable 공지 | Full ink, 읽을 수 없음 (키 없음), no badge | Keep | — |
+| Coverage line | First row of the thread, hairline beneath | Keep | — |
+| Room list | Own cream field, full height to the bottom edge | Keep | — |
+| Bubbles | Flat, tail-less, unoutlined, left-aligned both parties | Keep | — |
+| Unread badge | Red badge, white numeral | Keep the form; **change the red** | **Yes — contrast** |
+| Ledge colour | Warm-white #FAF6EE seam | **1px slate #4E5D69** | **Yes — contrast** |
+| List divider | Warm-white seam | **1px slate #4E5D69** | **Yes — contrast** |
+| Send door | Square-cornered upright rectangle | Keep; enforce square corners | — |
+| Doorway gap | Not legible in the render | Specify explicitly below | Corrected |
+| Column measure | Ran wider than intended | Cap at `62ch` | Corrected |
+| Generated Hangul | Typos (화면어, 다서, 어변 주, 업에) | **Never product copy.** Use the strings in this file | Artifact |
+| Black mass | Alpha hole, diagnosed | Not a design element. Ignore | Artifact |
+
+## Embedded tokens
+
+Contrast ratios below are **measured**, not estimated (WCAG 2.1 relative
+luminance, computed 2026-09-21).
+
+| Token | Value | Use | Measured contrast |
+| --- | --- | --- | --- |
+| `--field-wall` | `#CBDDE9` | conversation above the ledge | — |
+| `--field-list` | `#EFE7D9` | room list, full height | — |
+| `--field-ground` | `#E3D7C0` | conversation below the ledge | — |
+| `--ink` | `#2A2724` | body text, room titles | 10.65 on wall · 12.09 on list · 10.43 on ground · 13.78 on bubble |
+| `--ink-muted` | `#4E5D69` | speaker, time, preview, coverage, state words | 4.87 on wall · 5.53 on list · 4.77 on ground — **AA, not AAA** |
+| `--rule` | `#4E5D69` @1px | **the ledge and the list divider** | 4.87 / 4.77 / 5.53 — clears the 3:1 non-text floor |
+| `--bubble-other` | `#FAF6EE` | other people's bubbles | ink on it: 13.78 |
+| `--bubble-self` | `#F4EBDA` | the signed-in user's bubbles | ink on it: 12.55 |
+| `--accent-send` | `#F3B41B` | **the send door and nothing else** | ink on it: 8.03 |
+| `--accent-send-inset` | `#C98E0E` @1px | the door's inset line | — |
+| `--badge-unread` | `#BB3322` | unread badge fill only | **white on it: 5.82 (AA pass)** |
+| `--badge-unread-ink` | `#FFFFFF` | the unread numeral | — |
+| Spacing scale | `4 8 12 16 24 32 48 64` px | — | — |
+| Radius | `bubble 8px` · `badge 999px` · **`door 0px`** | the door is square, always | — |
+| Border width | `1px` everywhere | no 2px rules | — |
+| Elevation | exactly one: `0 2px 6px rgba(42,39,36,.18)` on the send door only | — | — |
+| Motion | `--dur-cross 300ms` · `--dur-fade 160ms` · `--ease cubic-bezier(.2,.0,.2,1)` | — | — |
+
+**Two deliberate departures, both forced by measurement.**
+
+1. The concept's warm-white seam measures **1.29:1** against the wall, and the
+   wall and ground measure **1.02:1** against each other — they differ in hue but
+   not in luminance. The ledge is the load-bearing signal of the whole design, so
+   it cannot be invisible to reduced colour vision. The ledge and the list divider
+   become 1px `--rule` slate. Field tones remain as a secondary, redundant cue.
+2. The concept's badge red `#D8452F` gives white numerals **4.36:1**, below the
+   4.5 AA floor. `#BB3322` gives **5.82** and stays in the reference's brick-red
+   family.
+
+## Geometry and layout
+
+Optional spatial citations use StyleGallery at pinned revision
+`a41577742eab023c2156afc6e3e84b1476eb3e0b` (checked 2026-09-14). A citation names
+a responsibility only; every value here is local and explicit.
+
+| Surface | Structure | Sizing | **Scroll owner** | Citation |
+| --- | --- | --- | --- | --- |
+| App shell ≥1024px | two columns, list + conversation | list `clamp(240px, 25%, 320px)`; conversation fills the rest | neither — the shell never scrolls | `stylegallery:fixed-sidenav-shell@a415777` |
+| Room list | vertical stack, full height top to bottom edge | rows auto-height, 12px vertical rhythm | **the list column, independently** | `stylegallery:stack@a415777` |
+| Room row | title+time on line 1, observed preview or 미리보기 없음 + badge on line 2 | badge `min-width 20px`, `height 20px` | — | `stylegallery:cluster@a415777` |
+| Conversation wall | message stack above the ledge | measure **max `62ch`**, left-aligned | **the wall region only** | `stylegallery:scroll-body-shell@a415777` |
+| Ledge | 1px `--rule`, spans the conversation pane only; never crosses the list | — | — | — |
+| Ground | pending stack + draft note + composer | same `62ch` measure | **pinned. Only its pending sub-stack scrolls**, inside the `40dvh` cap | `stylegallery:sticky-footer@a415777` |
+| Message turn | speaker/time line above a bubble | bubble hugs content, `max-width 100%` of measure | — | `stylegallery:stack@a415777` |
+
+- **Reading order:** room list → room title → coverage → messages oldest-first →
+  ledge → pending → draft warning → composer → send.
+- **The doorway gap.** The vertical divider is interrupted for the full height of
+  the active room's row, a gap of at least `24px`. This is the only ornamental
+  gesture in the product and it costs no colour. It must be implemented as an
+  actual break in the rule, not a lighter segment.
+- **Scroll ownership, stated once.** Exactly two regions scroll: the room list
+  and the conversation wall. The shell is `100dvh` and `body` never scrolls. The
+  ground is pinned; the composer, the draft note and the door never move. When
+  pending items outgrow the ground's `40dvh` cap, only the pending sub-stack
+  scrolls, inside the ground.
+- **The ledge is a boundary, not a coordinate.** It sits wherever the ground's
+  content puts it, growing upward as pending items accumulate up to the `40dvh`
+  cap, and the wall keeps a minimum of `30dvh`.
+- Constraints are container-local, driven by container width, not viewport media
+  queries, except where the mobile rules below state otherwise.
+
+## Frame and ornament system
+
+The direction is **near-unornamented**, and this is a prohibition, not an omission.
+
+| Element | May appear | Forbidden | Role |
+| --- | --- | --- | --- |
+| Send door | once, at the right end of the composer | anywhere else; any rounding; any second yellow | the only saturated action surface |
+| Door inset line | inside the door | elsewhere | 1px `--accent-send-inset` |
+| Doorway gap | the active room row only | any other row | the one flourish |
+| Cat mark | empty states, the connecting state, the brand mark, and standing at the ledge/divider junction on ≥1024px | as an avatar, a sticker, a reaction, or anywhere in the message flow | quiet signature |
+| The one shadow | the send door | every other element | depth for the action only |
+
+Decorative additions beyond this table are prohibited. No gradients, no
+glassmorphism, no neumorphism, no stacked shadows, no diagonal layout geometry,
+no grain or noise over any text surface, no weathering or distress textures, no
+lettering or wordmark copied from any reference.
+
+## Typography
+
+**Font availability is NOT verified.** The direction names Pretendard; its files,
+licence, weights and Hangul coverage were not checked in this run. Treat the
+preferred family as pending.
+
+| Role | Preferred | Fallback stack | Size / line-height / weight |
+| --- | --- | --- | --- |
+| Message body | Pretendard *(pending verification)* | `Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif` | 16px / 1.7 / 400 |
+| Room title | same | same | 15px / 1.4 / 500; active row 600 |
+| Preview, speaker, time, coverage, state words | same | same | 13px / 1.45 / 400, `--ink-muted` |
+| Unread numeral | same | same | 12px / 1 / 600, tabular figures |
+| Door label 보내기 | same | same | 15px / 1 / 600, `--ink` |
+
+- Line length is capped at `62ch`; long Hangul must never span the full pane.
+- Times use tabular figures so the right edge of each row does not jitter.
+- **Fallback check required:** Malgun Gothic's metrics differ from Pretendard's;
+  verify that room rows do not reflow to three lines and that bubbles do not
+  change height when the webfont fails. Test with the webfont blocked.
+- No italic. Hangul has no true italic and synthesised oblique is a defect.
+
+## Components and interaction states
+
+| Component | Anatomy | Limits | Semantics |
+| --- | --- | --- | --- |
+| Room row | title, time, observed preview or 미리보기 없음, unread badge, unreadable note | preview one line, ellipsis; observed bodies only (G1) | `<a>` within a `<nav>` list; `aria-current="page"` when active |
+| Unread badge | `--badge-unread` pill, white numeral | **exact count 1..99, then `99+`**; 0 shows no badge | the full number goes in the row's accessible name, e.g. 데스크톱 기준 안 읽음 143개, even when the pill reads 99+; never cleared by the web (G2) |
+| Message turn | speaker+time line, optional quote block, bubble | — | `<article>` in a `<section role="log">` |
+| Quote block | 2px left rule `--ink-muted`, quoted text | 2 lines then ellipsis | `<blockquote>` |
+| Mention | 600 weight + 1px underline | — | **never colour alone** |
+| Coverage line | muted text + 1px rule under | — | first child of the log |
+| Composer | hairline underline input + send door | — | `<form>`; Enter sends, Shift+Enter newline |
+| Send door | square yellow rect, inset line, label | — | `<button type="submit">` |
+
+### States
+
+| Flow | State | Treatment | Recovery |
+| --- | --- | --- | --- |
+| Send | idle | door at full `--accent-send` | — |
+| Send | confirming (`dryRun`) | inline panel on the ground: the resolved room, and if `wouldClearDraft`, the sentence 보내면 데스크톱 앱에 쓰고 있던 초안이 지워질 수 있습니다 | cancel restores focus to the input |
+| Send | submitted, unproven | bubble appears **below the ledge**, `--bubble-self`, state word 입력됨 · 전달 미확인 | none offered; **never auto-retry** |
+| Send | candidate observed | a new `fromMe` row is already above the ledge because it was read back; the pending item offers 이 기록으로 확인 | the user links them; nothing auto-matches (G4) |
+| Send | linked by the user | the pending bubble crosses the ledge once, 300ms, into the observed row; state word 보냈습니다 belongs to the read row | — |
+| Send | `SEND_FAILED`, timeout, abort | stays below the ledge, state word 결과 확인 필요, with a manual 다시 보내기 the user must press | explicit user action only, through a new `dryRun` and consent |
+| Send | `429 RATE_LIMITED` | attempt rejected, stays below the ledge, 보내는 중인 메시지가 많습니다 | a fresh explicit attempt by the user; no timer, no "queue is empty now" claim (G5) |
+| Send | result lost (tab closed, leader gone) | 결과 확인 필요 | never re-sent on the user's behalf |
+| Room | `readable: false` | full ink; preview replaced by 읽을 수 없음 (키 없음); no badge; **no dimming** | an explainer on how to open the room in the desktop client |
+| Room | no observed body yet | preview line reads 미리보기 없음 | fills in once a body arrives through `/context` or `/stream` |
+| Thread | window ceiling | after 1000 newest, a muted line: 여기서 볼 수 있는 가장 오래된 메시지입니다. 더 이전 기록은 데스크톱 앱에서 확인하세요 | none: no older-history route exists (G3) |
+| Room | ambiguous | a chooser listing every candidate with `memberCount` and `lastActivityAt` | user picks; never auto-resolve |
+| Stream | connecting | the cat walks in the list's footer | — |
+| Stream | gap after resume | a muted line in the thread: 연결이 끊긴 동안의 일부 대화는 아래에 없을 수 있습니다, with a 지금 불러오기 action calling `/context` | — |
+| Stream | `503 BUSY` | 이 컴퓨터에서 열 수 있는 실시간 연결을 모두 사용 중입니다 (8개) | retry control |
+| Auth | `401` | the token screen — **distinct from 503** | re-enter the token |
+| Host | `503` + `KAKAO_NOT_RUNNING` etc. | a host-state screen naming the specific code | retry |
+| Host | `PERMISSION_REQUIRED` | its own macOS instructions screen | reopen after granting |
+| Thread | empty | the cat, plus 이 기기에 저장된 대화가 없습니다 — **never** "대화가 없습니다" | — |
+
+All interactive elements need `:focus-visible` as a 2px `--ink` outline offset
+2px. Hover changes background tone only, never layout.
+
+## Responsive rules
+
+| Range | Layout |
+| --- | --- |
+| ≥1024px | two panes. List `clamp(240px,25%,320px)` full height to the bottom edge, its own scroll. Ledge spans the conversation pane. Cat at the ledge/divider junction. |
+| 768–1023px | list narrows to 220px, previews hidden, title + time + badge only. Cat hidden. |
+| <768px | single pane. The list is a separate view; the thread gets a header row with a back chevron and the room title. Ledge spans the full width. Ground pinned to the bottom. No cat. |
+
+- Touch targets ≥44×44px below 768px; the send door grows to 44px tall while
+  keeping square corners.
+- The ledge never disappears at any width. If it will not fit, reduce the wall,
+  never the ground: **losing the boundary loses the product's central claim.**
+- Verify at 320px width and at 200% browser zoom; text must reflow without
+  horizontal scrolling.
+
+## Motion and reduced motion
+
+| Trigger | Property | Duration / easing | Reduced-motion |
+| --- | --- | --- | --- |
+| User links a pending item to an observed row; crossing the ledge | transform + opacity on one overlay clone | 300ms `--ease` | no movement: the pending item disappears and the observed row is announced |
+| New message arrives | opacity 0→1 | 160ms | instant |
+| **Cat, while connecting** | 4–6 frame walk cycle, translateX, looping | ~1.2s per loop | **the cat stops and sits; a static mark remains visible** |
+| Room switch | opacity | 160ms | instant |
+
+The crossing is the only movement with meaning; everything else fades. Under
+`prefers-reduced-motion: reduce` every state change must remain **observable
+without motion** — the state word and the side of the ledge always carry the
+information, so nothing is lost.
+
+## Accessibility
+
+- Target: **WCAG 2.1 AA**. Measured text pairs are recorded in the token table;
+  `--ink-muted` clears AA but not AAA, which is accepted for metadata.
+- Landmarks: `<nav>` for the list, `<main>` for the thread, `<form>` for the
+  composer. One `<h1>` per view, the room title.
+- The thread is `role="log"` with `aria-live="polite"`; arriving messages are
+  announced. Linking a pending item to an observed row announces 보냈습니다.
+- **Never colour alone.** Unread = badge *and* accessible text. Mention = weight
+  *and* underline. Send state = the word *and* the side of the ledge.
+- Keyboard: Tab reaches list → thread → composer → door. Enter sends,
+  Shift+Enter newlines, Escape cancels the confirmation and restores focus.
+- Focus is managed on room switch: move it to the room title, not the top.
+- The unread badge must not be the only accessible signal. The full count goes
+  in the row's accessible name, including above 99 where the pill shows 99+.
+- Non-text contrast: the ledge, the divider and focus rings all clear 3:1
+  (measured 4.77–5.53).
+
+## Asset manifest
+
+| Asset | Path | Origin / rights | Status |
+| --- | --- | --- | --- |
+| Selected concept | `design/seeds/C4-flat-wall.png` | generated this session | **ready — evidence only, never a shipping asset** |
+| Other candidates | `design/seeds/C{1,2,3,5,6}*.png` | generated | ready, evidence |
+| Submitted prompts | `design/seeds/prompt-C*.txt` | this session | ready |
+| Reference provenance | `design/references/REF-{A..E}.jpg` | owner-supplied, creator unknown, **no licence** | provenance only; never redistributed, never shipped |
+| **Cat mark (SVG)** | not created | must be drawn as an original vector | **PENDING** — must not be cropped from a concept image |
+| **Cat walk cycle** | not created | original | **PENDING** |
+| Pretendard webfont | not obtained | licence unverified | **PENDING** |
+
+A generated concept is never painted as a page background with clickable
+overlays. Every control is a real interface element.
+
+## Interoperability declarations
+
+```txt
+Consumer reference: not_applicable
+Consumer reference reason: This design contract declares no StyleGallery-local reference record.
+```
+
+- Cited identifiers: `fixed-sidenav-shell`, `stack`, `cluster`,
+  `scroll-body-shell`, `sticky-footer`, all at `@a415777`.
+- Pinned revision re-read this session: yes, from the skill's pinned index. No
+  upstream LICENSE exists at that revision, so identifiers are cited and no
+  upstream prose, CSS or token value is copied.
+
+## Implementation order
+
+1. Generate types from `openapi.json`. Do not hand-write them. Add a CI check
+   that the local copy still matches the cores byte-for-byte.
+2. Tokens, the fallback font stack, and `GET /health` — the one unauthenticated
+   route, so connection can be proven separately from authorization.
+3. Token handling plus `GET /rooms`; make `401` and `503` visibly different
+   screens. Build the room list including the unreadable row.
+4. `GET /context`: the thread, the ledge, quotations, mentions, coverage.
+5. One shared `/stream`, cursor resume, backoff, and the gap disclosure.
+6. `POST /send` last: `dryRun` confirmation, the draft warning, the pending zone,
+   and read-back before any message is called 보냈습니다.
+7. Responsive rules, the cat's motion and its reduced-motion alternative.
+8. Real-browser QA at 1440×900, 768px and 390×844.
+
+## Acceptance checks
+
+| Surface / state | Observable pass condition | Method |
+| --- | --- | --- |
+| Ledge, desktop + mobile | A pending message renders below the ledge; it leaves only when the user links it to an observed `fromMe` row | stub `/send` + `/context` |
+| Send wording | 보냈습니다 appears only on a `fromMe` row that was actually read back; never on a request | unit + real-surface |
+| No causal match | An identical `fromMe` row typed on the desktop does not auto-resolve the pending item | stub `/context` with a duplicate body |
+| Preview | A room with no observed body shows 미리보기 없음 and triggers no `/context` request | network stub, zero calls asserted |
+| Unread | Opening a room changes neither the badge nor the accessible count; 143 unread reads 99+ with 143 in the name | stub `/rooms` |
+| History ceiling | After the 1000 window the ceiling line appears and no further `/context` is sent | stub |
+| 429 | The door is not re-enabled by time; only a new user attempt sends | fake clock |
+| Uncertain send | `SEND_FAILED` produces no automatic retry; exactly one manual control | stubbed failure |
+| Draft warning | `wouldClearDraft` is shown *before* the send, never after | `dryRun` stub |
+| Unknown error code | An invented code renders the default branch, not a crash or a blank | stub a code absent from the enum |
+| Ids | A room id above 2^53 round-trips through selection and URL unchanged | unit, with `18491246151592761` |
+| Unreadable room | 공지 is present, full ink, undimmed, reason stated, no badge | visual |
+| Empty thread | Copy never says the conversation does not exist | visual |
+| Ambiguity | `409` with candidates renders a chooser; nothing auto-selects | stub |
+| Stream cap | A 9th connection attempt is impossible from one client; `503 BUSY` has its own screen | integration |
+| Contrast | Every pair in the token table measures at or above its recorded value | automated |
+| Reduced motion | With `prefers-reduced-motion`, the cat stops and the crossing is instant, with no state lost | visual |
+| Keyboard | List → thread → composer → door, with a visible focus ring throughout | manual |
+| Zoom | 200% zoom at 1280px reflows without horizontal scroll | manual |
+| Font fallback | With the webfont blocked, no row reflows to three lines | manual |
+| No real data | No fixture, screenshot or committed artifact contains a real name, title or message | review |
+
+Stubs must be able to return `401`, `429`, `503 BUSY` and a malformed envelope. A
+stub that cannot fail is a test passing against an error path that cannot happen.
+
+## Assumptions, blockers and approval
+
+| Open item | Impact | Owner | Fallback |
+| --- | --- | --- | --- |
+| Stack | settled in `.omo/plans/client-performance-implementation.md`: React + TypeScript + Vite static SPA | lead | — |
+| Token placement: proxy vs browser | blocks step 3 | owner | proxy-injected header; browser never holds it |
+| Pretendard licence / coverage | blocks final type | implementer | the system fallback stack above |
+| Cat SVG + walk cycle | blocks the connecting state | owner to supply or commission | a static mark |
+| **No contacts route exists** | 친구목록 is `kind:"direct"` rooms only | owner | raise an issue on `kanao-cli` / `kamado-cli` |
+| Warm dark palette | unspecified | — | **not designed.** Rust wall, darker terracotta ground, faint amber ledge was recorded as intent only and never rendered or measured |
+| `openapi.json` CRLF | `shasum` in `BRIEF.md` §1 mismatches on Windows | maintainer | add `.gitattributes` marking it `-text` |
+
+**Owner approved this contract revision on 2026-09-21**, explicitly accepting
+both measured departures from the concept (the slate ledge, the darker badge
+red) and the pending items in the table above.
+
+This document declares the design ready for implementation. It does **not**
+claim the product is built or tested. S5 implementation has not started and
+begins only on a separate instruction.
