@@ -1,0 +1,39 @@
+{
+  "name": "saya",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "dev": "vite",
+    "contract:generate": "bun scripts/contract-generate.ts",
+    "contract:check": "bun scripts/contract-check.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "build": "vite build",
+    "test": "bun test",
+    "qa": "bun scripts/qa.ts",
+    "perf": "bun scripts/perf.ts",
+    "size:check": "bun scripts/size-check.ts",
+    "check:all": "bun scripts/check-all.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "3.14.13",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/bun": "1.4.2",
+    "@types/js-yaml": "4.0.9",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "json-schema-to-ts": "3.1.1",
+    "openapi-typescript": "7.13.0",
+    "playwright-core": "1.63.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.0"
+  }
+}

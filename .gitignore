@@ -13,3 +13,6 @@ coverage/
 .vscode/
 .DS_Store
 *.log
+
+# Agent session transcripts, not product
+.omo/

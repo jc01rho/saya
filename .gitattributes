@@ -1,0 +1,2 @@
+openapi.json -text
+src/contract/* text eol=lf
