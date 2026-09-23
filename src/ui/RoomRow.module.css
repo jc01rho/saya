@@ -44,11 +44,17 @@
   min-width: 0;
 }
 
+/*
+ * Both lines are grid items, whose automatic minimum is their content: without
+ * this the title and the preview push the row past the list's edge instead of
+ * ending in an ellipsis.
+ */
 .header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-8);
+  min-width: 0;
 }
 
 .title {
@@ -79,6 +85,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-8);
+  min-width: 0;
 }
 
 .preview {
