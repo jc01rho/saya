@@ -1,0 +1,109 @@
+/*
+ * A video tile: the video element itself, holding its first frame, with the
+ * play mark and the running time over it. The box is reserved from the stored
+ * size so the wall never jumps when metadata arrives.
+ */
+.frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-block-start: var(--space-4);
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 80%, #000000);
+  cursor: pointer;
+}
+
+.frame:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.poster {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.play {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(20, 18, 16, 0.6);
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  padding-inline-start: 3px;
+}
+
+.length {
+  position: absolute;
+  inset-block-end: var(--space-8);
+  inset-inline-end: var(--space-8);
+  padding: 2px var(--space-8);
+  border-radius: 999px;
+  background: rgba(20, 18, 16, 0.72);
+  color: #ffffff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+/* Past its deadline the address is never requested; this stands in its place. */
+.gone {
+  margin-block-start: var(--space-4);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.lightbox {
+  max-width: 100vw;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.lightbox::backdrop {
+  background: rgba(20, 18, 16, 0.88);
+}
+
+.player {
+  display: block;
+  max-width: min(94vw, 1400px);
+  max-height: 84dvh;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #000000;
+}
+
+.close {
+  display: block;
+  margin: var(--space-12) auto 0;
+  min-height: var(--touch-min);
+  padding: var(--space-4) var(--space-24);
+  border: var(--rule-width) solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}

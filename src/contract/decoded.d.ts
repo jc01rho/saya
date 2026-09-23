@@ -473,6 +473,22 @@ export interface components {
             /** @description Every picture the message carried, in order: one for a single photo, one per picture for an album. `url`, `width` and `height` above repeat the first. A size the client did not store is 0. */
             images: components["schemas"]["PhotoImage"][];
         };
+        /** @description Where a video lives and what the client stored about it. Present only on a video message. There is no thumbnail: across 3,814 videos on the two builds not one attachment carried a thumbnail address, so a viewer that wants a first frame asks the video for it. The address is on the client's CDN and the cores fetch nothing for it. A number the client did not store is 0. */
+        Video: {
+            /** Format: uri */
+            url: string;
+            width: number;
+            height: number;
+            /** @description Seconds. */
+            duration: number;
+            /** @description Bytes. */
+            size: number;
+            /**
+             * Format: date-time
+             * @description Present only when the client stored one: after it the address may no longer answer. Measured at 14 days after the message was sent.
+             */
+            expiresAt?: string;
+        };
         /** @description One picture of a message: its address on the client's CDN and the size stored beside it. */
         PhotoImage: {
             /** Format: uri */
@@ -522,6 +538,7 @@ export interface components {
             /** @constant */
             repliesToMe?: true;
             photo?: components["schemas"]["Photo"];
+            video?: components["schemas"]["Video"];
         };
         /** @description The same facts the per-message keys carry, gathered once so a caller can ask "was I addressed" without walking the window. */
         Attention: {

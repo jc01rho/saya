@@ -10,6 +10,7 @@ import { Mention } from "./Mention";
 import styles from "./MessageBubble.module.css";
 import { Photo } from "./Photo";
 import { QuoteBlock } from "./QuoteBlock";
+import { Video } from "./Video";
 
 type Message = components["schemas"]["Message"];
 
@@ -21,6 +22,32 @@ const STATE_WORDS: Record<SendState, string> = {
   unknown: COPY.unknown,
   rejected: COPY.rejected,
 };
+
+/**
+ * The words the desktop client writes in place of an attachment it cannot put
+ * in a text column: 사진, 사진 N장, 동영상. They are not a caption — KakaoTalk
+ * has none on an attachment — so once the picture or the player is drawn they
+ * say strictly less than it does.
+ *
+ * Matched exactly, against this message's own count, so anything a person
+ * actually typed survives. A body equal to its own kind label is the same kind
+ * of placeholder and goes with them.
+ */
+function isMediaPlaceholder(
+  text: string | undefined,
+  message: Message,
+  kind: string | null,
+): boolean {
+  const body = text?.trim();
+  if (!body) return false;
+  if (kind && body === kind) return true;
+  if (
+    message.photo &&
+    (body === "사진" || body === `사진 ${message.photo.count}장`)
+  )
+    return true;
+  return Boolean(message.video) && body === "동영상";
+}
 
 export interface MessageBubbleProps {
   message: Message;
@@ -60,12 +87,14 @@ export function MessageBubble({
   // One card per turn, for the first address: a body full of links is a body,
   // not a wall of cards.
   const linked = message.text ? firstUrl(message.text) : null;
-  // The body is the kind's own word and nothing else: 사진 for a photo. It says
-  // no more than the label does, so it never renders twice; and when the
-  // picture itself is here, it says less than the picture and goes entirely.
-  const duplicate = Boolean(kind) && kind === message.text?.trim();
-  const showLabel = Boolean(kind) && !(duplicate && message.photo);
-  const showText = Boolean(message.text) && !duplicate;
+  // With the picture on screen, the kind label names what is already visible —
+  // and it is the raw `other:27` for a kind the core could not name, which says
+  // nothing to anyone. The body beside it is the client's placeholder for the
+  // same attachment. Both go; a real caption, which is neither, stays.
+  const media = Boolean(message.photo || message.video);
+  const placeholder = isMediaPlaceholder(message.text, message, kind);
+  const showLabel = Boolean(kind) && !media && !placeholder;
+  const showText = Boolean(message.text) && !placeholder;
 
   return (
     <article
@@ -104,10 +133,11 @@ export function MessageBubble({
           ) : null}
           {showText ? (
             <p className={styles.text}>{linkify(message.text as string)}</p>
-          ) : showLabel || message.photo ? null : (
+          ) : showLabel || media ? null : (
             <span className={styles.kind}>{COPY.emptyBody}</span>
           )}
-          {message.photo ? <Photo photo={message.photo} /> : null}
+          {message.photo ? <Photo photo={message.photo} now={now} /> : null}
+          {message.video ? <Video video={message.video} now={now} /> : null}
           {linked ? <LinkCard url={linked} /> : null}
           {/* The stamp rides the last line, as it does in every messenger. */}
           <time

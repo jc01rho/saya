@@ -28,6 +28,9 @@ export const COPY = {
   photoPrev: "이전 사진",
   photoNext: "다음 사진",
   photoClose: "닫기",
+  videoOpen: "동영상 재생",
+  /** The signed address has a deadline; past it the client never asks for it. */
+  videoGone: "동영상을 더 이상 불러올 수 없습니다",
 } as const;
 
 /** The desktop's count belongs in the row's accessible name, exact even past 99. */

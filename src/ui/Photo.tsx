@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { components } from "../contract/decoded";
 import { COPY } from "./copy";
 import { cx } from "./cx";
+import { carrierExpired } from "./expiry";
 import styles from "./Photo.module.css";
 
 type PhotoData = components["schemas"]["Photo"];
@@ -24,15 +25,20 @@ function Tile({
   image,
   index,
   more,
+  now,
   onOpen,
 }: {
   image: PhotoImage;
   index: number;
   /** Pictures hidden behind this tile, drawn as +N like every messenger. */
   more: number;
+  now: Date;
   onOpen: (index: number) => void;
 }) {
   const [failed, setFailed] = useState(false);
+  // Past its signed deadline the address is never put on an `src`, so the
+  // browser makes no request the host would refuse.
+  const gone = failed || carrierExpired(image, now);
   return (
     <button
       type="button"
@@ -41,7 +47,7 @@ function Tile({
       aria-label={COPY.photoOpenAt(index + 1)}
       onClick={() => onOpen(index)}
     >
-      {failed ? (
+      {gone ? (
         <span className={styles.gone}>{COPY.photoGone}</span>
       ) : (
         <img
@@ -163,7 +169,7 @@ function Lightbox({
  * Addresses are the client's own CDN, signed and short-lived, so an expired one
  * is ordinary and says so rather than leaving a broken image.
  */
-export function Photo({ photo }: { photo: PhotoData }) {
+export function Photo({ photo, now }: { photo: PhotoData; now: Date }) {
   const [at, setAt] = useState<number | null>(null);
   const images = photo.images.length
     ? photo.images
@@ -190,12 +196,18 @@ export function Photo({ photo }: { photo: PhotoData }) {
             image={image}
             index={index}
             more={index === shown.length - 1 ? hidden : 0}
+            now={now}
             onOpen={setAt}
           />
         ))}
       </div>
       {at !== null ? (
-        <Lightbox images={images} at={at} onMove={setAt} onClose={close} />
+        <Lightbox
+          images={images.filter((image) => !carrierExpired(image, now))}
+          at={at}
+          onMove={setAt}
+          onClose={close}
+        />
       ) : null}
     </>
   );
