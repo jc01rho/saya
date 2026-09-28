@@ -207,6 +207,234 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The notice pinned in a room
+         * @description Read from the catalog, so it needs no room key and never opens a room. `notice` is null when the room has none.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /**
+                     * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+                     * @example 18491246151592761
+                     */
+                    roomId: components["parameters"]["RoomId"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The notice, or null. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NoticeAnswer"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The photos, videos, files and links a room's messages carried
+         * @description Looks through the newest `limit` messages and lists what they carried, oldest first. A covered message offers no links while it stays covered.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /**
+                     * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+                     * @example 18491246151592761
+                     */
+                    roomId: components["parameters"]["RoomId"];
+                    /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
+                    open?: components["parameters"]["OpenRoom"];
+                    kind?: "photo" | "video" | "file" | "link";
+                    /** @description How many of the newest messages to look through. */
+                    limit?: number;
+                    /** @description Page backwards from this message id. */
+                    beforeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description What the messages carried. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Attachments"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every version of an edited message
+         * @description Asked only of a message that is still there: one deleted for everyone keeps its history, and reading it back would undo the deletion, so that is `MESSAGE_NOT_FOUND`.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /**
+                     * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+                     * @example 18491246151592761
+                     */
+                    roomId: components["parameters"]["RoomId"];
+                    /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
+                    open?: components["parameters"]["OpenRoom"];
+                    /** @description The message's id, as a string of digits. */
+                    messageId: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The versions, oldest first. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Revisions"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A file message's bytes
+         * @description The copy the client saved in `Documents\카카오톡 받은 파일` when one matches by name and size; otherwise fetched from the address, and only from the client's own hosts. An expired address is `410 FILE_EXPIRED` without a request being made.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /**
+                     * @description The room's identifier, as a string. Ids exceed 2^53, so they cross this boundary as text; a value outside the 64-bit range is a 400 rather than an overflow out of the database driver.
+                     * @example 18491246151592761
+                     */
+                    roomId: components["parameters"]["RoomId"];
+                    /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
+                    open?: components["parameters"]["OpenRoom"];
+                    /** @description The message's id, as a string of digits. */
+                    messageId: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The file, streamed. */
+                200: {
+                    headers: {
+                        /** @description `attachment`, with the name in `filename*` (UTF-8, percent-encoded) and a printable-ASCII fallback in `filename`. */
+                        "Content-Disposition"?: string;
+                        /** @description `local` for the client's saved copy, `remote` for the address. */
+                        "X-Kanao-Source"?: "local" | "remote";
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": string;
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                /** @description The file's address has expired and no saved copy was found. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stream": {
         parameters: {
             query?: never;
@@ -539,6 +767,18 @@ export interface components {
             repliesToMe?: true;
             photo?: components["schemas"]["Photo"];
             video?: components["schemas"]["Video"];
+            /** @description Present only when somebody reacted. Who reacted is not stored by the client, only how many chose each kind. */
+            reactions?: components["schemas"]["Reaction"][];
+            /**
+             * @description Present only when the sender edited the message; `text` is the newest version and `/revisions` lists the others.
+             * @constant
+             */
+            edited?: true;
+            /**
+             * @description Present when an open chat's SafeBot covered the message. Its `text` is empty, the way the client hides it, unless the caller asked for covered messages to be shown.
+             * @enum {string}
+             */
+            covered?: "safebot";
         };
         /** @description The same facts the per-message keys carry, gathered once so a caller can ask "was I addressed" without walking the window. */
         Attention: {
@@ -660,6 +900,78 @@ export interface components {
          */
         Cursor: {
             [key: string]: string;
+        };
+        /** @description One kind of 공감 on a message and how many people chose it. */
+        Reaction: {
+            /** @description The word the client shows, such as 사랑 or 엄지척. */
+            label: string;
+            count: number;
+            /** @description The mini emoticon it is drawn with. */
+            code?: string;
+        };
+        /** @description The notice pinned in a room. A board post wins over the older notice row, which in every room holding both was the older of the two. */
+        Notice: {
+            text: string;
+            /**
+             * @example text
+             * @example image
+             * @example schedule
+             */
+            kind: string;
+            authorId: string | null;
+            /** @description Who that id is now. */
+            author: string | null;
+            /** Format: date-time */
+            postedAt: string | null;
+            /** @enum {string} */
+            source: "board" | "legacy";
+        };
+        NoticeAnswer: {
+            /** @constant */
+            ok: true;
+            room: components["schemas"]["Room"];
+            notice: components["schemas"]["Notice"] | null;
+        };
+        /** @description Something a message carried. An address, never the thing itself; a file's address stops answering once it expires, and `/file` fetches it. */
+        Attachment: {
+            messageId: string;
+            /** @enum {string} */
+            kind: "photo" | "video" | "file" | "link";
+            senderId: string;
+            sender: string;
+            /** Format: date-time */
+            sentAt: string | null;
+            url: string;
+            /** @description A file's name as it was sent; somebody else wrote it. */
+            name?: string;
+            /** @description Bytes, for a file or a video. */
+            size?: number;
+            /** @description Present on an album; `url` is its first picture. */
+            count?: number;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        Attachments: {
+            /** @constant */
+            ok: true;
+            room: components["schemas"]["Room"];
+            attachments: components["schemas"]["Attachment"][];
+            count: number;
+        };
+        Revision: {
+            /** @description 0 is the message as first sent. */
+            revision: number;
+            text: string;
+            kind: string;
+        };
+        Revisions: {
+            /** @constant */
+            ok: true;
+            room: components["schemas"]["Room"];
+            messageId: string;
+            /** @description Oldest first. Empty when the client kept no history for that message. */
+            revisions: components["schemas"]["Revision"][];
+            count: number;
         };
     };
     responses: {

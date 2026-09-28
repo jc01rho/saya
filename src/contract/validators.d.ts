@@ -23,5 +23,12 @@ export const validateStreamMessage: ValidateFunction<components["schemas"]["Stre
 export const validateStreamCursor: ValidateFunction<components["schemas"]["StreamCursor"]>;
 export const validateStreamPing: ValidateFunction<components["schemas"]["StreamPing"]>;
 export const validateCursor: ValidateFunction<components["schemas"]["Cursor"]>;
+export const validateReaction: ValidateFunction<components["schemas"]["Reaction"]>;
+export const validateNotice: ValidateFunction<components["schemas"]["Notice"]>;
+export const validateNoticeAnswer: ValidateFunction<components["schemas"]["NoticeAnswer"]>;
+export const validateAttachment: ValidateFunction<components["schemas"]["Attachment"]>;
+export const validateAttachments: ValidateFunction<components["schemas"]["Attachments"]>;
+export const validateRevision: ValidateFunction<components["schemas"]["Revision"]>;
+export const validateRevisions: ValidateFunction<components["schemas"]["Revisions"]>;
 export const validateHealthResponse: ValidateFunction<paths["/health"]["get"]["responses"][200]["content"]["application/json"]>;
 export const validateRoomsResponse: ValidateFunction<paths["/rooms"]["get"]["responses"][200]["content"]["application/json"]>;

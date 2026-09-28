@@ -9,7 +9,7 @@ import openapiTS, { astToString } from "openapi-typescript";
 export const contractDirectory = new URL("../src/contract/", import.meta.url);
 const root = new URL("../", import.meta.url);
 const canonicalHash =
-  "f6a5d9a5c0b2139e903e040a2daf1eb8f56d6300fc42e8a5738448847cda1c17";
+  "ba7c046aefce311da4d9e4022a3aacd8c9d7ba7ff9b7d6bc7e438e05199f7291";
 const header =
   "// Generated from openapi.json by bun run contract:generate. Do not edit.\n";
 type Schema = Record<string, unknown>;

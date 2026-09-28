@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### 변경
+
+**계약을 kanao-cli 0.22.0 의 `openapi.json` 0.15.0 으로 올렸습니다.** `/notice`, `/attachments`, `/revisions`, `/file`, 메시지의 `reactions`·`edited`·`covered`, 오류 코드 `MESSAGE_NOT_FOUND`·`FILE_EXPIRED` 가 생성된 계약(`src/contract/`)에 들어왔습니다. 문서상 모두 Windows 전용이고, 화면에 쓰는 일은 아직 하지 않았습니다. `contract-generate.ts` 의 고정 해시도 새 파일로 바꿨습니다.
+
+검증: `contract:generate`·`contract:check`·`typecheck`·`lint` 통과, `bun test` 165 pass / 0 fail.
+
 ## [0.1.1] — 2026-09-23
 
 ### 고침
