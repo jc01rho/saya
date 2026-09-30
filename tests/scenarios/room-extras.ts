@@ -128,6 +128,12 @@ export const scenario: Scenario = {
     });
     log("notice-sheet", noticeFit ?? {});
     if (!noticeFit?.inside) fail("the notice sheet runs past the screen");
+    // The sheet reads the whole text and says where it came from.
+    const source = await page
+      .locator('dialog[data-ui="notice-dialog"] [data-ui="notice-source"]')
+      .count();
+    if (source !== 1)
+      fail("the whole notice does not say it was found by its words");
     if (!noticeFit?.overflows || !wheeled)
       fail("a long notice does not scroll inside its sheet");
     await shot("room-extras-notice");

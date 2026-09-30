@@ -154,17 +154,24 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
       });
       linked.text = "가상 문서 주소 https://example.invalid/가상-문서";
       linked.reactions = [{ label: "좋아요", count: 2 }];
+      // Long on purpose: the whole notice opens in a sheet, and one taller
+      // than the screen must scroll there rather than be cut off. As the
+      // client stores it, the post is its first 100 characters and the whole
+      // text is the one message it was pinned from (contract 0.18.0).
+      const whole = [
+        "가상 공지: 이번 주 관측 일정은 목요일 저녁입니다. 합성 문장입니다.",
+        ...Array.from(
+          { length: 60 },
+          (_, line) => `${line + 1}. 가상 관측 수칙 줄입니다. 합성 문장입니다.`,
+        ),
+      ].join("\n");
+      const pinned = rows[0];
+      if (!pinned) throw new Error("Missing generated pinned message");
       notices.set(id, {
-        // Long on purpose: the whole notice opens in a sheet, and a notice
-        // taller than the screen must scroll there rather than be cut off.
-        text: [
-          "가상 공지: 이번 주 관측 일정은 목요일 저녁입니다. 합성 문장입니다.",
-          ...Array.from(
-            { length: 60 },
-            (_, line) =>
-              `${line + 1}. 가상 관측 수칙 줄입니다. 합성 문장입니다.`,
-          ),
-        ].join("\n"),
+        text: [...whole].slice(0, 100).join(""),
+        truncated: true,
+        fullText: whole,
+        fullTextMessageId: pinned.id,
         kind: "text",
         authorId: "38000000000000001",
         author: "가상참여자-1",
