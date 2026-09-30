@@ -222,8 +222,9 @@ function validate52(data, { instancePath = "", parentData, parentDataProperty, r
 }
 validate52.evaluated = { dynamicProps: false, dynamicItems: false };
 var validateErrorEnvelope = validate53;
-var schema21 = { type: "object", required: ["id", "title", "kind", "type", "memberCount", "unread", "lastMessageId", "lastActivityAt", "readable"], properties: { id: { type: "string" }, title: { type: "string" }, kind: { type: "string" }, type: { type: "string" }, memberCount: { type: "integer" }, unread: { type: "integer" }, lastMessageId: { type: ["string", "null"] }, lastActivityAt: { type: ["string", "null"], format: "date-time" }, readable: { type: "boolean" }, typeCode: { type: "integer" } } };
+var schema21 = { type: "object", required: ["id", "title", "kind", "type", "memberCount", "unread", "lastMessageId", "lastActivityAt", "readable"], properties: { id: { type: "string" }, title: { type: "string" }, kind: { type: "string" }, type: { type: "string" }, memberCount: { type: "integer" }, unread: { type: "integer" }, lastMessageId: { type: ["string", "null"] }, lastActivityAt: { type: ["string", "null"], format: "date-time" }, readable: { type: "boolean" }, typeCode: { type: "integer" }, images: { type: "array", maxItems: 4, items: { type: "string", format: "uri" } } } };
 var formats0 = require_formats().fullFormats["date-time"];
+var formats2 = require_formats().fullFormats.uri;
 function validate55(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -365,6 +366,50 @@ function validate55(data, { instancePath = "", parentData, parentDataProperty, r
                           } else {
                             var valid0 = true;
                           }
+                          if (valid0) {
+                            if (data.images !== undefined) {
+                              let data10 = data.images;
+                              const _errs21 = errors;
+                              if (errors === _errs21) {
+                                if (Array.isArray(data10)) {
+                                  if (data10.length > 4) {
+                                    validate55.errors = [{ instancePath: instancePath + "/images", schemaPath: "#/properties/images/maxItems", keyword: "maxItems", params: { limit: 4 }, message: "must NOT have more than 4 items" }];
+                                    return false;
+                                  } else {
+                                    var valid1 = true;
+                                    const len0 = data10.length;
+                                    for (let i0 = 0;i0 < len0; i0++) {
+                                      let data11 = data10[i0];
+                                      const _errs23 = errors;
+                                      if (errors === _errs23) {
+                                        if (errors === _errs23) {
+                                          if (typeof data11 === "string") {
+                                            if (!formats2(data11)) {
+                                              validate55.errors = [{ instancePath: instancePath + "/images/" + i0, schemaPath: "#/properties/images/items/format", keyword: "format", params: { format: "uri" }, message: 'must match format "' + "uri" + '"' }];
+                                              return false;
+                                            }
+                                          } else {
+                                            validate55.errors = [{ instancePath: instancePath + "/images/" + i0, schemaPath: "#/properties/images/items/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                                            return false;
+                                          }
+                                        }
+                                      }
+                                      var valid1 = _errs23 === errors;
+                                      if (!valid1) {
+                                        break;
+                                      }
+                                    }
+                                  }
+                                } else {
+                                  validate55.errors = [{ instancePath: instancePath + "/images", schemaPath: "#/properties/images/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
+                                  return false;
+                                }
+                              }
+                              var valid0 = _errs21 === errors;
+                            } else {
+                              var valid0 = true;
+                            }
+                          }
                         }
                       }
                     }
@@ -383,7 +428,7 @@ function validate55(data, { instancePath = "", parentData, parentDataProperty, r
   validate55.errors = vErrors;
   return errors === 0;
 }
-validate55.evaluated = { props: { id: true, title: true, kind: true, type: true, memberCount: true, unread: true, lastMessageId: true, lastActivityAt: true, readable: true, typeCode: true }, dynamicProps: false, dynamicItems: false };
+validate55.evaluated = { props: { id: true, title: true, kind: true, type: true, memberCount: true, unread: true, lastMessageId: true, lastActivityAt: true, readable: true, typeCode: true, images: true }, dynamicProps: false, dynamicItems: false };
 function validate53(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -683,7 +728,6 @@ function validate58(data, { instancePath = "", parentData, parentDataProperty, r
 }
 validate58.evaluated = { props: { messageId: true, senderId: true, sender: true, text: true, kind: true }, dynamicProps: false, dynamicItems: false };
 var validatePhoto = validate59;
-var formats2 = require_formats().fullFormats.uri;
 function validate60(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -1009,7 +1053,7 @@ function validate62(data, { instancePath = "", parentData, parentDataProperty, r
 validate62.evaluated = { props: { url: true, width: true, height: true, duration: true, size: true, expiresAt: true }, dynamicProps: false, dynamicItems: false };
 var validatePhotoImage = validate60;
 var validateMessage = validate63;
-var schema27 = { type: "object", required: ["id", "roomId", "senderId", "sender", "text", "kind", "sentAt", "fromMe"], properties: { id: { type: "string" }, roomId: { type: "string" }, senderId: { type: "string" }, sender: { type: "string" }, text: { type: "string" }, kind: { type: "string" }, sentAt: { type: ["string", "null"], format: "date-time" }, fromMe: { type: "boolean" }, mentions: { type: "array", items: { $ref: "#/components/schemas/Mention" } }, mentionsAll: { const: true }, mentionsMe: { const: true }, replyTo: { $ref: "#/components/schemas/ReplySource" }, repliesToMe: { const: true }, photo: { $ref: "#/components/schemas/Photo" }, video: { $ref: "#/components/schemas/Video" }, reactions: { type: "array", items: { $ref: "#/components/schemas/Reaction" } }, edited: { const: true }, covered: { type: "string", enum: ["safebot"] } } };
+var schema27 = { type: "object", required: ["id", "roomId", "senderId", "sender", "text", "kind", "sentAt", "fromMe"], properties: { id: { type: "string" }, roomId: { type: "string" }, senderId: { type: "string" }, sender: { type: "string" }, text: { type: "string" }, kind: { type: "string" }, sentAt: { type: ["string", "null"], format: "date-time" }, fromMe: { type: "boolean" }, mentions: { type: "array", items: { $ref: "#/components/schemas/Mention" } }, mentionsAll: { const: true }, mentionsMe: { const: true }, replyTo: { $ref: "#/components/schemas/ReplySource" }, repliesToMe: { const: true }, photo: { $ref: "#/components/schemas/Photo" }, video: { $ref: "#/components/schemas/Video" }, reactions: { type: "array", items: { $ref: "#/components/schemas/Reaction" } }, edited: { const: true }, covered: { type: "string", enum: ["safebot"] }, senderImage: { type: "string", format: "uri" } } };
 function validate68(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -1344,6 +1388,28 @@ function validate63(data, { instancePath = "", parentData, parentDataProperty, r
                                           } else {
                                             var valid0 = true;
                                           }
+                                          if (valid0) {
+                                            if (data.senderImage !== undefined) {
+                                              let data20 = data.senderImage;
+                                              const _errs32 = errors;
+                                              if (errors === _errs32) {
+                                                if (errors === _errs32) {
+                                                  if (typeof data20 === "string") {
+                                                    if (!formats2(data20)) {
+                                                      validate63.errors = [{ instancePath: instancePath + "/senderImage", schemaPath: "#/properties/senderImage/format", keyword: "format", params: { format: "uri" }, message: 'must match format "' + "uri" + '"' }];
+                                                      return false;
+                                                    }
+                                                  } else {
+                                                    validate63.errors = [{ instancePath: instancePath + "/senderImage", schemaPath: "#/properties/senderImage/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                                                    return false;
+                                                  }
+                                                }
+                                              }
+                                              var valid0 = _errs32 === errors;
+                                            } else {
+                                              var valid0 = true;
+                                            }
+                                          }
                                         }
                                       }
                                     }
@@ -1370,7 +1436,7 @@ function validate63(data, { instancePath = "", parentData, parentDataProperty, r
   validate63.errors = vErrors;
   return errors === 0;
 }
-validate63.evaluated = { props: { id: true, roomId: true, senderId: true, sender: true, text: true, kind: true, sentAt: true, fromMe: true, mentions: true, mentionsAll: true, mentionsMe: true, replyTo: true, repliesToMe: true, photo: true, video: true, reactions: true, edited: true, covered: true }, dynamicProps: false, dynamicItems: false };
+validate63.evaluated = { props: { id: true, roomId: true, senderId: true, sender: true, text: true, kind: true, sentAt: true, fromMe: true, mentions: true, mentionsAll: true, mentionsMe: true, replyTo: true, repliesToMe: true, photo: true, video: true, reactions: true, edited: true, covered: true, senderImage: true }, dynamicProps: false, dynamicItems: false };
 var validateAttention = validate70;
 function validate70(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
@@ -2500,7 +2566,7 @@ validate91.evaluated = { props: { ok: true }, dynamicProps: false, dynamicItems:
 var validateCursor = validate85;
 var validateReaction = validate68;
 var validateNotice = validate92;
-var schema41 = { type: "object", required: ["text", "kind", "authorId", "author", "postedAt", "source"], properties: { text: { type: "string" }, kind: { type: "string" }, authorId: { type: ["string", "null"] }, author: { type: ["string", "null"] }, postedAt: { type: ["string", "null"], format: "date-time" }, source: { type: "string", enum: ["board", "legacy"] } } };
+var schema41 = { type: "object", required: ["text", "kind", "authorId", "author", "postedAt", "source"], properties: { text: { type: "string" }, kind: { type: "string" }, authorId: { type: ["string", "null"] }, author: { type: ["string", "null"] }, postedAt: { type: ["string", "null"], format: "date-time" }, source: { type: "string", enum: ["board", "legacy"] }, truncated: { const: true }, fullText: { type: "string" }, fullTextMessageId: { type: "string" }, fullTextTruncated: { const: true }, fullTextCandidates: { type: "array", items: { type: "string" } } } };
 function validate92(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -2601,6 +2667,83 @@ function validate92(data, { instancePath = "", parentData, parentDataProperty, r
                   } else {
                     var valid0 = true;
                   }
+                  if (valid0) {
+                    if (data.truncated !== undefined) {
+                      const _errs13 = errors;
+                      if (data.truncated !== true) {
+                        validate92.errors = [{ instancePath: instancePath + "/truncated", schemaPath: "#/properties/truncated/const", keyword: "const", params: { allowedValue: true }, message: "must be equal to constant" }];
+                        return false;
+                      }
+                      var valid0 = _errs13 === errors;
+                    } else {
+                      var valid0 = true;
+                    }
+                    if (valid0) {
+                      if (data.fullText !== undefined) {
+                        const _errs14 = errors;
+                        if (typeof data.fullText !== "string") {
+                          validate92.errors = [{ instancePath: instancePath + "/fullText", schemaPath: "#/properties/fullText/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                          return false;
+                        }
+                        var valid0 = _errs14 === errors;
+                      } else {
+                        var valid0 = true;
+                      }
+                      if (valid0) {
+                        if (data.fullTextMessageId !== undefined) {
+                          const _errs16 = errors;
+                          if (typeof data.fullTextMessageId !== "string") {
+                            validate92.errors = [{ instancePath: instancePath + "/fullTextMessageId", schemaPath: "#/properties/fullTextMessageId/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                            return false;
+                          }
+                          var valid0 = _errs16 === errors;
+                        } else {
+                          var valid0 = true;
+                        }
+                        if (valid0) {
+                          if (data.fullTextTruncated !== undefined) {
+                            const _errs18 = errors;
+                            if (data.fullTextTruncated !== true) {
+                              validate92.errors = [{ instancePath: instancePath + "/fullTextTruncated", schemaPath: "#/properties/fullTextTruncated/const", keyword: "const", params: { allowedValue: true }, message: "must be equal to constant" }];
+                              return false;
+                            }
+                            var valid0 = _errs18 === errors;
+                          } else {
+                            var valid0 = true;
+                          }
+                          if (valid0) {
+                            if (data.fullTextCandidates !== undefined) {
+                              let data10 = data.fullTextCandidates;
+                              const _errs19 = errors;
+                              if (errors === _errs19) {
+                                if (Array.isArray(data10)) {
+                                  var valid1 = true;
+                                  const len0 = data10.length;
+                                  for (let i0 = 0;i0 < len0; i0++) {
+                                    const _errs21 = errors;
+                                    if (typeof data10[i0] !== "string") {
+                                      validate92.errors = [{ instancePath: instancePath + "/fullTextCandidates/" + i0, schemaPath: "#/properties/fullTextCandidates/items/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                                      return false;
+                                    }
+                                    var valid1 = _errs21 === errors;
+                                    if (!valid1) {
+                                      break;
+                                    }
+                                  }
+                                } else {
+                                  validate92.errors = [{ instancePath: instancePath + "/fullTextCandidates", schemaPath: "#/properties/fullTextCandidates/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
+                                  return false;
+                                }
+                              }
+                              var valid0 = _errs19 === errors;
+                            } else {
+                              var valid0 = true;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2615,7 +2758,7 @@ function validate92(data, { instancePath = "", parentData, parentDataProperty, r
   validate92.errors = vErrors;
   return errors === 0;
 }
-validate92.evaluated = { props: { text: true, kind: true, authorId: true, author: true, postedAt: true, source: true }, dynamicProps: false, dynamicItems: false };
+validate92.evaluated = { props: { text: true, kind: true, authorId: true, author: true, postedAt: true, source: true, truncated: true, fullText: true, fullTextMessageId: true, fullTextTruncated: true, fullTextCandidates: true }, dynamicProps: false, dynamicItems: false };
 var validateNoticeAnswer = validate93;
 function validate93(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
@@ -2678,6 +2821,11 @@ function validate93(data, { instancePath = "", parentData, parentDataProperty, r
                 props0.author = true;
                 props0.postedAt = true;
                 props0.source = true;
+                props0.truncated = true;
+                props0.fullText = true;
+                props0.fullTextMessageId = true;
+                props0.fullTextTruncated = true;
+                props0.fullTextCandidates = true;
               }
               const _errs6 = errors;
               if (data2 !== null) {

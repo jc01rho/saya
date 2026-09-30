@@ -676,6 +676,8 @@ export interface components {
             readable: boolean;
             /** @description The client's own integer type, passed through without interpretation. */
             typeCode?: number;
+            /** @description Present only when the room has a picture to draw: the pictures its icon is made of, best first. A room with a photo of its own — one a member set, or an open group chat's link picture — is that photo alone. Otherwise a room with one counterpart (1:1, open 1:1, channel) is that counterpart's profile picture, the chat with oneself is the account's own, and any other room is up to four of its active members other than the account, in the catalog's order. A chat background is not a room's picture. Addresses are HTTPS on the client's CDN (`*.kakaocdn.net`); the cores fetch nothing for them. */
+            images?: string[];
         };
         /** @description One @name, kept as the account it points at rather than as the name. The text carries only a name, and anyone can wear a name; the id is the mention. */
         Mention: {
@@ -782,6 +784,11 @@ export interface components {
              * @enum {string}
              */
             covered?: "safebot";
+            /**
+             * Format: uri
+             * @description Present only when the client holds a profile picture for the sender: the small one, HTTPS on the client's CDN (`*.kakaocdn.net`). Like `sender`, it is the picture that account carries now, not the one it had when the message was sent. The cores fetch nothing for it.
+             */
+            senderImage?: string;
         };
         /** @description The same facts the per-message keys carry, gathered once so a caller can ask "was I addressed" without walking the window. */
         Attention: {
@@ -928,6 +935,22 @@ export interface components {
             postedAt: string | null;
             /** @enum {string} */
             source: "board" | "legacy";
+            /**
+             * @description Present only when `text` stopped at the 100 characters the client keeps of a board post; the rest of the post is not on this machine.
+             * @constant
+             */
+            truncated?: true;
+            /** @description Present only when `truncated` and exactly one live text or reply message in the room begins with the whole of `text`: that message's text, as the notice it was pinned from. The post records no message id, so this is **found by its words, not by an id**, and a caller should say so. Asked only of a room whose key is already in memory; `/notice` still never opens a room. */
+            fullText?: string;
+            /** @description The id of the message `fullText` was read from. Present exactly when `fullText` is. */
+            fullTextMessageId?: string;
+            /**
+             * @description Present only beside `fullText`, when that message itself stopped at the 3,999 characters the client keeps of a long message. The rest is a file the client did not save and its CDN refuses without the client's own protocol, so `fullText` is all a core can read.
+             * @constant
+             */
+            fullTextTruncated?: true;
+            /** @description Present when two or more messages each begin with the whole of `text`: their ids, up to six, and **none is picked** — ambiguity is refused with its candidates. */
+            fullTextCandidates?: string[];
         };
         NoticeAnswer: {
             /** @constant */

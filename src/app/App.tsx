@@ -5,7 +5,7 @@ import { browserPlatform } from "../coordination/platform";
 import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
 import { Reconciler } from "../core/reconcile";
-import type { ClientStores } from "../core/stores";
+import type { ClientStores, Immutable } from "../core/stores";
 import { AttachmentsEntry } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
@@ -98,7 +98,7 @@ const APP_COPY = {
  * when none of them applies rather than filled with a guess.
  */
 function roomSubtitle(
-  room: components["schemas"]["Room"] | undefined,
+  room: Immutable<components["schemas"]["Room"]> | undefined,
 ): string | null {
   if (!room) return null;
   if (!room.readable) return COPY.unreadable;

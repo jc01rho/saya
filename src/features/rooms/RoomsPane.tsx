@@ -12,11 +12,14 @@ import {
   useState,
 } from "react";
 import { roomHash } from "../../app/routes";
+import type { components } from "../../contract/decoded";
 import type { ClientStores } from "../../core/stores";
 import { Cat, cx, RoomRow } from "../../ui";
 import { ROOMS_COPY } from "./copy";
 import styles from "./RoomsPane.module.css";
 import { type RoomFilter, useSlice, useVisibleRoomIds } from "./slices";
+
+type Room = components["schemas"]["Room"];
 
 export interface RoomsPaneProps {
   stores: ClientStores;
@@ -96,7 +99,8 @@ const RoomItem = memo(function RoomItem({
   if (!snapshot) return null;
   return (
     <RoomRow
-      room={snapshot.room}
+      // The store's rows are deep-frozen; the row only reads them.
+      room={snapshot.room as Room}
       href={href}
       active={active}
       preview={snapshot.preview}
