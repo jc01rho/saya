@@ -8,6 +8,8 @@
 
 ### 변경
 
+**계약을 `openapi.json` 0.16.0 으로 올렸습니다(kanao-cli 0.22.1, kamado-cli 0.22.0).** macOS 코어도 방 정보 읽기를 답하게 되어, `/notice`·`/attachments`·`/revisions`·`/file`, `reactions`·`edited`·`covered`, `MESSAGE_NOT_FOUND`·`FILE_EXPIRED` 에서 `x-platform` 이 빠졌습니다. 남은 플랫폼 차이는 `Room.typeCode` 와 `PERMISSION_REQUIRED` 뿐입니다. 맥에서는 공지가 늘 `source: legacy` 이고 수정 기록이 빈 목록이며, 이는 기존 빈 상태 문구가 이미 다룹니다. 생성물은 설명 문구만 바뀌었고, 고정 해시를 새 파일로 옮겼습니다.
+
 **계약을 kanao-cli 0.22.0 의 `openapi.json` 0.15.0 으로 올렸습니다.** `/notice`, `/attachments`, `/revisions`, `/file`, 메시지의 `reactions`·`edited`·`covered`, 오류 코드 `MESSAGE_NOT_FOUND`·`FILE_EXPIRED` 가 생성된 계약(`src/contract/`)에 들어왔습니다. 문서상 모두 Windows 전용이고, 화면에 쓰는 일은 아직 하지 않았습니다. `contract-generate.ts` 의 고정 해시도 새 파일로 바꿨습니다.
 
 검증: `contract:generate`·`contract:check`·`typecheck`·`lint` 통과, `bun test` 165 pass / 0 fail.

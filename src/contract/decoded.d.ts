@@ -216,7 +216,7 @@ export interface paths {
         };
         /**
          * The notice pinned in a room
-         * @description Read from the catalog, so it needs no room key and never opens a room. `notice` is null when the room has none.
+         * @description Read from the catalog, so it needs no room key and never opens a room. `notice` is null when the room has none. The macOS database has no board table, so its notice is always `source: legacy`.
          */
         get: {
             parameters: {
@@ -323,7 +323,7 @@ export interface paths {
         };
         /**
          * Every version of an edited message
-         * @description Asked only of a message that is still there: one deleted for everyone keeps its history, and reading it back would undo the deletion, so that is `MESSAGE_NOT_FOUND`.
+         * @description Asked only of a message that is still there: one deleted for everyone keeps its history, and reading it back would undo the deletion, so that is `MESSAGE_NOT_FOUND`. The macOS client keeps no earlier versions at all, so there an edited message answers with an empty list.
          */
         get: {
             parameters: {
@@ -377,7 +377,7 @@ export interface paths {
         };
         /**
          * A file message's bytes
-         * @description The copy the client saved in `Documents\카카오톡 받은 파일` when one matches by name and size; otherwise fetched from the address, and only from the client's own hosts. An expired address is `410 FILE_EXPIRED` without a request being made.
+         * @description The copy the client saved when one is still there at the recorded size — on Windows looked for by name in `Documents\카카오톡 받은 파일`, on macOS at the path the client recorded for the save; otherwise fetched from the address, and only from the client's own hosts. An expired address is `410 FILE_EXPIRED` without a request being made.
          */
         get: {
             parameters: {
