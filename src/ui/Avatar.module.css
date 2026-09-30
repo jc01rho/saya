@@ -9,11 +9,12 @@
   flex: none;
   width: var(--size);
   height: var(--size);
-  border-radius: 50%;
+  /* r4: a soft squircle, one third of the side, at every size. */
+  border-radius: calc(var(--size) / 3);
   background: var(--tone);
   color: var(--tone-ink);
   font-size: calc(var(--size) * 0.4);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
   user-select: none;
 }

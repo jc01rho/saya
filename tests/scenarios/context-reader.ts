@@ -11,7 +11,7 @@ type Context = components["schemas"]["Context"];
 
 /** DESIGN.md tokens as Chrome reports them. */
 const RULE = "rgb(78, 93, 105)";
-const BUBBLE_OTHER = "rgb(250, 246, 238)";
+const BUBBLE_OTHER = "rgb(255, 255, 255)";
 const BUBBLE_SELF = "rgb(244, 235, 218)";
 /** DESIGN.md copy, verbatim. */
 const COVERAGE = "이 기기에 저장된 범위만 표시합니다";

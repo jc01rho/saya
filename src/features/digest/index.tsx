@@ -79,9 +79,13 @@ export function DigestEntry({
         data-ui="digest-open"
         aria-haspopup="dialog"
         aria-expanded={open}
+        title={ENTRY_COPY.open}
         onClick={openSheet}
       >
-        {ENTRY_COPY.open}
+        <span className="sr-only">{ENTRY_COPY.open}</span>
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M3.5 4.5h11M3.5 9h7M3.5 13.5h9" />
+        </svg>
       </button>
       {failed ? (
         <span

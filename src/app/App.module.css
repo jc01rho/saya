@@ -10,6 +10,7 @@
   color: var(--ink);
 }
 
+.rail,
 .list,
 .thread {
   min-width: 0;
@@ -22,16 +23,37 @@
   background: var(--field-wall);
 }
 
+/*
+ * r4: under the room header, the conversation and the room's side panel sit
+ * side by side. The conversation keeps the wall and the composer as before.
+ */
+.lower {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+}
+
+.conversation {
+  display: grid;
+  flex: 1;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* r4: rail, list and conversation from 768px, the messenger arrangement. */
 @media (min-width: 768px) {
   .shell {
-    grid-template-columns: var(--list-width) minmax(0, 1fr);
+    grid-template-columns: var(--rail-width) var(--list-width) minmax(0, 1fr);
   }
 }
 
-/* Middle widths: the list narrows; the rest of that range's rules belong to the shell task. */
+/* Middle widths: the list narrows and the rail keeps its icons. */
 @media (min-width: 768px) and (max-width: 1023.98px) {
   .shell {
-    --list-width: 220px;
+    --list-width: 260px;
+    --rail-width: 72px;
   }
 }
 
@@ -49,8 +71,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-12);
-  min-height: var(--space-48);
-  padding: var(--space-12) var(--space-24);
+  min-height: 60px;
+  padding: 11px 18px;
   border-bottom: var(--rule-width) solid var(--seam);
   background: var(--field-wall);
 }
@@ -65,12 +87,17 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--space-8);
+  gap: 2px;
   margin-inline-start: auto;
 }
 
 .actions > button {
   margin-inline-start: 0;
+}
+
+/* The digest's failure sentence may follow its icon; it never pushes the icons off the header. */
+.actions > [role="status"] {
+  max-width: 24ch;
 }
 
 /* The back chevron exists only where the list is a separate view. */
@@ -106,8 +133,9 @@
 
 .title {
   overflow: hidden;
-  font-size: var(--text-title);
-  font-weight: 600;
+  font-size: var(--text-room);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: var(--leading-title);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -116,8 +144,10 @@
 /* Only members the contract carries: readable, kind, memberCount. */
 .subtitle {
   overflow: hidden;
+  margin-top: 3px;
   color: var(--ink-muted);
-  font-size: 12px;
+  font-size: 11.5px;
+  font-weight: 500;
   line-height: var(--leading-meta);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -168,14 +198,16 @@
 .notice button {
   justify-self: start;
   padding: var(--space-8) var(--space-16);
-  border: var(--rule-width) solid var(--rule);
-  background: transparent;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--fill-wall);
   color: var(--ink);
   font-size: var(--text-meta);
+  font-weight: 700;
   line-height: var(--leading-meta);
   cursor: pointer;
 }
 
 .notice button:hover {
-  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+  background: color-mix(in srgb, var(--field-wall) 84%, var(--ink));
 }

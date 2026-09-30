@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { components } from "../../contract/decoded";
 import type { HttpOutcome, JsonRequest } from "../../transport/http";
-import { Cat, formatTime, isExpired } from "../../ui";
+import { Cat, cx, formatTime, isExpired } from "../../ui";
 import { failureOf, type ReadFailure, readFailureCopy } from "../reads";
 import { FileDownload, type FileTransport } from "../reads/FileDownload";
 import reads from "../reads/reads.module.css";
@@ -275,22 +275,30 @@ function Row({
 }
 
 export interface AttachmentsSheetProps {
+  /** The id the header's toggle names in `aria-controls`. */
+  id: string;
   http: AttachmentsTransport;
   roomId: string;
   onClose: () => void;
+  className?: string | undefined;
 }
 
 /**
  * What a room's newest messages carried: photos, videos, files and links,
  * filtered by the bridge and paged back by message id. The scope line says
  * how far it looked, so an empty page is never read as an empty room.
+ *
+ * r4: a side panel beside the conversation rather than a modal over it, the
+ * way the messenger arrangement shows a room's information. Below the
+ * two-pane break the same panel covers the thread, and Escape closes it.
  */
 export default function AttachmentsSheet({
+  id,
   http,
   roomId,
   onClose,
+  className,
 }: AttachmentsSheetProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const headingId = useId();
   const [kind, setKind] = useState<AttachmentKind | null>(null);
@@ -298,9 +306,6 @@ export default function AttachmentsSheet({
   const { pages, more, retry } = useAttachmentPages(http, roomId, kind);
 
   useEffect(() => {
-    const element = dialog.current;
-    if (!element || element.open) return;
-    element.showModal();
     heading.current?.focus();
   }, []);
 
@@ -314,28 +319,35 @@ export default function AttachmentsSheet({
   const settled = pages.pages > 0;
 
   return (
-    <dialog
-      ref={dialog}
-      className={reads.sheet}
+    <aside
+      id={id}
+      className={cx(styles.panel, className)}
       aria-labelledby={headingId}
       data-ui="attachments"
-      onClose={onClose}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.stopPropagation();
+        onClose();
+      }}
     >
-      <header className={reads.head}>
-        <h2 id={headingId} ref={heading} className={reads.title} tabIndex={-1}>
+      <header className={styles.head}>
+        <h2 id={headingId} ref={heading} className={styles.title} tabIndex={-1}>
           {ATTACHMENTS_COPY.title}
         </h2>
         <button
           type="button"
-          className={`${reads.action} ${reads.close}`}
+          className={styles.close}
           data-ui="attachments-close"
-          onClick={() => dialog.current?.close()}
+          onClick={onClose}
         >
-          {ATTACHMENTS_COPY.close}
+          <span className="sr-only">{ATTACHMENTS_COPY.close}</span>
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M5 5l8 8M13 5l-8 8" />
+          </svg>
         </button>
       </header>
       <div
-        className={reads.body}
+        className={styles.body}
         data-ui="attachments-body"
         aria-busy={pages.loading !== null || undefined}
       >
@@ -438,6 +450,6 @@ export default function AttachmentsSheet({
           </button>
         ) : null}
       </div>
-    </dialog>
+    </aside>
   );
 }

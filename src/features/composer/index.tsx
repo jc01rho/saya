@@ -28,7 +28,9 @@ type Status =
 const OPEN_ROOM = true;
 const COPY = {
   input: "메시지 작성",
-  placeholder: "메시지 입력",
+  placeholder: "메시지를 입력하세요",
+  /** Enter first asks the bridge (dryRun); nothing is sent before the confirmation. */
+  hint: "Enter 확인 후 보내기 · Shift+Enter 줄바꿈",
   send: "보내기",
   empty: "빈 메시지는 보낼 수 없습니다.",
   previewing: "전송 내용을 확인하고 있습니다.",
@@ -332,17 +334,29 @@ export const Composer = memo(function Composer({
           onCompositionEnd={() => ime.end()}
           onKeyDown={onKeyDown}
         />
-        <button
-          className={styles.door}
-          data-ui="composer-send"
-          type="submit"
-          disabled={status.kind === "previewing" || status.kind === "posting"}
-        >
-          <span className="sr-only">{COPY.send}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 11.5 20.5 4l-7.5 17.5-2.2-7.3z" fill="currentColor" />
-          </svg>
-        </button>
+        <div className={styles.tools}>
+          <span className={styles.hint} aria-hidden="true">
+            {COPY.hint}
+          </span>
+          <button
+            className={styles.door}
+            data-ui="composer-send"
+            type="submit"
+            disabled={status.kind === "previewing" || status.kind === "posting"}
+          >
+            <span className="sr-only">{COPY.send}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 18.5V6M6.5 11.5 12 6l5.5 5.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </form>
   );

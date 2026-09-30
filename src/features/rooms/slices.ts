@@ -14,7 +14,25 @@ export function useSlice<K extends keyof StoreSlices>(
   return useSyncExternalStore(subscribe, read, read);
 }
 
-export type RoomFilter = "all" | "people";
+export type RoomFilter = "all" | "unread" | "people" | "group";
+
+type RoomOf = Immutable<StoreSlices[`room.${string}`]>;
+
+/**
+ * Each filter reads only members the contract carries. 안읽음 is the desktop's
+ * count (G2); 사람 is `kind: "direct"`, because there is no contacts route;
+ * 그룹 is the two group kinds the contract names, `group` and `open`. A kind
+ * the contract does not name is listed under 전체 only, never guessed into one.
+ */
+function passes(snapshot: RoomOf, filter: RoomFilter, query: string): boolean {
+  if (!snapshot) return false;
+  const { room } = snapshot;
+  if (filter === "unread" && room.unread <= 0) return false;
+  if (filter === "people" && room.kind !== "direct") return false;
+  if (filter === "group" && room.kind !== "group" && room.kind !== "open")
+    return false;
+  return query === "" || room.title.toLocaleLowerCase("ko-KR").includes(query);
+}
 
 function sameIds(left: readonly string[], right: readonly string[]) {
   return (
@@ -24,19 +42,25 @@ function sameIds(left: readonly string[], right: readonly string[]) {
 }
 
 /**
- * The catalog order narrowed by the filter. "people" is the rooms whose kind is
- * "direct": the contract has no contacts route, so this is the only honest list.
- * The derived snapshot keeps its identity while the visible ids are unchanged,
- * so preview and unread updates on rows never rerender the list itself.
+ * The catalog order narrowed by the filter and by the search words, which are
+ * matched against the titles this client already holds and nothing else: the
+ * contract has no search route. The derived snapshot keeps its identity while
+ * the visible ids are unchanged, so preview and unread updates on rows never
+ * rerender the list itself.
  */
-function createVisibleRoomIds(stores: ClientStores, filter: RoomFilter) {
+function createVisibleRoomIds(
+  stores: ClientStores,
+  filter: RoomFilter,
+  query: string,
+) {
   let cached: readonly string[] | null = null;
   let dirty = true;
+  const narrowed = filter !== "all" || query !== "";
   const compute = (): readonly string[] => {
     const order = stores.getSnapshot("rooms.order");
-    if (filter === "all") return order;
-    return order.filter(
-      (id) => stores.getSnapshot(`room.${id}`)?.room.kind === "direct",
+    if (!narrowed) return order;
+    return order.filter((id) =>
+      passes(stores.getSnapshot(`room.${id}`), filter, query),
     );
   };
   const getSnapshot = (): readonly string[] => {
@@ -55,12 +79,11 @@ function createVisibleRoomIds(stores: ClientStores, filter: RoomFilter) {
     };
     const watchRooms = () => {
       for (const unsubscribe of roomUnsubscribes) unsubscribe();
-      roomUnsubscribes =
-        filter === "all"
-          ? []
-          : stores
-              .getSnapshot("rooms.order")
-              .map((id) => stores.subscribe(`room.${id}`, changed));
+      roomUnsubscribes = !narrowed
+        ? []
+        : stores
+            .getSnapshot("rooms.order")
+            .map((id) => stores.subscribe(`room.${id}`, changed));
     };
     const unsubscribeOrder = stores.subscribe("rooms.order", () => {
       watchRooms();
@@ -80,10 +103,12 @@ function createVisibleRoomIds(stores: ClientStores, filter: RoomFilter) {
 export function useVisibleRoomIds(
   stores: ClientStores,
   filter: RoomFilter,
+  query = "",
 ): readonly string[] {
+  const words = query.trim().toLocaleLowerCase("ko-KR");
   const source = useMemo(
-    () => createVisibleRoomIds(stores, filter),
-    [stores, filter],
+    () => createVisibleRoomIds(stores, filter, words),
+    [stores, filter, words],
   );
   return useSyncExternalStore(
     source.subscribe,

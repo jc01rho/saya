@@ -1,4 +1,11 @@
-import { type ReactNode, useEffect, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import type { components } from "../contract/decoded";
 import { Coordinator } from "../coordination/coordinator";
 import { browserPlatform } from "../coordination/platform";
@@ -6,16 +13,18 @@ import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
 import { Reconciler } from "../core/reconcile";
 import type { ClientStores, Immutable } from "../core/stores";
-import { AttachmentsEntry } from "../features/attachments";
+import { AttachmentsPanel, AttachmentsToggle } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
 import { DigestEntry } from "../features/digest";
+import icon from "../features/digest/DigestEntry.module.css";
 import { NoticeBar } from "../features/notice";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
 import { Avatar, Cat, COPY } from "../ui";
 import styles from "./App.module.css";
+import { Rail } from "./Rail";
 import { ROOMS_HASH, useRoute } from "./routes";
 
 /** Everything a tab holds in memory. Nothing here touches disk. */
@@ -141,6 +150,17 @@ function RoomOutlet({
 }) {
   const snapshot = useSlice(stores, `room.${roomId}`);
   const subtitle = roomSubtitle(snapshot?.room);
+  // The side panel stays open across rooms, as a messenger's info pane does;
+  // what it shows is keyed by the room inside it.
+  const [info, setInfo] = useState(false);
+  const panelId = useId();
+  const toggle = useRef<HTMLDivElement>(null);
+  const closeInfo = useCallback(() => {
+    setInfo(false);
+    toggle.current
+      ?.querySelector<HTMLButtonElement>('[data-ui="attachments-open"]')
+      ?.focus();
+  }, []);
   return (
     <>
       <div className={styles.top}>
@@ -165,20 +185,37 @@ function RoomOutlet({
             </h1>
             {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
           </div>
-          <div className={styles.actions}>
-            <AttachmentsEntry key={roomId} http={http} roomId={roomId} />
+          <div className={styles.actions} ref={toggle}>
             <DigestEntry stores={stores} http={http} roomId={roomId} />
+            <AttachmentsToggle
+              className={icon.open}
+              open={info}
+              controls={panelId}
+              onToggle={() => setInfo((open) => !open)}
+            />
           </div>
         </header>
         <NoticeBar key={roomId} http={http} roomId={roomId} />
       </div>
-      <ThreadPane
-        stores={stores}
-        windows={windows}
-        roomId={roomId}
-        http={http}
-      />
-      <Composer http={http} roomId={roomId} />
+      <div className={styles.lower}>
+        <div className={styles.conversation}>
+          <ThreadPane
+            stores={stores}
+            windows={windows}
+            roomId={roomId}
+            http={http}
+          />
+          <Composer http={http} roomId={roomId} />
+        </div>
+        {info ? (
+          <AttachmentsPanel
+            id={panelId}
+            http={http}
+            roomId={roomId}
+            onClose={closeInfo}
+          />
+        ) : null}
+      </div>
     </>
   );
 }
@@ -247,6 +284,7 @@ export function App({ session }: { session?: Session }) {
 
   return (
     <div className={styles.shell} data-ui="app" data-route={route.kind}>
+      <Rail className={styles.rail} stores={own.stores} />
       <RoomsPane
         className={styles.list}
         stores={own.stores}

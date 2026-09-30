@@ -2,6 +2,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -64,10 +65,21 @@ function useToday(): Date {
  * One row subscribes to its own entity, so a change to another message never
  * reaches it; memo keeps a window update from rerendering unchanged rows.
  */
+/** The local calendar day of a timestamp, or null when the wire gave none. */
+function dayOf(sentAt: string | null | undefined): string | null {
+  if (!sentAt) return null;
+  const date = new Date(sentAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+const DAY_FORMAT = new Intl.DateTimeFormat("ko-KR", { dateStyle: "full" });
+
 const MessageRow = memo(function MessageRow({
   stores,
   roomId,
   id,
+  prevId,
   now,
   gapBefore,
   http,
@@ -76,13 +88,27 @@ const MessageRow = memo(function MessageRow({
   stores: ClientStores;
   roomId: string;
   id: string;
+  /** The turn drawn above this one, which decides the day pill and the run. */
+  prevId: string | null;
   now: Date;
   gapBefore: boolean;
   http: FileTransport | undefined;
   onRevisions: ((messageId: string) => void) | undefined;
 }) {
   const message = useSlice(stores, `message.${roomId}.${id}`);
+  // An id that is never a message key reads as absent, so the first turn has no previous.
+  const prev = useSlice(stores, `message.${roomId}.${prevId ?? ""}`);
   const openRevisions = useCallback(() => onRevisions?.(id), [onRevisions, id]);
+  const day = dayOf(message?.sentAt);
+  // A day is announced only when the wire dated this turn and it differs from the last one.
+  const newDay = day !== null && day !== dayOf(prev?.sentAt);
+  const continued =
+    !gapBefore &&
+    !newDay &&
+    message !== undefined &&
+    prev !== undefined &&
+    prev.fromMe === message.fromMe &&
+    prev.sender === message.sender;
   return (
     <>
       {gapBefore ? (
@@ -90,11 +116,21 @@ const MessageRow = memo(function MessageRow({
           {THREAD_COPY.discontinuity}
         </p>
       ) : null}
+      {newDay && message?.sentAt ? (
+        <p className={styles.day} data-ui="thread-day">
+          <span>
+            <time dateTime={message.sentAt}>
+              {DAY_FORMAT.format(new Date(message.sentAt))}
+            </time>
+          </span>
+        </p>
+      ) : null}
       {message ? (
         // The store's rows are deep-frozen; the bubble only reads them.
         <MessageBubble
           message={message as Message}
           now={now}
+          continued={continued}
           onRevisions={onRevisions ? openRevisions : undefined}
           actions={
             // Message carries no file member; `/file` answers MESSAGE_NOT_FOUND for any other kind.
@@ -215,6 +251,14 @@ export function ThreadPane({
   };
   const retry = () => windows.retry(roomId);
   const gaps = new Set(view.discontinuities);
+  const previous = useMemo(() => {
+    const map = new Map<string, string>();
+    view.order.forEach((id, index) => {
+      const before = view.order[index - 1];
+      if (before !== undefined) map.set(id, before);
+    });
+    return map;
+  }, [view.order]);
 
   return (
     <section
@@ -268,6 +312,7 @@ export function ThreadPane({
               stores={stores}
               roomId={roomId}
               id={id}
+              prevId={previous.get(id) ?? null}
               now={now}
               gapBefore={gaps.has(id)}
               http={http}

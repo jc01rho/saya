@@ -1,3 +1,110 @@
+/*
+ * r4: the room's side panel, beside the conversation under the room header.
+ * It is the list's cream field, so it reads as a pane of its own; its body is
+ * the one scroll owner inside it.
+ */
+.panel,
+.slot {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: var(--panel-width);
+  min-height: 0;
+  border-inline-start: var(--rule-width) solid var(--seam);
+  background: var(--field-list);
+  color: var(--ink);
+}
+
+@media (max-width: 1023.98px) {
+  .panel,
+  .slot {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: auto;
+    border: 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 20px 14px var(--space-12) 18px;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: var(--leading-title);
+}
+
+.title:focus-visible {
+  outline-offset: 2px;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.close:hover {
+  background: var(--fill-list);
+  color: var(--ink);
+}
+
+.body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 0;
+  padding: 0 18px 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.unavailable {
+  padding: 18px;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.retry {
+  justify-self: start;
+  margin: 0 18px;
+  padding: var(--space-8) 15px;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--fill-list);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* Kind filters: peers in one row that wraps (stylegallery: tab-strip, wrap-row). */
 .kinds {
   display: flex;
@@ -9,10 +116,19 @@
   border: 0;
 }
 
-/* As many square columns as fit, never narrower than a thumb (stylegallery: ram-grid). */
+/* The panel's filters sit on the cream field, so they take its fill. */
+.kinds > button:not([aria-pressed="true"]) {
+  background: var(--fill-list);
+}
+
+.kinds > button:not([aria-pressed="true"]):hover {
+  background: var(--hover-list);
+}
+
+/* Three square columns in the panel, more where it covers the thread (stylegallery: ram-grid). */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(96px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(80px, 100%), 1fr));
   gap: var(--space-4);
 }
 
@@ -28,8 +144,8 @@
   aspect-ratio: 1 / 1;
   width: 100%;
   overflow: clip;
-  border-radius: 6px;
-  background: var(--bubble-other);
+  border-radius: var(--radius-tile);
+  background: var(--fill-list);
   color: var(--ink-muted);
 }
 
@@ -70,23 +186,27 @@
 /* Files and links: a label column beside what it is and who sent it (stylegallery: media-object). */
 .rows {
   display: grid;
+  gap: 2px;
 }
 
+/* r4: rows carry no rule; each is its own rounded field on hover. */
 .row {
   display: grid;
   grid-template-columns: 4ch minmax(0, 1fr);
-  gap: var(--space-12);
-  padding-block: var(--space-12);
+  gap: 9px;
+  padding: var(--space-8);
+  border-radius: var(--radius-tile);
   min-width: 0;
 }
 
-.row + .row {
-  border-block-start: var(--rule-width) solid var(--seam);
+.row:hover {
+  background: var(--hover-list);
 }
 
 .kind {
   color: var(--ink-muted);
-  font-size: var(--text-meta);
+  font-size: 11px;
+  font-weight: 700;
   line-height: var(--leading-meta);
 }
 
@@ -100,7 +220,8 @@
 .name,
 .link {
   max-width: 100%;
-  font-size: var(--text-body);
+  font-size: 12px;
+  font-weight: 600;
   line-height: var(--leading-title);
   overflow-wrap: anywhere;
 }

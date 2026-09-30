@@ -79,7 +79,8 @@ export function VirtualThreadTurns({
     getItemKey: (index) => rendered.ids[index] ?? `missing-${index}`,
     estimateSize: () => 140,
     overscan: 6,
-    gap: 16,
+    // The same 2px the semantic list keeps between turns (r4).
+    gap: 2,
     scrollMargin: margin,
     measureElement: (element) => {
       controller.current?.request();

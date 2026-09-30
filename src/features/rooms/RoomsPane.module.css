@@ -42,6 +42,7 @@
   overflow: hidden;
 }
 
+.head,
 .headInner,
 .footInner,
 .status,
@@ -49,60 +50,145 @@
   background: var(--field-list);
 }
 
+/* r4: the heading over a filled search field, then the filter pills. */
 .headInner {
+  display: grid;
+  gap: 14px;
+  padding: 20px 18px var(--space-12);
+}
+
+.headTop {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-16);
-  min-height: var(--space-48);
-  padding: 0 var(--space-16);
+  gap: var(--space-8);
+  min-width: 0;
 }
 
 .brand {
   overflow: hidden;
-  font-size: var(--text-title);
-  font-weight: 600;
-  line-height: var(--leading-title);
+  font-size: var(--text-heading);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+/* The mark stands in for the rail below 768px, where the rail is not drawn. */
+.mark {
+  display: none;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--field-list);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@media (max-width: 767.98px) {
+  .mark {
+    display: inline-grid;
+  }
+
+  .search {
+    height: var(--touch-min);
+  }
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-field);
+  background: var(--fill-list);
+  color: var(--ink-muted);
+}
+
+.search:focus-within {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.search svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.search input::placeholder {
+  color: var(--ink-muted);
+}
+
+.search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
 .filter {
   display: flex;
-  flex: none;
-  gap: var(--space-8);
+  flex-wrap: wrap;
+  gap: 6px;
   min-width: 0;
   margin: 0;
-  padding: 0;
+  padding: 0 18px var(--space-12);
   border: 0;
 }
 
+/* Filter pills: filled, borderless. */
 .chip {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--space-48);
-  height: var(--touch-min);
-  padding: 0 var(--space-4);
-  border-bottom: var(--rule-width) solid transparent;
+  padding: 7px 13px;
+  border-radius: var(--radius-badge);
+  background: var(--fill-list);
   color: var(--ink-muted);
-  font-size: var(--text-meta);
-  line-height: var(--leading-meta);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
   user-select: none;
 }
 
-/* Hover changes background tone only, never layout. */
+/* Hover changes background tone only, never layout. No fade: a half-way ink pill is illegible. */
 .chip:hover {
-  background: color-mix(in srgb, var(--field-list) 94%, var(--ink));
+  background: var(--hover-list);
+  color: var(--ink);
 }
 
-/* Selected: weight and a rule together, never colour alone. */
+/* Selected: the ink field and full ink, never colour alone. */
 .chip:has(> input:checked) {
-  color: var(--ink);
-  font-weight: 600;
-  border-bottom-color: var(--rule);
+  background: var(--ink);
+  color: var(--field-list);
+}
+
+@media (max-width: 767.98px) {
+  .chip {
+    min-height: var(--touch-min);
+    padding-inline: var(--space-16);
+  }
 }
 
 /* The head clips overflow, so the ring sits inside the chip like a row's does. */

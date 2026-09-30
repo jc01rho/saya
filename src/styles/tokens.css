@@ -8,7 +8,8 @@
 
   /* Fields */
   --field-wall: #cbdde9;
-  --field-list: #efe7d9;
+  /* r4.1: the list is white; the cream that was its field is now its hover. */
+  --field-list: #ffffff;
   --field-ground: #e3d7c0;
 
   /* Ink */
@@ -17,7 +18,7 @@
   --rule: #4e5d69;
 
   /* Bubbles: flat, tail-less, unoutlined */
-  --bubble-other: #faf6ee;
+  --bubble-other: #ffffff;
   --bubble-self: #f4ebda;
 
   /* The one accent: the send door and nothing else. Fixed in both themes. */
@@ -45,6 +46,33 @@
   --radius-door: 0px;
 
   /*
+   * r4 form, taken from the messenger arrangement the owner chose (GOYO):
+   * borderless surfaces, filled fields, soft squircles. Only shapes and weights
+   * come from there; every colour below is mixed from the saya fields and ink.
+   */
+  --radius-row: 14px;
+  --radius-field: 12px;
+  --radius-talk: 18px;
+  --radius-tail: 4px;
+  --radius-box: 18px;
+  --radius-tile: 10px;
+  /*
+   * On the white list the states are one cream family, deepening with the
+   * state: fill (search, pills) < hover < the current row.
+   */
+  --hover-list: #efe7d9;
+  --fill-list: color-mix(in srgb, var(--hover-list) 60%, var(--field-list));
+  --active-list: #e3d7c0;
+  --fill-wall: color-mix(in srgb, var(--field-wall) 90%, var(--ink));
+  --hover-wall: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+  --field-input: #ffffff;
+  --rail-width: 84px;
+  --panel-width: 300px;
+  /* r4.3: one step smaller across the board, on the owner's call. */
+  --text-heading: 19px;
+  --text-room: 15px;
+
+  /*
    * Seam: the line where two regions meet. The fields on either side already
    * differ, so the seam only has to settle the edge — a full-strength rule
    * there reads as a black bar drawn across the screen.
@@ -67,17 +95,18 @@
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
 
   /* Type */
+  /* The messenger arrangement's stack, as it ships it. */
   --font-sans:
-    "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic",
-    system-ui, sans-serif;
-  --text-body: 15px;
+    "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo",
+    "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+  --text-body: 14px;
   --leading-body: 1.6;
-  --text-title: 15px;
+  --text-title: 14px;
   --leading-title: 1.4;
-  --text-meta: 13px;
+  --text-meta: 12px;
   --leading-meta: 1.45;
-  --text-badge: 12px;
-  --text-door: 15px;
+  --text-badge: 11px;
+  --text-door: 14px;
 
   /* Component geometry */
   --measure: 62ch;
@@ -87,7 +116,7 @@
   --door-inset: 6px;
   --touch-min: 44px;
   --doorway-gap: 24px;
-  --list-width: clamp(240px, 25%, 320px);
+  --list-width: clamp(280px, 26%, 340px);
   --ground-cap: 40dvh;
   --wall-min: 30dvh;
   --cat-height: 24px;
@@ -107,6 +136,12 @@
 
   --bubble-other: #493630;
   --bubble-self: #57402f;
+  --field-input: #493630;
+
+  /* The dark list keeps its warm field, so its states stay mixes of it. */
+  --hover-list: color-mix(in srgb, var(--field-list) 95%, var(--ink));
+  --fill-list: color-mix(in srgb, var(--field-list) 91%, var(--ink));
+  --active-list: color-mix(in srgb, var(--field-list) 84%, var(--ink));
 
   /* The warm dark fields sit closer together, so the seam needs a little more. */
   --seam: color-mix(in srgb, var(--rule) 30%, transparent);

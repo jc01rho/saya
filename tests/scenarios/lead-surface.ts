@@ -22,7 +22,9 @@ export const scenario: Scenario = {
       page.on("request", onRequest);
 
       await page.goto(`${url}/#/rooms`, { waitUntil: "load" });
-      await page.waitForSelector("nav a", { timeout: 15_000 });
+      await page.waitForSelector('nav[data-ui="rooms-pane"] a', {
+        timeout: 15_000,
+      });
       await screenshot(`lead-${label}-rooms`);
 
       // 1. The unreadable room must be LISTED, not hidden. It no longer states

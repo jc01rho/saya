@@ -1,26 +1,46 @@
-/* The header's quiet control: rule-outlined, transparent, pushed to the pane's right edge. */
+/*
+ * r4: a header icon — transparent until hovered, then a filled rounded field.
+ * The word stays in the accessible name and the tooltip.
+ */
 .open {
+  display: grid;
+  place-items: center;
   flex: none;
-  margin-inline-start: auto;
-  min-height: var(--space-32);
-  padding: var(--space-4) var(--space-16);
-  border: var(--rule-width) solid var(--rule);
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-field);
   background: transparent;
-  color: var(--ink);
-  font-size: var(--text-meta);
-  line-height: var(--leading-meta);
+  color: var(--ink-muted);
   cursor: pointer;
+  transition:
+    background-color var(--dur-fade) var(--ease),
+    color var(--dur-fade) var(--ease);
+}
+
+.open svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* Hover changes background tone only, never layout. */
-.open:hover {
-  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+.open:hover,
+.open[aria-expanded="true"] {
+  background: var(--fill-wall);
+  color: var(--ink);
 }
 
 /* Touch targets grow below 768px. */
 @media (max-width: 767.98px) {
   .open {
-    min-height: var(--touch-min);
+    width: var(--touch-min);
+    height: var(--touch-min);
   }
 }
 

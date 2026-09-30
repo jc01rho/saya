@@ -76,6 +76,63 @@ export const scenario: Scenario = {
     if (seen.files !== 1) fail(`file controls: ${seen.files}`);
     await shot("room-extras-1440x900");
 
+    // The whole notice opens in a sheet; one taller than the screen scrolls there.
+    const noticeSheet = await domBarrier(
+      page,
+      'dialog[data-ui="notice-dialog"][open]',
+    );
+    await page.locator('[data-ui="notice"]').click();
+    await noticeSheet.wait();
+    // Scrolled the way a person does, with the wheel over the text.
+    const noticeBody = page
+      .locator('dialog[data-ui="notice-dialog"] > div')
+      .last();
+    const box = await noticeBody.boundingBox();
+    if (box) {
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.wheel(0, 600);
+    }
+    const scrolledTo = await domBarrier(
+      page,
+      'dialog[data-ui="notice-dialog"][data-scrolled="true"]',
+    );
+    await page.evaluate(() => {
+      const dialog = document.querySelector<HTMLElement>(
+        'dialog[data-ui="notice-dialog"]',
+      );
+      const body = dialog?.children[1] as HTMLElement | undefined;
+      const mark = () => {
+        if (dialog && body && body.scrollTop > 0)
+          dialog.dataset.scrolled = "true";
+      };
+      mark();
+      body?.addEventListener("scroll", mark);
+    });
+    const wheeled = await scrolledTo.wait().then(
+      () => true,
+      () => false,
+    );
+    const noticeFit = await page.evaluate(() => {
+      const dialog = document.querySelector<HTMLElement>(
+        'dialog[data-ui="notice-dialog"]',
+      );
+      const body = dialog?.children[1] as HTMLElement | undefined;
+      if (!dialog || !body) return null;
+      return {
+        inside: dialog.getBoundingClientRect().bottom <= innerHeight,
+        overflows:
+          body.scrollHeight > body.clientHeight ||
+          dialog.scrollHeight > dialog.clientHeight,
+        overflowY: getComputedStyle(body).overflowY,
+      };
+    });
+    log("notice-sheet", noticeFit ?? {});
+    if (!noticeFit?.inside) fail("the notice sheet runs past the screen");
+    if (!noticeFit?.overflows || !wheeled)
+      fail("a long notice does not scroll inside its sheet");
+    await shot("room-extras-notice");
+    await page.keyboard.press("Escape");
+
     // 수정됨 → the versions, oldest first.
     const revisions = answered(page, "/revisions");
     const list = await domBarrier(page, '[data-ui="revisions-list"] li');
@@ -105,11 +162,11 @@ export const scenario: Scenario = {
     if (got.suggestedFilename() !== "가상 관측 보고서.txt")
       fail(`downloaded as ${got.suggestedFilename()}`);
 
-    // 모아보기, then only files.
+    // 모아보기 opens the room's side panel (r4), then only files.
     const first = answered(page, "/attachments");
     const sheet = await domBarrier(
       page,
-      'dialog[data-ui="attachments"][open] [data-ui="attachments-scope"]',
+      'aside[data-ui="attachments"] [data-ui="attachments-scope"]',
     );
     await page.locator('[data-ui="attachments-open"]').click();
     await first;
@@ -136,7 +193,21 @@ export const scenario: Scenario = {
 
     await page.setViewportSize(MOBILE);
     await shot("room-extras-attachments-390x844");
+    // Escape closes the panel from inside it and hands focus back to its toggle.
+    const closed = await domBarrier(
+      page,
+      '[data-ui="attachments-open"][aria-expanded="false"]',
+    );
     await page.keyboard.press("Escape");
+    await closed.wait();
+    if (
+      !(await page.evaluate(
+        () =>
+          document.activeElement?.getAttribute("data-ui") ===
+          "attachments-open",
+      ))
+    )
+      fail("closing the panel did not return focus to its toggle");
     const overflow = await page.evaluate(
       () =>
         document.documentElement.scrollWidth >

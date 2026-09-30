@@ -30,9 +30,11 @@ export interface RoomsPaneProps {
   className?: string | undefined;
 }
 
-const FILTERS: { value: RoomFilter; label: string }[] = [
-  { value: "all", label: ROOMS_COPY.all },
-  { value: "people", label: ROOMS_COPY.people },
+const FILTERS: { value: RoomFilter; label: string; empty: string }[] = [
+  { value: "all", label: ROOMS_COPY.all, empty: ROOMS_COPY.emptyAll },
+  { value: "unread", label: ROOMS_COPY.unread, empty: ROOMS_COPY.emptyUnread },
+  { value: "people", label: ROOMS_COPY.people, empty: ROOMS_COPY.emptyPeople },
+  { value: "group", label: ROOMS_COPY.group, empty: ROOMS_COPY.emptyGroup },
 ];
 
 /** Time labels depend on the day only, so the list ticks once, at local midnight. */
@@ -122,8 +124,9 @@ export function RoomsPane({
   className,
 }: RoomsPaneProps) {
   const [filter, setFilter] = useState<RoomFilter>("all");
+  const [query, setQuery] = useState("");
   const [focusedRoomId, setFocusedRoomId] = useState<string | null>(null);
-  const ids = useVisibleRoomIds(stores, filter);
+  const ids = useVisibleRoomIds(stores, filter, query);
   const connection = useSlice(stores, "connection");
   const now = useToday();
   const group = useId();
@@ -221,33 +224,59 @@ export function RoomsPane({
     >
       <div className={styles.head}>
         <div className={styles.headInner}>
-          <Brand className={styles.brand}>
-            <span lang="ja">{ROOMS_COPY.brandMark}</span>{" "}
-            {ROOMS_COPY.brandLatin}
-          </Brand>
-          <fieldset className={styles.filter}>
-            <legend className="sr-only">{ROOMS_COPY.filter}</legend>
-            {FILTERS.map(({ value, label }) => (
-              <label key={value} className={styles.chip}>
-                <input
-                  className="sr-only"
-                  type="radio"
-                  name={group}
-                  value={value}
-                  checked={filter === value}
-                  onChange={() => setFilter(value)}
-                />
-                {label}
-              </label>
-            ))}
-          </fieldset>
+          <div className={styles.headTop}>
+            {/* The rail carries the mark from 768px; below it the list does. */}
+            <span className={styles.mark} lang="ja" aria-hidden="true">
+              {[...ROOMS_COPY.brandMark][0]}
+            </span>
+            <Brand className={styles.brand}>
+              {ROOMS_COPY.heading}
+              <span className="sr-only">
+                {" "}
+                · <span lang="ja">{ROOMS_COPY.brandMark}</span>{" "}
+                {ROOMS_COPY.brandLatin}
+              </span>
+            </Brand>
+          </div>
+          <div className={styles.search}>
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="6.75" cy="6.75" r="4.75" />
+              <path d="M10.25 10.25 13.5 13.5" />
+            </svg>
+            <input
+              aria-label={ROOMS_COPY.search}
+              type="search"
+              data-ui="room-search"
+              placeholder={ROOMS_COPY.searchPlaceholder}
+              value={query}
+              onChange={(event) => setQuery(event.currentTarget.value)}
+            />
+          </div>
         </div>
+        <fieldset className={styles.filter}>
+          <legend className="sr-only">{ROOMS_COPY.filter}</legend>
+          {FILTERS.map(({ value, label }) => (
+            <label key={value} className={styles.chip}>
+              <input
+                className="sr-only"
+                type="radio"
+                name={group}
+                value={value}
+                checked={filter === value}
+                onChange={() => setFilter(value)}
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
       </div>
       <div className={styles.scroller} data-ui="room-scroller">
         {loading ? <p className={styles.status}>{ROOMS_COPY.loading}</p> : null}
         {empty ? (
           <p className={styles.status}>
-            {filter === "people" ? ROOMS_COPY.emptyPeople : ROOMS_COPY.emptyAll}
+            {query.trim()
+              ? ROOMS_COPY.emptySearch
+              : FILTERS.find((option) => option.value === filter)?.empty}
           </p>
         ) : null}
         <ul

@@ -4,17 +4,20 @@
  * beyond the tokens, no shadow, no radius on the sheet.
  */
 
-/* A quiet control: rule-outlined, transparent, hugging its label. Only the send door is coloured. */
+/* r4: a quiet control is a filled pill with no rule. Only the send door is coloured. */
 .action {
   flex: none;
   min-height: var(--space-32);
-  padding: var(--space-4) var(--space-16);
-  border: var(--rule-width) solid var(--rule);
-  background: transparent;
+  padding: var(--space-4) 14px;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--fill-wall);
   color: var(--ink);
   font-size: var(--text-meta);
+  font-weight: 700;
   line-height: var(--leading-meta);
   cursor: pointer;
+  transition: background-color var(--dur-fade) var(--ease);
 }
 
 .action[aria-disabled="true"] {
@@ -23,9 +26,10 @@
 
 /* Hover changes background tone only, never layout. */
 .action:hover {
-  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+  background: color-mix(in srgb, var(--field-wall) 84%, var(--ink));
 }
 
+/* Pressed: the ink field and weight, never colour alone. */
 .action[aria-pressed="true"] {
   background: var(--ink);
   color: var(--field-wall);
@@ -53,7 +57,8 @@
   justify-items: start;
   gap: var(--space-8);
   padding: var(--space-12) var(--space-16);
-  border: var(--rule-width) solid var(--rule);
+  border-radius: var(--radius-field);
+  background: var(--fill-wall);
   color: var(--ink);
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
@@ -65,18 +70,28 @@
 }
 
 /* The sheet: the digest's modal surface, reused for every 0.15.0 read. */
+/*
+ * A long notice was clipped with no way down: the sheet stops at the screen's
+ * height, but its body was never handed that height, so the body's own scroll
+ * never engaged. The body now shrinks to what is left in a column, and the
+ * sheet scrolls too, under a sticky head — so whichever box ends up holding
+ * the height, the text can be reached.
+ */
 .sheet[open] {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   width: min(100% - var(--space-32), calc(var(--measure) + var(--space-48)));
   max-width: none;
   max-height: calc(100dvh - 2 * var(--space-32));
   margin: auto;
   padding: 0;
-  border: var(--rule-width) solid var(--rule);
+  border: 0;
+  border-radius: 20px;
   background: var(--field-wall);
   color: var(--ink);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sheet::backdrop {
@@ -90,16 +105,22 @@
     max-height: none;
     margin: 0;
     border: 0;
+    border-radius: 0;
   }
 }
 
 .head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--space-16);
   min-height: var(--space-48);
-  padding: var(--space-12) var(--space-24);
-  border-block-end: var(--rule-width) solid var(--rule);
+  padding: var(--space-16) var(--space-24) var(--space-12);
+  border-block-end: var(--rule-width) solid var(--seam);
+  background: var(--field-wall);
 }
 
 .heading {
@@ -111,8 +132,9 @@
 }
 
 .title {
-  font-size: var(--text-title);
-  font-weight: 600;
+  font-size: var(--text-room);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: var(--leading-title);
 }
 
@@ -123,6 +145,7 @@
 /* The sheet's one scroll owner. */
 .body {
   display: grid;
+  flex: 1 1 auto;
   align-content: start;
   gap: var(--space-16);
   min-height: 0;

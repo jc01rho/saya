@@ -1,8 +1,16 @@
+/*
+ * r4, the messenger arrangement: turns span the wall, a run by one speaker
+ * sits tight, and a new speaker opens a little space above.
+ */
 .turn {
   display: grid;
   row-gap: var(--space-4);
   width: 100%;
-  max-width: var(--measure);
+  margin-top: 10px;
+}
+
+.continued {
+  margin-top: 0;
 }
 
 .other {
@@ -11,86 +19,97 @@
 
 .self {
   justify-items: end;
-  margin-inline-start: auto;
 }
 
-/*
- * Avatar beside the bubble, both sitting on the same baseline foot.
- *
- * A turn is capped at the golden section of the column, so a long message
- * leaves the reciprocal share as visible margin and never reads as the whole
- * wall. Below the two-pane break the column is already narrow, so the cap
- * relaxes rather than squeezing Hangul into a ribbon.
- */
+/* Monogram beside the column, both on the same top edge. */
 .row {
   display: flex;
-  align-items: flex-end;
-  gap: var(--space-8);
-  max-width: 61.8%;
+  align-items: flex-start;
+  gap: 11px;
+  max-width: 78%;
   min-width: 0;
 }
 
 @media (max-width: 767.98px) {
   .row {
-    max-width: 85%;
+    max-width: 88%;
   }
 }
 
-.self .row {
+/* Keeps a continued turn's bubble on the same edge as the run's first. */
+.gap {
+  flex: none;
+  width: 34px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.self .column {
+  align-items: flex-end;
+}
+
+/* The bubble and its stamp on one line; the stamp keeps the bubble's foot. */
+.line {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.self .line {
   flex-direction: row-reverse;
 }
 
+/* Long Hangul never spans the pane: the bubble keeps the reading measure. */
 .bubble {
   position: relative;
   min-width: 0;
-  max-width: 100%;
-  padding: var(--space-8) var(--space-12);
-  border-radius: 14px;
+  max-width: var(--measure);
+  padding: 9px 13px;
+  border-radius: var(--radius-talk) var(--radius-talk) var(--radius-talk)
+    var(--radius-tail);
   background: var(--bubble-other);
   color: var(--ink);
 }
 
 .self .bubble {
+  border-radius: var(--radius-talk) var(--radius-talk) var(--radius-tail)
+    var(--radius-talk);
   background: var(--bubble-self);
-  border-bottom-right-radius: 4px;
 }
 
-.other .bubble {
-  border-bottom-left-radius: 4px;
-}
-
-/* Speaker name and the addressed-me chips, above the body inside the bubble. */
+/* Speaker name and the addressed-me chips, above the bubble. */
 .meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-8);
-  margin-bottom: 2px;
+  gap: 5px var(--space-8);
+  margin: 0 0 5px 4px;
   color: var(--ink-muted);
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
 }
 
 .speaker {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--ink);
 }
 
-/*
- * The stamp rides the last line: it floats to the trailing edge and reserves
- * its own width there, so a long final word wraps around it instead of
- * colliding with it.
- */
+/* Outside the bubble at its foot: 수정됨, then the time. */
 .stamp {
-  float: inline-end;
   display: inline-flex;
+  flex: none;
   align-items: baseline;
   gap: var(--space-4);
-  margin-block-start: var(--space-8);
-  margin-inline-start: var(--space-12);
+  padding-bottom: 2px;
   color: var(--ink-muted);
   font-size: 11px;
+  font-weight: 500;
   line-height: 1;
   white-space: nowrap;
 }
@@ -143,6 +162,8 @@ button.edited {
 
 .text {
   font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: -0.025em;
   line-height: var(--leading-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -168,6 +189,11 @@ button.edited {
 
 .self .footer {
   justify-content: flex-end;
+}
+
+/* Under the bubble, not under the monogram. */
+.other .footer {
+  padding-inline-start: 45px;
 }
 
 .state {

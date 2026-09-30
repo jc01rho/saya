@@ -11,12 +11,12 @@ import { ROOT } from "../harness/runner";
  */
 export const LIGHT = {
   "--field-wall": "#CBDDE9",
-  "--field-list": "#EFE7D9",
+  "--field-list": "#FFFFFF",
   "--field-ground": "#E3D7C0",
   "--ink": "#2A2724",
   "--ink-muted": "#4E5D69",
   "--rule": "#4E5D69",
-  "--bubble-other": "#FAF6EE",
+  "--bubble-other": "#FFFFFF",
   "--bubble-self": "#F4EBDA",
   "--accent-send": "#F3B41B",
   "--accent-send-inset": "#C98E0E",
@@ -57,12 +57,12 @@ export const SCALE = {
 /** Measured pairs recorded in DESIGN.md; the shipped values must not fall below them. */
 const RECORDED_LIGHT: [keyof typeof LIGHT, keyof typeof LIGHT, number][] = [
   ["--ink", "--field-wall", 10.65],
-  ["--ink", "--field-list", 12.09],
+  ["--ink", "--field-list", 14.85],
   ["--ink", "--field-ground", 10.43],
-  ["--ink", "--bubble-other", 13.78],
+  ["--ink", "--bubble-other", 14.85],
   ["--ink", "--bubble-self", 12.55],
   ["--ink-muted", "--field-wall", 4.87],
-  ["--ink-muted", "--field-list", 5.53],
+  ["--ink-muted", "--field-list", 6.79],
   ["--ink-muted", "--field-ground", 4.77],
   ["--rule", "--field-wall", 3],
   ["--rule", "--field-list", 3],
@@ -301,7 +301,7 @@ export async function auditStatic(): Promise<StaticAudit> {
     fail(`SendDoor.module.css unreadable: ${String(error)}`);
   }
 
-  // Fonts: vendored Pretendard subsets, font-display optional, no preload.
+  // Fonts: vendored Pretendard subsets, font-display swap (as upstream ships it), no preload.
   try {
     const fonts = await text("src/styles/fonts.css");
     const faces = [...fonts.matchAll(/@font-face\s*{([^}]*)}/g)].map(
@@ -310,8 +310,8 @@ export async function auditStatic(): Promise<StaticAudit> {
     if (!faces.length) fail("fonts.css has no @font-face blocks");
     const urls: string[] = [];
     for (const face of faces) {
-      if (!/font-display\s*:\s*optional\s*;/.test(face))
-        fail("a @font-face block is not font-display: optional");
+      if (!/font-display\s*:\s*swap\s*;/.test(face))
+        fail("a @font-face block is not font-display: swap");
       if (!/font-family\s*:\s*["']Pretendard Variable["']/.test(face))
         fail("a @font-face block is not Pretendard Variable");
       const url = /url\(\s*["']?([^"')]+)["']?\s*\)/.exec(face)?.[1];

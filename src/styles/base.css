@@ -18,6 +18,10 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: var(--leading-body);
+  /* r4.3: the messenger arrangement's tracking and smoothing, as it ships them. */
+  letter-spacing: -0.02em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   /* Hangul has no true italic; a synthesised oblique or bold is a defect. */
   font-synthesis: none;
   text-rendering: optimizeLegibility;

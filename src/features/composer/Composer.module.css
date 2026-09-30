@@ -4,21 +4,19 @@
   display: grid;
   gap: var(--space-8);
   min-width: 0;
-  padding-block: var(--space-8) var(--space-16);
+  padding: var(--space-12) 26px 20px;
   border-top: 0;
   background: transparent;
 }
 
+/* r4: the confirmation is a filled, rounded field above the box, no rule. */
 .confirmation {
   display: grid;
   gap: var(--space-8);
-  max-width: var(--measure);
   width: 100%;
-  margin: 0 auto;
-  padding: var(--space-12) var(--space-16);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--field-wall) 85%, var(--ink));
-  border: var(--rule-width) solid var(--rule);
+  padding: 14px var(--space-16);
+  border-radius: var(--radius-row);
+  background: var(--fill-wall);
   color: var(--ink);
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
@@ -26,14 +24,12 @@
 
 .confirming,
 .label {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .warning,
 .status {
-  max-width: var(--measure);
   width: 100%;
-  margin: 0 auto;
   color: var(--ink-muted);
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
@@ -49,17 +45,18 @@
 .confirm {
   min-height: var(--space-32);
   padding: var(--space-4) var(--space-16);
-  border: var(--rule-width) solid var(--rule);
-  border-radius: 4px;
-  background: transparent;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--field-input);
   color: var(--ink);
   font-size: var(--text-meta);
+  font-weight: 700;
   line-height: var(--leading-meta);
   cursor: pointer;
 }
 
 .confirm {
-  border-color: var(--accent-send-inset);
+  border: var(--rule-width) solid var(--accent-send-inset);
   background: var(--accent-send);
   box-shadow: var(--elevation-door);
 }
@@ -73,45 +70,75 @@
 }
 
 /*
- * The entry is a pill and the door is a circle riding beside it, the shape
- * every messenger composer has settled on. Alignment is to the last line, so
- * the circle stays at the foot as the field grows.
+ * r4: the composer is one filled box — the writing field on top, a row of
+ * tools under it with the door at its end, the messenger arrangement's form.
+ * The box is the field's own white, so it reads as a field against the wall.
  */
 .entry {
-  /*
-   * Field and door share one height, so their circles and corners line up on
-   * a single line. `end` keeps the door at the foot as the field grows.
-   */
-  --composer-height: 48px;
+  --door-size: 40px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-8);
-  align-items: end;
-  max-width: var(--measure);
+  gap: 6px;
   width: 100%;
-  margin: 0 auto;
+  padding: var(--space-12) var(--space-12) 10px;
+  border-radius: var(--radius-box);
+  background: var(--field-input);
+}
+
+/* The ring belongs to the box, so the field inside it needs none of its own. */
+.entry:has(.input:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 .input {
   min-width: 0;
-  min-height: var(--composer-height);
-  max-height: 200px;
-  /* 15px × 1.6 line + 11px twice + the 1px border = the shared height exactly. */
-  padding: 11px var(--space-16);
+  min-height: 24px;
+  max-height: 120px;
+  padding: 2px var(--space-4);
   resize: none;
-  border: 1px solid color-mix(in srgb, var(--rule) 30%, transparent);
-  border-radius: 22px;
-  /* Solid white: the field has to read as a field against the wall. */
-  background: #ffffff;
+  border: 0;
+  background: transparent;
   color: var(--ink);
   font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: -0.025em;
   line-height: var(--leading-body);
   outline: none;
 }
 
+.input::placeholder {
+  color: var(--ink-muted);
+}
+
 .input:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-offset);
+  outline: none;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.hint {
+  flex: 1;
+  min-width: 0;
+  padding-inline-start: var(--space-4);
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 767.98px) {
+  .entry {
+    --door-size: var(--touch-min);
+  }
+
+  .hint {
+    visibility: hidden;
+  }
 }
 
 /* The door: a circle, the one saturated surface and the one shadow. */
@@ -119,8 +146,8 @@
   display: inline-grid;
   place-items: center;
   flex: none;
-  width: var(--composer-height);
-  height: var(--composer-height);
+  width: var(--door-size);
+  height: var(--door-size);
   padding: 0;
   border: var(--rule-width) solid var(--accent-send-inset);
   border-radius: 50%;
@@ -131,8 +158,8 @@
 }
 
 .door svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .door:hover {

@@ -12,10 +12,10 @@
 .link {
   display: flex;
   align-items: center;
-  gap: var(--space-12);
+  gap: 13px;
   min-height: 64px;
-  padding: var(--space-8);
-  border-radius: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-row);
   color: var(--ink);
   text-decoration: none;
   transition: background-color var(--dur-fade) var(--ease);
@@ -23,12 +23,12 @@
 
 /* Hover changes background tone only, never layout. */
 .link:hover {
-  background: color-mix(in srgb, var(--field-list) 92%, var(--ink));
+  background: var(--hover-list);
 }
 
 .active .link,
 .active .link:hover {
-  background: color-mix(in srgb, var(--field-list) 80%, var(--ink));
+  background: var(--active-list);
 }
 
 /* Rows live inside a scrolling column, so the ring sits inside the row. */
@@ -39,7 +39,7 @@
 
 .body {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
 }
@@ -60,20 +60,17 @@
 .title {
   overflow: hidden;
   font-size: var(--text-title);
-  font-weight: 500;
+  font-weight: 700;
   line-height: var(--leading-title);
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--ink);
 }
 
-.active .title {
-  font-weight: 600;
-}
-
 .time {
   color: var(--ink-muted);
   font-size: 11px;
+  font-weight: 500;
   line-height: var(--leading-title);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -91,7 +88,7 @@
 .preview {
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: var(--leading-meta);
   white-space: nowrap;
   text-overflow: ellipsis;

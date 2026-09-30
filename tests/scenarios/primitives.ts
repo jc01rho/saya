@@ -90,7 +90,7 @@ export const scenario: Scenario = {
       ...firstVisit,
     };
     log("fonts-first-visit", report.fontsFirstVisit as Record<string, unknown>);
-    // font-display: optional only uses a face that is already cached; the second visit shows Pretendard.
+    // font-display: swap shows Pretendard once a subset arrives; the second visit reads it from the cache.
     await page.reload({ waitUntil: "load" });
     await awaitReady(page);
     report.fontsSecondVisit = await fontStatus(page);

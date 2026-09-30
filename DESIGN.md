@@ -10,6 +10,15 @@ where a working record and this file disagree, **this file wins**.
 
 ## Status and authority
 
+- Contract revision: r4, 2026-09-30. r4 takes the **form** of the messenger
+  tab of `bangome/xpmessenger` (its GOYO v2 renderer), as the owner asked:
+  "형태는 GOYO, 컬러감은 saya 유지". Shapes, weights, spacing and arrangement
+  come from there; **every colour is still a saya token** or a mix of a saya
+  field with `--ink`, and no GOYO colour value is used. saya stays a web
+  client; the reference being an Electron app changes nothing here. The ledge
+  law and every contract truth are unchanged. What r4 changes is listed in
+  "r4: the messenger arrangement" below; where it disagrees with an older
+  line of this file, r4 wins.
 - Contract revision: r3, 2026-09-23. r3 moves the layout to the messenger
   arrangement the owner asked for, taking Telegram Web as the reference:
   a monogram circle on every room row and in the thread header, the speaker and
@@ -158,20 +167,73 @@ above.
 | Generated Hangul | Typos (화면어, 다서, 어변 주, 업에) | **Never product copy.** Use the strings in this file | Artifact |
 | Black mass | Alpha hole, diagnosed | Not a design element. Ignore | Artifact |
 
+## r4: the messenger arrangement
+
+Reference: `bangome/xpmessenger` `renderer/index.html` and `renderer/styles.css`
+(messenger tab only), read 2026-09-30. Its principles are taken as stated
+there — borderless surfaces, hierarchy by weight, filled fields, rounded-square
+thumbnails — with its colours replaced by saya's.
+
+Provenance: the reference is a **private** repository with no licence file,
+read through the owner's invitation as a collaborator. Only layout and form
+values (sizes, radii, weights, spacing) are taken; no code, markup, stylesheet,
+asset, icon or copy is copied into saya, and none of its product (the
+groupware integration it clones) is referenced. Like `design/references/`, it
+is provenance only and is never redistributed.
+
+| Surface | r4 form | Colour (saya) |
+| --- | --- | --- |
+| Rail | `--rail-width` 84px column left of the list (72px at 768–1023px): the さ mark on a 44px ink squircle, then 대화 as an icon over an 11/700 label in a 62px rounded field; the current section is filled `--active-list`. The desktop's total unread count rides it (accessible name 데스크톱 기준 안 읽음 N개). **No connection dot**: no slice reports a connection state yet, so none is drawn. Hidden below 768px, where the list shows the mark beside its heading. | `--field-list`, `--seam` divider |
+| List head | 대화 at 22/800 (the index view's h1; the product name follows in its accessible name), a 36px filled search field (radius 12), then filter pills 전체 · 안읽음 · 사람 · 그룹 (radius 999, 13/700; selected = ink field). Search matches **titles already loaded** only — there is no search route — and an empty result says so. 안읽음 is the desktop's count; 사람 is `kind: "direct"`; 그룹 is `kind` `group` or `open`. A kind the contract does not name (a live kanao 0.22.1 also sends `open-group`, `open-direct` and `channel`) appears under 전체 only. | `--fill-list`, selected `--ink` |
+| Room row | 48px monogram squircle, title 15/700, time 12/500, preview 13.5px, badge on the preview line; padding 11px 10px, radius 14, hover and active are filled fields. | `--hover-list`, `--active-list` |
+| Monogram | radius one third of its side at every size (squircle), 700 weight. Still never a photograph. | the eight tones |
+| Thread header | 40px monogram, title 17/800, subtitle 12.5/500; icon buttons 38px (radius 12, transparent until hovered): 발췌 and 모아보기. The words stay in the accessible names and tooltips. | `--fill-wall` on hover |
+| Room side panel | 모아보기 is a 300px panel beside the conversation, under the header (not a modal). Kind pills, the scope sentence, a square-tile grid (radius 10), file and link rows without rules. Escape or × closes it and returns focus to its toggle. It stays open across rooms. Below 1024px it covers the conversation area. | `--field-list` |
+| Turns | Turns span the wall; each bubble keeps the `62ch` measure. The speaker's name (12.5/700) sits **above** the bubble and the stamp (11/500, with 수정됨) **outside** it at its foot — left of my bubbles, right of others'. A run by one speaker on one day shows the 34px monogram and the name once; the rest keep the space. A new day opens with a centred pill (`dateStyle: full`), drawn only when the wire dated the turn. | `--bubble-other`, `--bubble-self`, `--fill-wall` pill |
+| Bubble | radius 18 with a 4px tail corner: bottom-left for others, bottom-right for mine; padding 11px 15px. | unchanged |
+| Composer | one filled box (radius 18) on `--field-input`: the field on top (15/1.6/500), a tool row under it with the Enter hint and the door at its end. The door is a 40px circle (44px below 768px), still the only saturated surface and the only shadow. | `--field-input`, `--accent-send` |
+| Quiet controls | filled pills without a rule (radius 999, 13/700) in every sheet, notice and confirmation; pressed = ink field. | `--fill-wall` |
+| Notice bar | 공지 as a small filled pill before the line. | `--fill-wall` |
+
+Deliberately **not** taken from the reference, because the contract exposes
+none of it: presence dots, read counts, attachments and pasted images in the
+composer, emoji, message selection and deletion, multi-view, pinned rooms, and
+the org chart, notifications, calendar and Jira sections. In-room search is
+also not drawn yet: `/context` holds at most the newest 1000 turns and the wall
+virtualises beyond 200, so a search would have to state its reach and scroll a
+virtual list — left for a later revision rather than approximated.
+
 ## Embedded tokens
 
+r4 adds form tokens only: `--radius-row 14px`, `--radius-field 12px`,
+`--radius-talk 18px`, `--radius-tail 4px`, `--radius-box 18px`,
+`--radius-tile 10px`, `--rail-width 84px`, `--panel-width 300px`,
+`--text-heading 22px`, `--text-room 17px`; `--fill-wall` (wall 90% / ink),
+`--hover-wall` (94%) and `--field-input` (`#FFFFFF`, dark `#493630`).
+`--list-width` becomes `clamp(280px, 26%, 340px)`.
+
+**r4.1, owner's call 2026-09-30:** the list and other people's bubbles are
+white, and the list's former cream `#EFE7D9` becomes its hover. The list's
+states are one cream family deepening with the state — `--fill-list`
+(`#EFE7D9` 60% / white = `#F5F1E8`: search, pills, tiles, link cards) <
+`--hover-list` `#EFE7D9` < `--active-list` `#E3D7C0` (the current row and
+section). The dark theme keeps its warm list, so there these three stay mixes
+of it with ink (91% · 95% · 84%). Measured on the white list: `--ink` 14.85 on
+white · 13.17 on fill · 12.09 on hover · 10.43 on active; `--ink-muted` 6.79 ·
+6.02 · 5.53 · 4.77 — all at or above the r2 floors.
+
 Contrast ratios below are **measured**, not estimated (WCAG 2.1 relative
-luminance, computed 2026-09-21).
+luminance, computed 2026-09-21; the two r4.1 rows 2026-09-30).
 
 | Token | Value | Use | Measured contrast |
 | --- | --- | --- | --- |
 | `--field-wall` | `#CBDDE9` | conversation above the ledge | — |
-| `--field-list` | `#EFE7D9` | room list, full height | — |
+| `--field-list` | `#FFFFFF` (r4.1; was `#EFE7D9`) | room list, rail and side panel, full height | — |
 | `--field-ground` | `#E3D7C0` | conversation below the ledge | — |
-| `--ink` | `#2A2724` | body text, room titles | 10.65 on wall · 12.09 on list · 10.43 on ground · 13.78 on bubble |
-| `--ink-muted` | `#4E5D69` | speaker, time, preview, coverage, state words | 4.87 on wall · 5.53 on list · 4.77 on ground — **AA, not AAA** |
-| `--rule` | `#4E5D69` @1px | **the ledge and the list divider** | 4.87 / 4.77 / 5.53 — clears the 3:1 non-text floor |
-| `--bubble-other` | `#FAF6EE` | other people's bubbles | ink on it: 13.78 |
+| `--ink` | `#2A2724` | body text, room titles | 10.65 on wall · 14.85 on list · 10.43 on ground · 14.85 on bubble |
+| `--ink-muted` | `#4E5D69` | speaker, time, preview, coverage, state words | 4.87 on wall · 6.79 on list · 4.77 on ground — **AA, not AAA** |
+| `--rule` | `#4E5D69` @1px | **the ledge and the list divider** | 4.87 / 4.77 / 6.79 — clears the 3:1 non-text floor |
+| `--bubble-other` | `#FFFFFF` (r4.1; was `#FAF6EE`) | other people's bubbles | ink on it: 14.85 |
 | `--bubble-self` | `#F4EBDA` | the signed-in user's bubbles | ink on it: 12.55 |
 | `--accent-send` | `#F3B41B` | **the send door and nothing else** | ink on it: 8.03 |
 | `--accent-send-inset` | `#C98E0E` @1px | the door's inset line | — |
@@ -251,6 +313,22 @@ lettering or wordmark copied from any reference.
 licence, weights and Hangul coverage were not checked in this run. Treat the
 preferred family as pending.
 
+**r4.3, the face is the messenger arrangement's, as it ships it** (owner's
+call, 2026-09-30: "폰트 xpmessenger 꺼 그대로"). Pretendard Variable 1.3.9 dynamic
+subsets — the same files the reference loads — vendored under `/fonts/` with
+**`font-display: swap`**, as upstream ships them; the earlier `optional` meant a
+first visit never showed Pretendard at all and read in Malgun Gothic. Tracking
+`-0.02em` on the page and `-0.025em` on message and composer text, message text
+at weight 500, antialiased; the stack is the reference's. The fallback check
+above still applies: a subset that arrives late swaps once.
+
+**r4.3, owner's call 2026-09-30: every size is one step smaller** — "전체적으로
+폰트가 너무 큰게 많다". Message body 14/1.6, room title 14, secondary text 12,
+unread numeral 11, door label 14; the list heading 19/800, the thread title
+15/800, the room row's preview 12.5 and time 11, the speaker 11.5, the header
+subtitle 11.5, filter pills 12. The r4 table above and the rows below keep
+their older numbers as history; these win.
+
 | Role | Preferred | Fallback stack | Size / line-height / weight |
 | --- | --- | --- | --- |
 | Message body | Pretendard *(pending verification)* | `Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif` | 15px / 1.6 / 400 |
@@ -307,6 +385,10 @@ All interactive elements need `:focus-visible` as a 2px `--ink` outline offset
 2px. Hover changes background tone only, never layout.
 
 ## Responsive rules
+
+r4: from 768px the shell is rail + list + conversation; the side panel sits
+beside the conversation from 1024px and covers it below. Below 768px there is
+no rail, and the rest of this table holds.
 
 | Range | Layout |
 | --- | --- |

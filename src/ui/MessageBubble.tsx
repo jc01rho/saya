@@ -61,6 +61,11 @@ export interface MessageBubbleProps {
   actions?: ReactNode;
   /** Present where `/revisions` can be asked; without it 수정됨 is a plain word. */
   onRevisions?: (() => void) | undefined;
+  /**
+   * r4: the previous turn on the wall was the same speaker on the same day,
+   * so this one drops the monogram and the name and keeps their space.
+   */
+  continued?: boolean;
 }
 
 function Reactions({
@@ -93,10 +98,11 @@ function Reactions({
 }
 
 /**
- * Messenger message turn:
- * - Other person's messages on the LEFT with avatar and speaker name.
- * - My messages (fromMe) aligned to the RIGHT.
- * Preserves children[0] = meta, children[1] = bubble, children[2] = footer.
+ * Messenger message turn (r4, the messenger arrangement):
+ * - Other people's messages on the LEFT: a squircle monogram, the speaker's
+ *   name above the bubble, the stamp outside it at the foot.
+ * - My messages (fromMe) on the RIGHT, the stamp on the bubble's left.
+ * - A run by one speaker shows the monogram and name once.
  */
 export function MessageBubble({
   message,
@@ -104,6 +110,7 @@ export function MessageBubble({
   state,
   actions,
   onRevisions,
+  continued = false,
 }: MessageBubbleProps) {
   const time = formatTime(message.sentAt, now);
   const kind = kindLabel(message.kind);
@@ -129,21 +136,34 @@ export function MessageBubble({
   const showText = Boolean(message.text) && !placeholder;
   // SafeBot's cover is the client's own: an empty body under it is hidden, not absent.
   const covered = message.covered === "safebot";
+  const showSpeaker = !message.fromMe && !continued;
 
   return (
     <article
-      className={cx(styles.turn, message.fromMe ? styles.self : styles.other)}
+      className={cx(
+        styles.turn,
+        message.fromMe ? styles.self : styles.other,
+        continued && styles.continued,
+      )}
       data-ui="message"
       data-side={message.fromMe ? "self" : "other"}
       data-state={state ?? (message.fromMe ? "read" : undefined)}
+      data-continued={continued || undefined}
     >
       <div className={styles.row}>
-        {message.fromMe ? null : <Avatar name={speakerName} size={36} />}
-        <div className={styles.bubble}>
-          {message.fromMe && !mentioned ? null : (
+        {message.fromMe ? null : continued ? (
+          <span className={styles.gap} aria-hidden="true" />
+        ) : (
+          <Avatar name={speakerName} size={34} />
+        )}
+        <div className={styles.column}>
+          {showSpeaker || mentioned ? (
             <div className={styles.meta}>
-              {message.fromMe ? null : (
+              {showSpeaker ? (
                 <span className={styles.speaker}>{speakerName}</span>
+              ) : (
+                // The name still belongs to the turn for a reader who cannot see the run.
+                <span className="sr-only">{speakerName}</span>
               )}
               {message.mentionsAll ? <Mention name={null} all /> : null}
               {message.mentions?.map((mention) => (
@@ -153,65 +173,71 @@ export function MessageBubble({
                 />
               ))}
             </div>
+          ) : message.fromMe ? null : (
+            <span className="sr-only">{speakerName}</span>
           )}
-          {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
-          {/*
+          <div className={styles.line}>
+            <div className={styles.bubble}>
+              {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
+              {/*
             The core sends a photo as kind `photo` with the body text 사진. That
             word is a placeholder for the picture, so once the picture itself is
             on screen neither the label nor the body should repeat it.
           */}
-          {showLabel ? (
-            <span className={styles.kind} data-ui="kind-label">
-              {kind}
-            </span>
-          ) : null}
-          {covered && showText ? (
-            <span className={styles.kind} data-ui="covered">
-              {COPY.coveredShown}
-            </span>
-          ) : null}
-          {showText ? (
-            <p className={styles.text}>{linkify(message.text as string)}</p>
-          ) : covered ? (
-            <span className={styles.kind} data-ui="covered">
-              {COPY.covered}
-            </span>
-          ) : showLabel || media ? null : (
-            <span className={styles.kind}>{COPY.emptyBody}</span>
-          )}
-          {message.photo ? <Photo photo={message.photo} now={now} /> : null}
-          {message.video ? <Video video={message.video} now={now} /> : null}
-          {linked && !covered ? <LinkCard url={linked} /> : null}
-          {message.reactions?.length ? (
-            <Reactions reactions={message.reactions} />
-          ) : null}
-          {/* The stamp rides the last line, as it does in every messenger. */}
-          <span className={styles.stamp}>
-            {message.edited ? (
-              onRevisions ? (
-                <button
-                  type="button"
-                  className={styles.edited}
-                  data-ui="edited"
-                  aria-label={COPY.editedOpen}
-                  aria-haspopup="dialog"
-                  onClick={onRevisions}
-                >
-                  {COPY.edited}
-                </button>
-              ) : (
-                <span className={styles.edited} data-ui="edited">
-                  {COPY.edited}
+              {showLabel ? (
+                <span className={styles.kind} data-ui="kind-label">
+                  {kind}
                 </span>
-              )
-            ) : null}
-            <time
-              className={styles.time}
-              {...(time.dateTime ? { dateTime: time.dateTime } : {})}
-            >
-              {time.label}
-            </time>
-          </span>
+              ) : null}
+              {covered && showText ? (
+                <span className={styles.kind} data-ui="covered">
+                  {COPY.coveredShown}
+                </span>
+              ) : null}
+              {showText ? (
+                <p className={styles.text}>{linkify(message.text as string)}</p>
+              ) : covered ? (
+                <span className={styles.kind} data-ui="covered">
+                  {COPY.covered}
+                </span>
+              ) : showLabel || media ? null : (
+                <span className={styles.kind}>{COPY.emptyBody}</span>
+              )}
+              {message.photo ? <Photo photo={message.photo} now={now} /> : null}
+              {message.video ? <Video video={message.video} now={now} /> : null}
+              {linked && !covered ? <LinkCard url={linked} /> : null}
+              {message.reactions?.length ? (
+                <Reactions reactions={message.reactions} />
+              ) : null}
+            </div>
+            {/* The stamp sits outside the bubble at its foot, as in the messenger arrangement. */}
+            <span className={styles.stamp}>
+              {message.edited ? (
+                onRevisions ? (
+                  <button
+                    type="button"
+                    className={styles.edited}
+                    data-ui="edited"
+                    aria-label={COPY.editedOpen}
+                    aria-haspopup="dialog"
+                    onClick={onRevisions}
+                  >
+                    {COPY.edited}
+                  </button>
+                ) : (
+                  <span className={styles.edited} data-ui="edited">
+                    {COPY.edited}
+                  </span>
+                )
+              ) : null}
+              <time
+                className={styles.time}
+                {...(time.dateTime ? { dateTime: time.dateTime } : {})}
+              >
+                {time.label}
+              </time>
+            </span>
+          </div>
         </div>
       </div>
       {stateWord || actions ? (
