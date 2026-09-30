@@ -145,5 +145,47 @@ export const scenario: Scenario = {
       "successful send did not clear only its draft",
     );
     log("consent-voided-and-reconfirmed", { roomId: ROOM_ID });
+
+    // A room with no desktop draft: Enter sends at once, with no confirmation,
+    // and the silent dry run still comes first.
+    const plainRoom = (BigInt(ROOM_ID) + 1n).toString();
+    const plainComposer = await domBarrier(page, '[data-ui="composer-input"]');
+    await page.evaluate((roomId) => {
+      window.location.hash = `#/room/${roomId}`;
+    }, plainRoom);
+    await plainComposer.wait();
+    await input.fill(FIRST);
+    const order: boolean[] = [];
+    const onRequest = (request: import("playwright-core").Request) => {
+      if (new URL(request.url()).pathname !== "/api/send") return;
+      const body = request.postDataJSON() as { dryRun?: boolean } | null;
+      order.push(body?.dryRun === true);
+    };
+    page.on("request", onRequest);
+    const direct = sendRequest(page, false);
+    const sent = await domBarrier(page, '[data-ui="composer-submitted"]');
+    await input.press("Enter");
+    const directPost = await direct;
+    await sent.wait();
+    page.off("request", onRequest);
+    assert(
+      JSON.stringify(directPost.postDataJSON()) ===
+        JSON.stringify({
+          room: plainRoom,
+          text: FIRST,
+          dryRun: false,
+          openRoom: true,
+        }),
+      "a plain send did not carry the typed text",
+    );
+    assert(
+      JSON.stringify(order) === JSON.stringify([true, false]),
+      `a plain send did not dry-run first, then send once: ${JSON.stringify(order)}`,
+    );
+    assert(
+      (await page.locator('[data-ui="composer-confirmation"]').count()) === 0,
+      "a send that erases no draft still asked for confirmation",
+    );
+    log("plain-send-without-confirmation", { roomId: plainRoom });
   },
 };

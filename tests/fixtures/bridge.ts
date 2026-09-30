@@ -2,7 +2,7 @@ import type { ValidateFunction } from "ajv";
 import type { components } from "../../src/contract/decoded";
 import * as validators from "../../src/contract/validators.js";
 import { Barriers, bounded, deferred } from "../harness/barriers";
-import { type Dataset, generateData } from "./data";
+import { type Dataset, FIRST_ROOM_ID, generateData } from "./data";
 
 type Schema = components["schemas"];
 export type Route =
@@ -292,6 +292,10 @@ export function startBridge(
       if (!room) return failure(404, "CHAT_NOT_FOUND");
       // Deliberately no automatic stream echo: queue acceptance is not a read-back receipt.
       const dryRun = body.dryRun ?? false;
+      // Only the first room holds a desktop draft, so both paths are always
+      // reachable: that room asks before a send erases it, every other room
+      // sends at once.
+      const draft = room.id === FIRST_ROOM_ID;
       return checked(
         {
           ok: true,
@@ -300,7 +304,7 @@ export function startBridge(
           room: room.title,
           roomId: room.id,
           length: [...body.text].length,
-          ...(dryRun ? { wouldClearDraft: true } : { clearedDraft: true }),
+          ...(dryRun ? { wouldClearDraft: draft } : { clearedDraft: draft }),
         },
         validators.validateSendResult,
       );

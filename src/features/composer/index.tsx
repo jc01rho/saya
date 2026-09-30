@@ -30,7 +30,7 @@ const COPY = {
   input: "메시지 작성",
   placeholder: "메시지를 입력하세요",
   /** Enter first asks the bridge (dryRun); nothing is sent before the confirmation. */
-  hint: "Enter 확인 후 보내기 · Shift+Enter 줄바꿈",
+  hint: "Enter 보내기 · Shift+Enter 줄바꿈",
   send: "보내기",
   empty: "빈 메시지는 보낼 수 없습니다.",
   previewing: "전송 내용을 확인하고 있습니다.",
@@ -164,10 +164,17 @@ export const Composer = memo(function Composer({
         return;
       }
       if (!state.grantConsent(fingerprint)) return;
+      // Owner's call, 2026-09-30: no confirmation for an ordinary send. The
+      // dry run still runs, silently, so a send that would erase what the
+      // desktop client is holding as a draft is asked about before it does.
+      if (result.wouldClearDraft !== true) {
+        await post(fingerprint);
+        return;
+      }
       setConfirmation({
         fingerprint,
         room: result.room,
-        wouldClearDraft: result.wouldClearDraft === true,
+        wouldClearDraft: true,
       });
       setStatus({ kind: "idle" });
     } catch (error) {
@@ -189,7 +196,16 @@ export const Composer = memo(function Composer({
       setStatus({ kind: "idle" });
       return;
     }
-    const { fingerprint } = visibleConfirmation;
+    await post(visibleConfirmation.fingerprint);
+  };
+
+  /** The real send, for a fingerprint the dry run just granted consent to. */
+  async function post(fingerprint: ConsentFingerprint) {
+    if (!state.hasConsent(fingerprint)) {
+      setConfirmation(null);
+      setStatus({ kind: "idle" });
+      return;
+    }
     const controller = new AbortController();
     postAbort.current = controller;
     setStatus({ kind: "posting" });
@@ -226,7 +242,7 @@ export const Composer = memo(function Composer({
           error instanceof HttpProtocolError ? COPY.protocol : COPY.network,
       });
     }
-  };
+  }
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

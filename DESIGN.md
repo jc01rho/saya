@@ -363,7 +363,7 @@ their older numbers as history; these win.
 | Flow | State | Treatment | Recovery |
 | --- | --- | --- | --- |
 | Send | idle | door at full `--accent-send` | — |
-| Send | confirming (`dryRun`) | inline panel on the ground: the resolved room, and if `wouldClearDraft`, the sentence 보내면 데스크톱 앱에 쓰고 있던 초안이 지워질 수 있습니다 | cancel restores focus to the input |
+| Send | confirming (`dryRun`) | **r4.3, owner's call 2026-09-30 ("미리보기 없이 그냥 보내게"): the dry run runs silently and the panel appears only when `wouldClearDraft`** — the resolved room and the sentence 보내면 데스크톱 앱에 쓰고 있던 초안이 지워질 수 있습니다. Any other send goes on Enter with no panel; truth 4 still holds, because the one case it protects is the one still asked about. | cancel restores focus to the input |
 | Send | submitted, unproven | bubble appears **below the ledge**, `--bubble-self`, state word 입력됨 · 전달 미확인 | none offered; **never auto-retry** |
 | Send | candidate observed | a new `fromMe` row is already above the ledge because it was read back; the pending item offers 이 기록으로 확인 | the user links them; nothing auto-matches (G4) |
 | Send | linked by the user | the pending bubble crosses the ledge once, 300ms, into the observed row; state word 보냈습니다 belongs to the read row | — |
