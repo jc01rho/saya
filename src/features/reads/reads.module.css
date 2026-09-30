@@ -1,0 +1,168 @@
+/*
+ * The 0.15.0 reads share one grammar with the digest: quiet rule-outlined
+ * controls, muted status lines, and the modal sheet over the wall. No colour
+ * beyond the tokens, no shadow, no radius on the sheet.
+ */
+
+/* A quiet control: rule-outlined, transparent, hugging its label. Only the send door is coloured. */
+.action {
+  flex: none;
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+.action[aria-disabled="true"] {
+  cursor: progress;
+}
+
+/* Hover changes background tone only, never layout. */
+.action:hover {
+  background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
+}
+
+.action[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--field-wall);
+}
+
+.status,
+.muted {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+/* 받기 and what came of it, wrapping as one cluster (stylegallery: cluster). */
+.file {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-8);
+  min-width: 0;
+}
+
+/* A refused read: the design's words and the bridge's code, with one manual retry. */
+.notice {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  border: var(--rule-width) solid var(--rule);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.notice code {
+  font: inherit;
+  color: var(--ink-muted);
+}
+
+/* The sheet: the digest's modal surface, reused for every 0.15.0 read. */
+.sheet[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(100% - var(--space-32), calc(var(--measure) + var(--space-48)));
+  max-width: none;
+  max-height: calc(100dvh - 2 * var(--space-32));
+  margin: auto;
+  padding: 0;
+  border: var(--rule-width) solid var(--rule);
+  background: var(--field-wall);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.sheet::backdrop {
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+@media (max-width: 767.98px) {
+  .sheet[open] {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border: 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  min-height: var(--space-48);
+  padding: var(--space-12) var(--space-24);
+  border-block-end: var(--rule-width) solid var(--rule);
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-12);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--leading-title);
+}
+
+.close {
+  margin-inline-start: auto;
+}
+
+/* The sheet's one scroll owner. */
+.body {
+  display: grid;
+  align-content: start;
+  gap: var(--space-16);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  padding: var(--space-16) var(--space-24) var(--space-24);
+}
+
+@media (max-width: 767.98px) {
+  .head,
+  .body {
+    padding-inline: var(--space-16);
+  }
+}
+
+/* Nothing found: the cat and one sentence that never claims nothing happened. */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-16);
+  padding: var(--space-48) var(--space-24);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  text-align: center;
+}
+
+.text {
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+@media (max-width: 767.98px) {
+  .action {
+    min-height: var(--touch-min);
+  }
+}

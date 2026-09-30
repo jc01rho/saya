@@ -2,6 +2,8 @@ import type { components } from "../../src/contract/decoded";
 
 type Room = components["schemas"]["Room"];
 type Message = components["schemas"]["Message"];
+type Notice = components["schemas"]["Notice"];
+type Revision = components["schemas"]["Revision"];
 export type Dataset = "baseline" | "stress";
 export const SEED = 7;
 export const FIRST_ROOM_ID = "18491246151592761";
@@ -18,6 +20,9 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
   const messageCount = dataset === "stress" ? 1000 : 40;
   const rooms: Room[] = [];
   const messages = new Map<string, Message[]>();
+  const notices = new Map<string, Notice>();
+  const revisions = new Map<string, Revision[]>();
+  const files = new Map<string, { name: string; bytes: string }>();
   for (let r = 0; r < count; r++) {
     const id = (BigInt(FIRST_ROOM_ID) + BigInt(r)).toString();
     const rows: Message[] = [];
@@ -72,6 +77,41 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
       }
       rows.push(row);
     }
+    // The second room carries the 0.15.0 members at its newest end, where an
+    // opened thread shows them. Nothing here consumes the random stream, so
+    // every other value is what it was before.
+    if (r === 1 && size >= 40) {
+      const [reacted, edited, covered, file, linked] = rows.slice(-5);
+      if (!reacted || !edited || !covered || !file || !linked)
+        throw new Error("Missing generated extras");
+      reacted.reactions = [
+        { label: "좋아요", count: 3 },
+        { label: "최고", count: 1 },
+      ];
+      revisions.set(edited.id, [
+        { revision: 0, text: "가상 등불 첫 문장입니다.", kind: "text" },
+        { revision: 1, text: edited.text, kind: "text" },
+      ]);
+      edited.edited = true;
+      covered.covered = "safebot";
+      covered.text = "";
+      file.kind = "file";
+      file.text = "가상 관측 보고서.txt";
+      files.set(file.id, {
+        name: file.text,
+        bytes: "가상 관측 보고서: 합성 데이터입니다.\n",
+      });
+      linked.text = "가상 문서 주소 https://example.invalid/가상-문서";
+      linked.reactions = [{ label: "좋아요", count: 2 }];
+      notices.set(id, {
+        text: "가상 공지: 이번 주 관측 일정은 목요일 저녁입니다. 합성 문장입니다.",
+        kind: "text",
+        authorId: "38000000000000001",
+        author: "가상참여자-1",
+        postedAt: new Date(EPOCH - 3 * 86_400_000).toISOString(),
+        source: "board",
+      });
+    }
     const last = rows.at(-1);
     rooms.push({
       id,
@@ -86,7 +126,7 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
     });
     messages.set(id, rows);
   }
-  return { seed, dataset, rooms, messages };
+  return { seed, dataset, rooms, messages, notices, revisions, files };
 }
 
 export type SyntheticData = ReturnType<typeof generateData>;

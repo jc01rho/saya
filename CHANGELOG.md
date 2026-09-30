@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### 추가
+
+**0.15.0 계약의 새 읽기를 화면에 올렸습니다.** 방 머리 아래에 고정 공지 한 줄(`/notice`, 누르면 전체), 머리의 **모아보기** 시트(`/attachments`, 종류 필터와 `beforeId` 이전 페이지, 살펴본 범위를 문장으로 밝힘), 메시지의 공감 수(`reactions`), **수정됨**을 누르면 여는 수정 기록(`/revisions`), 세이프봇이 가린 메시지(`covered`), 파일 메시지와 모아보기의 **파일 받기**(`/file`, `410 FILE_EXPIRED`는 문장으로)를 추가했습니다. `MESSAGE_NOT_FOUND`·`FILE_EXPIRED`는 자기 문구가 있고, 경로를 모르는 코어(0.22.0 이전)의 404는 공지에서는 조용히, 시트에서는 "0.22.0 이상의 코어가 제공"한다고 말합니다. 공간 패턴은 StyleGallery(`4061d12`)의 badge-list·cluster·tab-strip·ram-grid·frame·media-object를 따랐습니다.
+
+검증: `typecheck`·`lint`·`build`·`size:check`·`contract:check` 통과, `bun test` 190 pass / 0 fail, 합성 브리지 위 Chrome 시나리오 `room-extras` PASS(1440×900, 390×844). 실제 `kanao serve`로는 확인하지 않았습니다.
+
 ### 변경
 
 **계약을 `openapi.json` 0.16.0 으로 올렸습니다(kanao-cli 0.22.1, kamado-cli 0.22.0).** macOS 코어도 방 정보 읽기를 답하게 되어, `/notice`·`/attachments`·`/revisions`·`/file`, `reactions`·`edited`·`covered`, `MESSAGE_NOT_FOUND`·`FILE_EXPIRED` 에서 `x-platform` 이 빠졌습니다. 남은 플랫폼 차이는 `Room.typeCode` 와 `PERMISSION_REQUIRED` 뿐입니다. 맥에서는 공지가 늘 `source: legacy` 이고 수정 기록이 빈 목록이며, 이는 기존 빈 상태 문구가 이미 다룹니다. 생성물은 설명 문구만 바뀌었고, 고정 해시를 새 파일로 옮겼습니다.

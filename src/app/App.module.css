@@ -55,6 +55,24 @@
   background: var(--field-wall);
 }
 
+/* The header and the pinned notice under it share the thread's first row. */
+.top {
+  min-width: 0;
+}
+
+/* The header's quiet controls, pushed to the trailing edge as one group (stylegallery: split-nav). */
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-8);
+  margin-inline-start: auto;
+}
+
+.actions > button {
+  margin-inline-start: 0;
+}
+
 /* The back chevron exists only where the list is a separate view. */
 .back {
   position: relative;

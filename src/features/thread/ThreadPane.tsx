@@ -14,6 +14,8 @@ import {
 import type { ClientStores } from "../../core/stores";
 import { Cat, COPY, CoverageLine, cx, MessageBubble } from "../../ui";
 import { connectionStateFor } from "../connection";
+import { FileDownload, type FileTransport } from "../reads/FileDownload";
+import { RevisionsDialog, type RevisionsTransport } from "../revisions";
 import { useSlice } from "../rooms";
 import { THREAD_COPY } from "./copy";
 import styles from "./ThreadPane.module.css";
@@ -27,6 +29,8 @@ export interface ThreadPaneProps {
   /** The room the route names, as the wire string. */
   roomId: string;
   className?: string | undefined;
+  /** The 0.15.0 per-message reads: 수정 기록 and 파일 받기. Absent, rows offer neither. */
+  http?: (RevisionsTransport & FileTransport) | undefined;
 }
 
 function useWindow(windows: ContextWindows, roomId: string) {
@@ -66,14 +70,19 @@ const MessageRow = memo(function MessageRow({
   id,
   now,
   gapBefore,
+  http,
+  onRevisions,
 }: {
   stores: ClientStores;
   roomId: string;
   id: string;
   now: Date;
   gapBefore: boolean;
+  http: FileTransport | undefined;
+  onRevisions: ((messageId: string) => void) | undefined;
 }) {
   const message = useSlice(stores, `message.${roomId}.${id}`);
+  const openRevisions = useCallback(() => onRevisions?.(id), [onRevisions, id]);
   return (
     <>
       {gapBefore ? (
@@ -83,7 +92,22 @@ const MessageRow = memo(function MessageRow({
       ) : null}
       {message ? (
         // The store's rows are deep-frozen; the bubble only reads them.
-        <MessageBubble message={message as Message} now={now} />
+        <MessageBubble
+          message={message as Message}
+          now={now}
+          onRevisions={onRevisions ? openRevisions : undefined}
+          actions={
+            // Message carries no file member; `/file` answers MESSAGE_NOT_FOUND for any other kind.
+            http && message.kind === "file" ? (
+              <FileDownload
+                http={http}
+                roomId={roomId}
+                messageId={id}
+                name={message.text || undefined}
+              />
+            ) : undefined
+          }
+        />
       ) : (
         <p className={styles.note} data-ui="thread-missing">
           {THREAD_COPY.missingRow}
@@ -163,11 +187,23 @@ export function ThreadPane({
   windows,
   roomId,
   className,
+  http,
 }: ThreadPaneProps) {
   const thread = useSlice(stores, `thread.${roomId}`);
   const window = useWindow(windows, roomId);
   const view = describeWindow(thread, window);
   const now = useToday();
+  // Held with its room, so switching rooms never shows another room's history.
+  const [revisions, setRevisions] = useState<{
+    roomId: string;
+    messageId: string;
+  } | null>(null);
+  const openRevisions = useCallback(
+    (messageId: string) => setRevisions({ roomId, messageId }),
+    [roomId],
+  );
+  const closeRevisions = useCallback(() => setRevisions(null), []);
+  const revisionsOf = revisions?.roomId === roomId ? revisions.messageId : null;
 
   useEffect(() => {
     windows.open(roomId);
@@ -234,8 +270,19 @@ export function ThreadPane({
               id={id}
               now={now}
               gapBefore={gaps.has(id)}
+              http={http}
+              onRevisions={http ? openRevisions : undefined}
             />
           )}
+        />
+      ) : null}
+      {http && revisionsOf !== null ? (
+        <RevisionsDialog
+          key={revisionsOf}
+          http={http}
+          roomId={roomId}
+          messageId={revisionsOf}
+          onClose={closeRevisions}
         />
       ) : null}
       {view.empty ? (

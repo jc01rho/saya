@@ -6,9 +6,11 @@ import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
 import { Reconciler } from "../core/reconcile";
 import type { ClientStores } from "../core/stores";
+import { AttachmentsEntry } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
 import { DigestEntry } from "../features/digest";
+import { NoticeBar } from "../features/notice";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
@@ -141,30 +143,41 @@ function RoomOutlet({
   const subtitle = roomSubtitle(snapshot?.room);
   return (
     <>
-      <header className={styles.threadHead}>
-        <a className={styles.back} href={ROOMS_HASH}>
-          <span className="sr-only">{APP_COPY.back}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M15 5l-7 7 7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </a>
-        <Avatar name={snapshot?.room.title ?? APP_COPY.untitled} size={40} />
-        <div className={styles.identity}>
-          <h1 className={styles.title}>
-            {snapshot?.room.title ?? APP_COPY.untitled}
-          </h1>
-          {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
-        </div>
-        <DigestEntry stores={stores} http={http} roomId={roomId} />
-      </header>
-      <ThreadPane stores={stores} windows={windows} roomId={roomId} />
+      <div className={styles.top}>
+        <header className={styles.threadHead}>
+          <a className={styles.back} href={ROOMS_HASH}>
+            <span className="sr-only">{APP_COPY.back}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M15 5l-7 7 7 7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+          <Avatar name={snapshot?.room.title ?? APP_COPY.untitled} size={40} />
+          <div className={styles.identity}>
+            <h1 className={styles.title}>
+              {snapshot?.room.title ?? APP_COPY.untitled}
+            </h1>
+            {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
+          </div>
+          <div className={styles.actions}>
+            <AttachmentsEntry key={roomId} http={http} roomId={roomId} />
+            <DigestEntry stores={stores} http={http} roomId={roomId} />
+          </div>
+        </header>
+        <NoticeBar key={roomId} http={http} roomId={roomId} />
+      </div>
+      <ThreadPane
+        stores={stores}
+        windows={windows}
+        roomId={roomId}
+        http={http}
+      />
       <Composer http={http} roomId={roomId} />
     </>
   );

@@ -11,7 +11,11 @@ export type Route =
   | "/context"
   | "/digest"
   | "/stream"
-  | "/send";
+  | "/send"
+  | "/notice"
+  | "/attachments"
+  | "/revisions"
+  | "/file";
 export type Fault = 401 | 429 | 503 | "malformed";
 export type BridgeEvent = {
   type: "request" | "response" | "stream-open" | "stream-close" | "command";
@@ -100,6 +104,97 @@ export function startBridge(
         storedLocally: all.length,
       },
     };
+  }
+
+  /** The 0.15.0 reads, answered from the same invented dataset as `/context`. */
+  function reads(
+    path: "/notice" | "/attachments" | "/revisions" | "/file",
+    url: URL,
+  ): Response {
+    const roomId = url.searchParams.get("roomId");
+    const open = url.searchParams.get("open");
+    if (!roomId || !/^-?\d+$/.test(roomId))
+      return failure(400, "INVALID_REQUEST");
+    if (open !== null && open !== "true" && open !== "false")
+      return failure(400, "INVALID_REQUEST");
+    const room = data.rooms.find((item) => item.id === roomId);
+    if (!room) return failure(404, "CHAT_NOT_FOUND");
+    if (path === "/notice")
+      return checked(
+        { ok: true, room, notice: data.notices.get(room.id) ?? null },
+        validators.validateNoticeAnswer,
+      );
+    if (!room.readable) return failure(503, "KEY_UNAVAILABLE");
+    const all = data.messages.get(room.id) ?? [];
+    if (path === "/attachments") {
+      const kind = url.searchParams.get("kind");
+      const limit = Number(url.searchParams.get("limit") ?? 50);
+      const beforeId = url.searchParams.get("beforeId");
+      if (
+        (kind !== null && !["photo", "video", "file", "link"].includes(kind)) ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 1000 ||
+        (beforeId !== null && !/^\d+$/.test(beforeId))
+      )
+        return failure(400, "INVALID_REQUEST");
+      // Fixture-side id ordering only; the client never does arithmetic on ids.
+      const pool =
+        beforeId === null
+          ? all
+          : all.filter((message) => BigInt(message.id) < BigInt(beforeId));
+      const attachments = pool.slice(-limit).flatMap((message) => {
+        if (message.covered) return [];
+        const base = {
+          messageId: message.id,
+          senderId: message.senderId,
+          sender: message.sender,
+          sentAt: message.sentAt,
+        };
+        const file = data.files.get(message.id);
+        const found: Schema["Attachment"][] = file
+          ? [
+              {
+                ...base,
+                kind: "file",
+                url: `https://example.invalid/file/${message.id}`,
+                name: file.name,
+                size: new TextEncoder().encode(file.bytes).byteLength,
+              },
+            ]
+          : [];
+        for (const link of message.text.match(/https?:\/\/\S+/g) ?? [])
+          found.push({ ...base, kind: "link", url: link });
+        return found.filter((item) => kind === null || item.kind === kind);
+      });
+      return checked(
+        { ok: true, room, attachments, count: attachments.length },
+        validators.validateAttachments,
+      );
+    }
+    const messageId = url.searchParams.get("messageId");
+    if (!messageId || !/^\d+$/.test(messageId))
+      return failure(400, "INVALID_REQUEST");
+    const message = all.find((item) => item.id === messageId);
+    if (path === "/revisions") {
+      if (!message) return failure(404, "MESSAGE_NOT_FOUND");
+      const revisions = data.revisions.get(messageId) ?? [];
+      return checked(
+        { ok: true, room, messageId, revisions, count: revisions.length },
+        validators.validateRevisions,
+      );
+    }
+    if (message?.kind !== "file") return failure(404, "MESSAGE_NOT_FOUND");
+    const file = data.files.get(messageId);
+    if (!file) return failure(410, "FILE_EXPIRED");
+    return new Response(file.bytes, {
+      headers: {
+        ...headers,
+        "content-type": "application/octet-stream",
+        "content-disposition": `attachment; filename="file.txt"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+        "x-kanao-source": "local",
+      },
+    });
   }
 
   async function route(request: Request, id: number): Promise<Response> {
@@ -210,6 +305,13 @@ export function startBridge(
         validators.validateSendResult,
       );
     }
+    if (
+      path === "/notice" ||
+      path === "/attachments" ||
+      path === "/revisions" ||
+      path === "/file"
+    )
+      return reads(path, url);
     if (path !== "/context" && path !== "/digest")
       return failure(404, "INVALID_REQUEST");
     const roomId = url.searchParams.get("roomId");

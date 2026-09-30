@@ -1,16 +1,27 @@
 import type { components } from "../contract/decoded";
 import {
+  validateAttachments,
   validateContext,
   validateDigest,
   validateErrorEnvelope,
   validateHealthResponse,
+  validateNoticeAnswer,
+  validateRevisions,
   validateRoomsResponse,
   validateSendResult,
 } from "../contract/validators.js";
 
 type Schema = components["schemas"];
 
-export type JsonRoute = "/health" | "/rooms" | "/context" | "/digest" | "/send";
+export type JsonRoute =
+  | "/health"
+  | "/rooms"
+  | "/context"
+  | "/digest"
+  | "/send"
+  | "/notice"
+  | "/attachments"
+  | "/revisions";
 
 type RoutePayload = {
   "/health": { ok: true };
@@ -18,6 +29,9 @@ type RoutePayload = {
   "/context": Schema["Context"];
   "/digest": Schema["Digest"];
   "/send": Schema["SendResult"];
+  "/notice": Schema["NoticeAnswer"];
+  "/attachments": Schema["Attachments"];
+  "/revisions": Schema["Revisions"];
 };
 
 type EnvelopeValidator = (value: unknown) => boolean;
@@ -28,7 +42,41 @@ const validators: { [Path in JsonRoute]: EnvelopeValidator } = {
   "/context": validateContext,
   "/digest": validateDigest,
   "/send": validateSendResult,
+  "/notice": validateNoticeAnswer,
+  "/attachments": validateAttachments,
+  "/revisions": validateRevisions,
 };
+
+/** A file message's bytes, as `/file` streamed them. */
+export type FileSuccess = {
+  kind: "success";
+  blob: Blob;
+  /** From `Content-Disposition`; somebody else wrote it, so it is only ever a download name. */
+  name: string | null;
+  /** `local` for the desktop client's saved copy, `remote` for the address. */
+  source: "local" | "remote" | null;
+};
+export type FileOutcome = FileSuccess | HttpFailure | HttpDiscarded;
+
+/**
+ * The name in a `Content-Disposition` header: `filename*` (RFC 5987, UTF-8,
+ * percent-encoded) wins over the printable-ASCII `filename` fallback.
+ */
+export function dispositionName(header: string | null): string | null {
+  if (!header) return null;
+  const extended = /filename\*\s*=\s*([^']*)'[^']*'([^;]+)/i.exec(header);
+  if (extended?.[2]) {
+    try {
+      const name = decodeURIComponent(extended[2].trim());
+      if (name) return name;
+    } catch {
+      // A broken escape falls through to the plain name.
+    }
+  }
+  const plain = /filename\s*=\s*("([^"]*)"|[^;]+)/i.exec(header);
+  const name = (plain?.[2] ?? plain?.[1])?.trim();
+  return name || null;
+}
 
 export type HttpSuccess<T> = { kind: "success"; data: T };
 export type HttpFailure = {
@@ -115,6 +163,56 @@ export class HttpClient {
       kind: "success",
       data: envelope as RoutePayload[Path],
     };
+  }
+
+  /**
+   * `/file`, the one route that answers with bytes. A 2xx is the file whatever
+   * its type — a file may itself be JSON — and anything else must be an error
+   * envelope, such as `410 FILE_EXPIRED`, or it is a protocol failure.
+   */
+  async file(request: {
+    roomId: string;
+    messageId: string;
+    signal: AbortSignal;
+  }): Promise<FileOutcome> {
+    if (request.signal.aborted) return { kind: "discarded" };
+    const query = new URLSearchParams({
+      roomId: request.roomId,
+      messageId: request.messageId,
+      // The same owner decision as `/context` (DESIGN.md G2): a room the user
+      // chose to read is opened rather than refused with KEY_UNAVAILABLE.
+      open: "true",
+    });
+    let response: Response;
+    try {
+      response = await fetch(`/api/file?${query}`, {
+        credentials: "same-origin",
+        signal: request.signal,
+      });
+    } catch (error) {
+      if (request.signal.aborted) return { kind: "discarded" };
+      throw error;
+    }
+    if (response.ok) {
+      const blob = await response.blob();
+      if (request.signal.aborted) return { kind: "discarded" };
+      const source = response.headers.get("x-kanao-source");
+      return {
+        kind: "success",
+        blob,
+        name: dispositionName(response.headers.get("content-disposition")),
+        source: source === "local" || source === "remote" ? source : null,
+      };
+    }
+    let envelope: unknown;
+    try {
+      envelope = JSON.parse(await response.text());
+    } catch {
+      throw new HttpProtocolError();
+    }
+    if (request.signal.aborted) return { kind: "discarded" };
+    if (!validateErrorEnvelope(envelope)) throw new HttpProtocolError();
+    return { kind: "failure", status: response.status, error: envelope.error };
   }
 
   private isCurrent(key: string, generation: number, signal: AbortSignal) {

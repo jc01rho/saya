@@ -59,6 +59,37 @@ export interface MessageBubbleProps {
   state?: SendState;
   /** Controls the composer feature supplies, e.g. 이 기록으로 확인 or 다시 보내기. */
   actions?: ReactNode;
+  /** Present where `/revisions` can be asked; without it 수정됨 is a plain word. */
+  onRevisions?: (() => void) | undefined;
+}
+
+function Reactions({
+  reactions,
+}: {
+  reactions: NonNullable<Message["reactions"]>;
+}) {
+  return (
+    <ul
+      className={styles.reactions}
+      data-ui="reactions"
+      aria-label={COPY.reactions}
+    >
+      {reactions.map((reaction) => (
+        <li
+          key={`${reaction.label}:${reaction.code ?? ""}`}
+          className={styles.reaction}
+        >
+          <span className="sr-only">
+            {COPY.reaction(reaction.label, reaction.count)}
+          </span>
+          <span aria-hidden="true">{reaction.label}</span>
+          <span className={styles.count} aria-hidden="true">
+            {reaction.count.toLocaleString("ko-KR")}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
@@ -72,6 +103,7 @@ export function MessageBubble({
   now,
   state,
   actions,
+  onRevisions,
 }: MessageBubbleProps) {
   const time = formatTime(message.sentAt, now);
   const kind = kindLabel(message.kind);
@@ -95,6 +127,8 @@ export function MessageBubble({
   const placeholder = isMediaPlaceholder(message.text, message, kind);
   const showLabel = Boolean(kind) && !media && !placeholder;
   const showText = Boolean(message.text) && !placeholder;
+  // SafeBot's cover is the client's own: an empty body under it is hidden, not absent.
+  const covered = message.covered === "safebot";
 
   return (
     <article
@@ -131,21 +165,53 @@ export function MessageBubble({
               {kind}
             </span>
           ) : null}
+          {covered && showText ? (
+            <span className={styles.kind} data-ui="covered">
+              {COPY.coveredShown}
+            </span>
+          ) : null}
           {showText ? (
             <p className={styles.text}>{linkify(message.text as string)}</p>
+          ) : covered ? (
+            <span className={styles.kind} data-ui="covered">
+              {COPY.covered}
+            </span>
           ) : showLabel || media ? null : (
             <span className={styles.kind}>{COPY.emptyBody}</span>
           )}
           {message.photo ? <Photo photo={message.photo} now={now} /> : null}
           {message.video ? <Video video={message.video} now={now} /> : null}
-          {linked ? <LinkCard url={linked} /> : null}
+          {linked && !covered ? <LinkCard url={linked} /> : null}
+          {message.reactions?.length ? (
+            <Reactions reactions={message.reactions} />
+          ) : null}
           {/* The stamp rides the last line, as it does in every messenger. */}
-          <time
-            className={styles.time}
-            {...(time.dateTime ? { dateTime: time.dateTime } : {})}
-          >
-            {time.label}
-          </time>
+          <span className={styles.stamp}>
+            {message.edited ? (
+              onRevisions ? (
+                <button
+                  type="button"
+                  className={styles.edited}
+                  data-ui="edited"
+                  aria-label={COPY.editedOpen}
+                  aria-haspopup="dialog"
+                  onClick={onRevisions}
+                >
+                  {COPY.edited}
+                </button>
+              ) : (
+                <span className={styles.edited} data-ui="edited">
+                  {COPY.edited}
+                </span>
+              )
+            ) : null}
+            <time
+              className={styles.time}
+              {...(time.dateTime ? { dateTime: time.dateTime } : {})}
+            >
+              {time.label}
+            </time>
+          </span>
         </div>
       </div>
       {stateWord || actions ? (

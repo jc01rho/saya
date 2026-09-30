@@ -31,6 +31,14 @@ export const COPY = {
   videoOpen: "동영상 재생",
   /** The signed address has a deadline; past it the client never asks for it. */
   videoGone: "동영상을 더 이상 불러올 수 없습니다",
+  /** `covered: "safebot"` with the body hidden, the way the desktop client hides it. */
+  covered: "세이프봇이 가린 메시지입니다",
+  coveredShown: "세이프봇이 가림",
+  edited: "수정됨",
+  editedOpen: "수정됨, 수정 기록 보기",
+  reactions: "공감",
+  /** Who reacted is not stored by the client, only how many chose each kind. */
+  reaction: (label: string, count: number) => `${label} ${count}명`,
 } as const;
 
 /** The desktop's count belongs in the row's accessible name, exact even past 99. */

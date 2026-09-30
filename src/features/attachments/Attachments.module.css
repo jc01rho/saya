@@ -1,0 +1,115 @@
+/* Kind filters: peers in one row that wraps (stylegallery: tab-strip, wrap-row). */
+.kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* As many square columns as fit, never narrower than a thumb (stylegallery: ram-grid). */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(96px, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.tile {
+  position: relative;
+  min-width: 0;
+}
+
+/* The media keeps its slot square and is cropped to it (stylegallery: frame). */
+.frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  overflow: clip;
+  border-radius: 6px;
+  background: var(--bubble-other);
+  color: var(--ink-muted);
+}
+
+.media {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: cover;
+}
+
+.play {
+  font-size: var(--space-24);
+  line-height: 1;
+}
+
+.gone {
+  padding: var(--space-8);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  text-align: center;
+}
+
+.badge {
+  position: absolute;
+  inset-inline-end: var(--space-4);
+  inset-block-end: var(--space-4);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  color: var(--field-wall);
+  font-size: 11px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Files and links: a label column beside what it is and who sent it (stylegallery: media-object). */
+.rows {
+  display: grid;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 4ch minmax(0, 1fr);
+  gap: var(--space-12);
+  padding-block: var(--space-12);
+  min-width: 0;
+}
+
+.row + .row {
+  border-block-start: var(--rule-width) solid var(--seam);
+}
+
+.kind {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.what {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.name,
+.link {
+  max-width: 100%;
+  font-size: var(--text-body);
+  line-height: var(--leading-title);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.more {
+  justify-self: start;
+}

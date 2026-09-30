@@ -1,0 +1,27 @@
+/* Versions as a stack separated by the hairline (stylegallery: stack). */
+.list {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.item {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.item + .item {
+  padding-block-start: var(--space-16);
+  border-block-start: var(--rule-width) solid var(--seam);
+}
+
+.label {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.current {
+  color: var(--ink);
+  font-weight: 600;
+}
