@@ -154,7 +154,7 @@ export function MessageBubble({
         {message.fromMe ? null : continued ? (
           <span className={styles.gap} aria-hidden="true" />
         ) : (
-          <Avatar name={speakerName} size={34} />
+          <Avatar name={speakerName} size={34} src={message.senderImage} />
         )}
         <div className={styles.column}>
           {showSpeaker || mentioned ? (

@@ -9,6 +9,55 @@ export const SEED = 7;
 export const FIRST_ROOM_ID = "18491246151592761";
 const EPOCH = Date.UTC(2037, 3, 7, 9);
 
+const PICTURE_TONES = [
+  ["#3D5A80", "#E0FBFC"],
+  ["#9C6644", "#EDE0D4"],
+  ["#2A9D8F", "#E9F5DB"],
+  ["#6D597A", "#FFE5EC"],
+  ["#BC6C25", "#FEFAE0"],
+  ["#1D3557", "#F1FAEE"],
+  ["#588157", "#DAD7CD"],
+  ["#7F5539", "#FFF1E6"],
+] as const;
+
+/**
+ * A made-up profile picture: two tones and two shapes drawn here, as an SVG
+ * data address, so the harness shows pictures without any network request and
+ * without anybody's face. The real cores send HTTPS addresses on the client's
+ * CDN; nothing in the client depends on which host an address names.
+ */
+export function syntheticPicture(index: number): string {
+  const [ground, figure] = PICTURE_TONES[index % PICTURE_TONES.length] ?? [
+    "#3D5A80",
+    "#E0FBFC",
+  ];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="${ground}"/><circle cx="48" cy="38" r="17" fill="${figure}"/><rect x="18" y="62" width="60" height="40" rx="30" fill="${figure}"/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** An address that cannot be drawn, so the monogram under it must remain. */
+export const BROKEN_PICTURE = "data:image/png;base64,AAAA";
+
+/** Senders 1, 2, 3, 5 and 6 have pictures; 0 (the account), 4 and 7 have none. */
+const PICTURED_SENDERS = new Set([1, 2, 3, 5, 6]);
+
+/**
+ * A room's pictures, in the contract's shape: one for a 1:1, up to four for a
+ * group. Some rooms have none, one group has a broken address among good ones
+ * and one has only a broken one, so both fallbacks are always on screen.
+ */
+function roomPictures(r: number): string[] | undefined {
+  if (r % 3 === 0) return r % 6 === 3 ? undefined : [syntheticPicture(r)];
+  if (r === 4)
+    return [syntheticPicture(1), BROKEN_PICTURE, syntheticPicture(3)];
+  if (r === 7) return [BROKEN_PICTURE];
+  if (r % 5 === 0) return undefined;
+  const count = 2 + (r % 3);
+  return Array.from({ length: count }, (_, index) =>
+    syntheticPicture(r + index),
+  );
+}
+
 /** All values are invented; no source outside this generator is consulted. */
 export function generateData(dataset: Dataset = "baseline", seed = SEED) {
   let state = seed >>> 0;
@@ -49,6 +98,8 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
         sentAt: new Date(EPOCH - r * 86_400_000 + m * 1000).toISOString(),
         fromMe: senderIndex === 0,
       };
+      if (PICTURED_SENDERS.has(senderIndex))
+        row.senderImage = syntheticPicture(senderIndex);
       if (m % 5 === 0 && m > 0) {
         const previous = rows[m - 1];
         if (!previous) throw new Error("Missing generated predecessor");
@@ -122,6 +173,7 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
       });
     }
     const last = rows.at(-1);
+    const pictures = roomPictures(r);
     rooms.push({
       id,
       title: `가상 관측소 ${r + 1}`,
@@ -132,6 +184,7 @@ export function generateData(dataset: Dataset = "baseline", seed = SEED) {
       lastMessageId: last?.id ?? null,
       lastActivityAt: last?.sentAt ?? null,
       readable: r % 19 !== 18,
+      ...(pictures ? { images: pictures } : {}),
     });
     messages.set(id, rows);
   }

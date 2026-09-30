@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 import type { components } from "../contract/decoded";
-import { Avatar } from "./Avatar";
+import { RoomAvatar } from "./Avatar";
 import { unreadName } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
@@ -53,7 +53,7 @@ export function RoomRow({
         aria-current={active ? "page" : undefined}
         onClick={onSelect}
       >
-        <Avatar name={room.title} size={48} />
+        <RoomAvatar name={room.title} size={48} images={room.images} />
         <div className={styles.body}>
           <div className={styles.header}>
             <span className={styles.title}>{room.title}</span>

@@ -22,7 +22,7 @@ import { NoticeBar } from "../features/notice";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
-import { Avatar, Cat, COPY } from "../ui";
+import { Cat, COPY, RoomAvatar } from "../ui";
 import styles from "./App.module.css";
 import { Rail } from "./Rail";
 import { ROOMS_HASH, useRoute } from "./routes";
@@ -178,7 +178,11 @@ function RoomOutlet({
               />
             </svg>
           </a>
-          <Avatar name={snapshot?.room.title ?? APP_COPY.untitled} size={40} />
+          <RoomAvatar
+            name={snapshot?.room.title ?? APP_COPY.untitled}
+            size={40}
+            images={snapshot?.room.images}
+          />
           <div className={styles.identity}>
             <h1 className={styles.title}>
               {snapshot?.room.title ?? APP_COPY.untitled}

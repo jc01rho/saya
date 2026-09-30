@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import styles from "./Avatar.module.css";
 
 /**
@@ -50,24 +50,67 @@ function monogram(name: string): string {
   return (first ?? "?").toUpperCase();
 }
 
-export interface AvatarProps {
-  /** The name the circle stands for; also the seed of its tone. */
-  name: string;
-  /** Diameter in px. */
-  size: number;
+/**
+ * Addresses that failed once in this tab. A profile picture that did not load
+ * is not asked for again by every row that shows the same person; the
+ * monogram stands in until the page is reloaded.
+ */
+const failed = new Set<string>();
+
+/** Whether an address is worth drawing: present and not already known to fail. */
+export function usable(src: string | null | undefined): src is string {
+  return typeof src === "string" && src !== "" && !failed.has(src);
 }
 
 /**
- * `Room` and `Message` carry no image member in `openapi.json`, so there is no
- * photograph to fetch and none is invented: this is a letter on a colour.
- * Decorative by definition — the name it stands for is already in the row.
+ * A picture laid over its own monogram. The monogram is always there, so a
+ * picture that is slow, missing or refused never leaves a hole or moves the
+ * row; when it fails, it is simply taken away.
  */
-export function Avatar({ name, size }: AvatarProps) {
+export function Picture({ src, onFail }: { src: string; onFail: () => void }) {
+  return (
+    <img
+      className={styles.picture}
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      draggable={false}
+      onError={() => {
+        failed.add(src);
+        onFail();
+      }}
+    />
+  );
+}
+
+export interface AvatarProps {
+  /** The name the square stands for; also the seed of its tone. */
+  name: string;
+  /** Side in px. */
+  size: number;
+  /**
+   * The profile picture the bridge reported (0.17.0 `senderImage`), if any.
+   * Without one — or once it fails — the monogram is what is drawn.
+   */
+  src?: string | null | undefined;
+}
+
+/**
+ * A profile picture where the contract gives one, a letter on a colour where it
+ * does not. Decorative by definition — the name it stands for is already in
+ * the row — so it is hidden from assistive tech either way.
+ */
+export function Avatar({ name, size, src }: AvatarProps) {
   const tone = toneFor(name);
+  const [, setBroken] = useState(0);
+  const draw = usable(src);
   return (
     <span
       className={styles.avatar}
       data-ui="avatar"
+      data-picture={draw || undefined}
       aria-hidden="true"
       style={
         {
@@ -78,6 +121,51 @@ export function Avatar({ name, size }: AvatarProps) {
       }
     >
       {monogram(name)}
+      {draw ? (
+        <Picture src={src} onFail={() => setBroken((count) => count + 1)} />
+      ) : null}
+    </span>
+  );
+}
+
+export interface RoomAvatarProps {
+  /** The room's title, for the monogram under the pictures. */
+  name: string;
+  size: number;
+  /** 0.17.0 `Room.images`: the pictures its icon is made of, best first. */
+  images?: readonly string[] | undefined;
+}
+
+/**
+ * A room's icon: one picture as a single square; two to four as a grid inside
+ * the same square, the way the messenger arrangement draws a group. A picture
+ * that fails drops out of the grid, and with none left the monogram remains.
+ */
+export function RoomAvatar({ name, size, images }: RoomAvatarProps) {
+  const [, setBroken] = useState(0);
+  const shown = (images ?? []).filter(usable).slice(0, 4);
+  if (shown.length <= 1)
+    return <Avatar name={name} size={size} src={shown[0] ?? null} />;
+  const tone = toneFor(name);
+  return (
+    <span
+      className={styles.grid}
+      data-ui="avatar"
+      data-picture="grid"
+      data-count={shown.length}
+      aria-hidden="true"
+      style={
+        {
+          "--size": `${size}px`,
+          "--tone": tone,
+        } as CSSProperties
+      }
+    >
+      {shown.map((src) => (
+        <span key={src} className={styles.cell}>
+          <Picture src={src} onFail={() => setBroken((count) => count + 1)} />
+        </span>
+      ))}
     </span>
   );
 }
