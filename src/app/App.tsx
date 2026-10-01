@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,6 +14,14 @@ import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
 import { Reconciler } from "../core/reconcile";
 import type { ClientStores, Immutable } from "../core/stores";
+import {
+  AgentActivity,
+  AgentToolsEntry,
+  AgentToolsState,
+  agentSourceOf,
+  createAgentTools,
+  useAgentTools,
+} from "../features/agent";
 import { AttachmentsPanel, AttachmentsToggle } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
@@ -231,6 +240,12 @@ function RoomOutlet({
  */
 export function App({ session }: { session?: Session }) {
   const [own] = useState(() => session ?? createSession());
+  const [agent] = useState(() => new AgentToolsState());
+  const tools = useMemo(
+    () => () => createAgentTools(agentSourceOf(own.stores, own.http)),
+    [own],
+  );
+  useAgentTools(agent, tools);
   const route = useRoute();
   const { phase, reload } = useCatalog(own.http, own.cache);
   const roomId = route.kind === "room" ? route.roomId : null;
@@ -294,6 +309,7 @@ export function App({ session }: { session?: Session }) {
         stores={own.stores}
         activeRoomId={roomId}
         loading={phase.kind === "loading"}
+        actions={<AgentToolsEntry state={agent} />}
       />
       <main className={styles.thread} data-ui="thread-outlet">
         {roomId === null ? (
@@ -307,6 +323,7 @@ export function App({ session }: { session?: Session }) {
           />
         )}
       </main>
+      <AgentActivity state={agent} />
     </div>
   );
 }
