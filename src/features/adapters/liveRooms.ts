@@ -17,6 +17,7 @@ const PREVIEW = 200;
 let snapshot: ReadonlyMap<string, AdapterRooms> = new Map();
 const listeners = new Set<() => void>();
 const watched = new Map<string, { refs: number; stop: () => void }>();
+const connections = new Map<string, number>();
 
 function update(
   id: string,
@@ -47,7 +48,10 @@ function pause(ms: number, signal: AbortSignal) {
  * One adapter's rooms, kept current: a live message moves its room up and
  * becomes its preview at once, a change elsewhere or a new message asks for
  * the list again shortly after, so unread counts stay the messenger's own,
- * and a read mark from a room view zeroes that room's count.
+ * and a read mark from a room view zeroes that room's count. When the stream
+ * comes back after a drop, the declaration is read again (the adapter may
+ * have restarted as something else) and the list is asked for again, since
+ * whatever happened while it was down never reached this stream.
  */
 function start(id: string): () => void {
   const controller = new AbortController();
@@ -94,13 +98,30 @@ function start(id: string): () => void {
       return;
     }
     void load();
+    const recover = async () => {
+      const again = await fetchCapabilities(id, signal).catch(() => null);
+      if (signal.aborted) return;
+      if (again?.kind === "incompatible") {
+        update(id, () => ({ state: "problem", problem: again }));
+        controller.abort();
+        return;
+      }
+      void load();
+    };
     let failures = 0;
+    let connected = false;
     while (!signal.aborted) {
       const end = await streamAdapter(id, {
         since: {},
         signal,
         onEvent(event) {
-          if (event.type === "ready") failures = 0;
+          if (event.type === "ready") {
+            if (connected || failures > 0) void recover();
+            connected = true;
+            failures = 0;
+            connections.set(id, (connections.get(id) ?? 0) + 1);
+            for (const listener of listeners) listener();
+          }
           if (
             event.type === "message.edited" ||
             event.type === "message.deleted"
@@ -176,6 +197,14 @@ export function subscribeAdapterRooms(listener: () => void): () => void {
 
 export function adapterRoomsSnapshot(): ReadonlyMap<string, AdapterRooms> {
   return snapshot;
+}
+
+/**
+ * How many times this adapter's shared stream has said `ready`; it moves on
+ * every (re)connection, so a view can read the declaration again when it does.
+ */
+export function adapterConnections(id: string): number {
+  return connections.get(id) ?? 0;
 }
 
 /** The messenger's own unread counts summed over the rooms it listed, once it has. */

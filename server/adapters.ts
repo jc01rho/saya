@@ -71,8 +71,14 @@ export function adapterProxies(
         rewrite: (path) => path.slice(prefix.length),
         headers: { Authorization: `Bearer ${token}` },
         configure(proxy) {
-          proxy.on("proxyRes", (response) => {
-            Object.assign(response.headers, ADAPTER_RESPONSE_HEADERS);
+          proxy.on("proxyRes", (upstream, _request, response) => {
+            Object.assign(upstream.headers, ADAPTER_RESPONSE_HEADERS);
+            // An adapter that dies mid-answer (restarting under an open
+            // stream) must end this answer too. Otherwise the browser keeps
+            // a stream nothing will write to again and never reconnects.
+            upstream.on("close", () => {
+              if (!upstream.complete) response.destroy();
+            });
           });
         },
       };

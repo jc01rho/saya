@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import {
+  adapterConnections,
   adapterRoomsSnapshot,
   subscribeAdapterRooms,
   unreadTotal,
@@ -117,6 +118,85 @@ test("watchers share one list and one stream; a live message moves its preview, 
   expect(closed).toBe(false);
   second();
   await bounded(streamClosed.promise, "stream closed");
+});
+
+const frame = (event: string, data: unknown) =>
+  new TextEncoder().encode(
+    `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+  );
+const ready = frame("ready", { ok: true, resumed: false, cursor: {} });
+
+/** Each stream says `ready`; the first then ends, as when the adapter restarts. */
+function restartingAdapter(capabilities: () => unknown) {
+  const seen = { capabilities: 0, roomLists: 0, streams: 0 };
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("/capabilities")) {
+      seen.capabilities += 1;
+      return json(capabilities());
+    }
+    if (url.endsWith("/rooms")) {
+      seen.roomLists += 1;
+      return json({
+        ok: true,
+        complete: true,
+        rooms: [
+          {
+            id: "r1",
+            title: "Synthetic one",
+            kind: "group",
+            unread: seen.roomLists,
+          },
+        ],
+      });
+    }
+    seen.streams += 1;
+    const first = seen.streams === 1;
+    return new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(ready);
+          if (first) controller.close();
+        },
+      }),
+      { headers: { "content-type": "text/event-stream" } },
+    );
+  }) as unknown as typeof fetch;
+  return seen;
+}
+
+test("a stream that comes back reads the declaration again and lists the rooms again", async () => {
+  const id = "shared-three";
+  const seen = restartingAdapter(() => declaration);
+  const stop = watchAdapterRooms([id]);
+  await until(() => {
+    const entry = adapterRoomsSnapshot().get(id);
+    return (
+      adapterConnections(id) === 2 &&
+      entry?.state === "ready" &&
+      unreadTotal(entry) === 2
+    );
+  }, "relisted after reconnecting");
+  expect(seen.capabilities).toBe(2);
+  expect(seen.roomLists).toBe(2);
+  stop();
+});
+
+test("an adapter that comes back outside the contract range becomes a problem", async () => {
+  const id = "shared-four";
+  const seen = restartingAdapter(() =>
+    seen.capabilities === 1
+      ? declaration
+      : { ...declaration, contract: { version: "0.3.0" } },
+  );
+  const stop = watchAdapterRooms([id]);
+  await until(
+    () => adapterRoomsSnapshot().get(id)?.state === "problem",
+    "refused after reconnecting",
+  );
+  expect(seen.roomLists).toBe(1);
+  expect(unreadTotal(adapterRoomsSnapshot().get(id))).toBeNull();
+  stop();
 });
 
 test("an adapter outside this client's contract range is a problem, not a list", async () => {

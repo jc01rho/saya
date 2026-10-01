@@ -92,12 +92,12 @@ describe("what comes back through the proxy", () => {
     ])["/adapters/telegram/"];
     const proxy = new EventEmitter();
     options?.configure?.(proxy as never, options);
-    const response = {
+    const response = Object.assign(new EventEmitter(), {
       headers: {
         "content-type": "text/html",
         "content-security-policy": "default-src *",
       } as Record<string, string>,
-    };
+    });
     proxy.emit("proxyRes", response, {}, {});
     expect(response.headers).toEqual({
       "content-type": "text/html",
@@ -107,5 +107,34 @@ describe("what comes back through the proxy", () => {
       "content-security-policy": "default-src 'none'; sandbox",
       "x-content-type-options": "nosniff",
     });
+  });
+
+  test("an adapter that dies mid-answer ends the browser's answer too; one that finishes does not", () => {
+    const options = adapterProxies([
+      { id: "telegram", url: "http://127.0.0.1:8790", token: TOKEN },
+    ])["/adapters/telegram/"];
+    const proxy = new EventEmitter();
+    options?.configure?.(proxy as never, options);
+    const answer = (complete: boolean) => {
+      const upstream = Object.assign(new EventEmitter(), {
+        headers: {} as Record<string, string>,
+        complete,
+      });
+      let destroyed = false;
+      proxy.emit(
+        "proxyRes",
+        upstream,
+        {},
+        {
+          destroy() {
+            destroyed = true;
+          },
+        },
+      );
+      upstream.emit("close");
+      return destroyed;
+    };
+    expect(answer(false)).toBe(true);
+    expect(answer(true)).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   type AdapterMessage,
@@ -24,6 +25,7 @@ import {
   streamAdapter,
 } from "../../transport/adapters";
 import { problemSentence } from "./copy";
+import { adapterConnections, subscribeAdapterRooms } from "./liveRooms";
 import { noteRead, rememberedRoom, rememberRooms } from "./rooms";
 import styles from "./Thread.module.css";
 import {
@@ -717,8 +719,15 @@ export function AdapterThread({
   );
 }
 
-/** The room's title (from the list when this tab has it) and the adapter's declaration. */
+/**
+ * The room's title (from the list when this tab has it) and the adapter's
+ * declaration, read again whenever the adapter's shared stream (re)connects,
+ * so a room opened while the adapter was down comes back with it.
+ */
 export function useAdapterRoom(adapterId: string, roomId: string) {
+  const connection = useSyncExternalStore(subscribeAdapterRooms, () =>
+    adapterConnections(adapterId),
+  );
   const [room, setRoom] = useState<AdapterRoom | undefined>(() =>
     rememberedRoom(adapterId, roomId),
   );
@@ -726,22 +735,34 @@ export function useAdapterRoom(adapterId: string, roomId: string) {
     { kind: "checking" } | AdapterOutcome
   >({ kind: "checking" });
   useEffect(() => {
+    void connection;
     const controller = new AbortController();
-    const ignore = () => {
-      // Only an abort rejects.
-    };
     fetchCapabilities(adapterId, controller.signal).then(
       setCapabilities,
-      ignore,
+      () => {
+        // Only an abort rejects.
+      },
     );
-    if (!rememberedRoom(adapterId, roomId))
-      fetchRooms(adapterId, controller.signal).then((result) => {
-        if (result.kind !== "ok") return;
-        rememberRooms(adapterId, result.data.rooms);
-        setRoom(rememberedRoom(adapterId, roomId));
-      }, ignore);
     return () => controller.abort();
-  }, [adapterId, roomId]);
+  }, [adapterId, connection]);
+  useEffect(() => {
+    void connection;
+    const controller = new AbortController();
+    const known = rememberedRoom(adapterId, roomId);
+    if (known) setRoom(known);
+    else
+      fetchRooms(adapterId, controller.signal).then(
+        (result) => {
+          if (result.kind !== "ok") return;
+          rememberRooms(adapterId, result.data.rooms);
+          setRoom(rememberedRoom(adapterId, roomId));
+        },
+        () => {
+          // Only an abort rejects.
+        },
+      );
+    return () => controller.abort();
+  }, [adapterId, roomId, connection]);
   return { room, capabilities };
 }
 
