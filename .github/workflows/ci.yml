@@ -31,11 +31,12 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Test
-        run: bun test
-
+      # tests/security/proxy-boundary.test.ts scans dist/, so the build comes first.
       - name: Production build
         run: bun run build
+
+      - name: Test
+        run: bun test
 
       - name: Size check
         run: bun run size:check

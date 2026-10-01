@@ -6,8 +6,9 @@ const steps = [
   ["contract:check", bunExe, ["run", "contract:check"]],
   ["typecheck", bunExe, ["run", "typecheck"]],
   ["lint", bunExe, ["run", "lint"]],
-  ["test", bunExe, ["test"]],
+  // proxy-boundary.test.ts scans dist/, so build before test (as CI does).
   ["build", bunExe, ["run", "build"]],
+  ["test", bunExe, ["test"]],
   ["size:check", bunExe, ["run", "size:check"]],
 ] as const;
 
