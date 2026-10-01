@@ -62,10 +62,12 @@ export interface MessageBubbleProps {
   /** Present where `/revisions` can be asked; without it 수정됨 is a plain word. */
   onRevisions?: (() => void) | undefined;
   /**
-   * r4: the previous turn on the wall was the same speaker on the same day,
-   * so this one drops the monogram and the name and keeps their space.
+   * Not the first of its run (one speaker, one minute): this turn drops the
+   * monogram, the name and the tail, and sits close under the one above.
    */
   continued?: boolean;
+  /** The last of its run, the one that shows the time. Defaults to true. */
+  last?: boolean;
 }
 
 function Reactions({
@@ -111,6 +113,7 @@ export function MessageBubble({
   actions,
   onRevisions,
   continued = false,
+  last = true,
 }: MessageBubbleProps) {
   const time = formatTime(message.sentAt, now);
   const kind = kindLabel(message.kind);
@@ -149,6 +152,7 @@ export function MessageBubble({
       data-side={message.fromMe ? "self" : "other"}
       data-state={state ?? (message.fromMe ? "read" : undefined)}
       data-continued={continued || undefined}
+      data-run-last={last || undefined}
     >
       <div className={styles.row}>
         {message.fromMe ? null : continued ? (
@@ -230,8 +234,9 @@ export function MessageBubble({
                   </span>
                 )
               ) : null}
+              {/* Only the run's last turn shows the time; the others keep it for screen readers. */}
               <time
-                className={styles.time}
+                className={last ? styles.time : "sr-only"}
                 {...(time.dateTime ? { dateTime: time.dateTime } : {})}
               >
                 {time.label}
