@@ -68,6 +68,29 @@ before touching it.
 - If a feature needs something the contract does not expose, it is an issue on
   the core repositories, not a local workaround.
 
+### The adapter contract (owner, 2026-10-01, `feat/multi-provider`)
+
+saya is becoming a client for more than one messenger. The owner amended the
+line above deliberately, and only this far:
+
+- **Two contracts, both copied, neither written here.** KakaoTalk stays on
+  `openapi.json` from `kanao`/`kamado`, unchanged. Every network messenger
+  (Telegram first; Slack, Discord and others later) is answered by an adapter
+  in the `tsuba` repository, which publishes one shared adapter contract. saya
+  copies that file byte for byte and generates from it exactly as it does for
+  `openapi.json`. KakaoTalk is not forced into the adapter contract.
+- **Still no core here.** saya never holds a messenger session, API key or bot
+  token, never imports a messenger SDK, and never talks to Telegram, Slack or
+  any other service directly. Each adapter runs as its own process behind the
+  same kind of proxy as a KakaoTalk core, and the proxy injects its token.
+- **Draw what the adapter declares, nothing more.** Adapters differ. Each one
+  answers `GET /capabilities` with the features it supports and their limits;
+  a control for a feature that is not declared is not drawn, and an absent
+  feature means unsupported, never "probably fine". Do not branch on the
+  provider's name where a capability says the same thing.
+- **A feature an adapter should expose is an issue on `tsuba`**, the same way
+  a missing KakaoTalk feature is an issue on the cores.
+
 ## `openapi.json` is copied, never edited
 
 It is byte-identical to the file in both core repositories. Updating means
@@ -123,7 +146,8 @@ request says plainly whether it was.
 
 ## Deliberately absent
 
-A second contract, an in-process plugin API, and any path that reaches KakaoTalk
+A contract of saya's own (the adapter contract belongs to `tsuba`), an in-process
+plugin API, any messenger SDK in the client, and any path that reaches KakaoTalk
 without going through a core. Login automation, protocol reimplementation and
 history harvesting are absent here for the same reasons they are absent there.
 `server/` is the single, optional exception described above; it answers two
