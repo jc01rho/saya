@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ADAPTERS_HASH, roomHash } from "../../app/routes";
+import { roomHash } from "../../app/routes";
 import type { components } from "../../contract/decoded";
 import type { ClientStores } from "../../core/stores";
 import { Cat, cx, RoomRow } from "../../ui";
@@ -237,18 +237,6 @@ export function RoomsPane({
                 {ROOMS_COPY.brandLatin}
               </span>
             </Brand>
-            {/* Below 768px there is no rail, so the list carries its 연결 too. */}
-            <a
-              className={styles.adapters}
-              href={ADAPTERS_HASH}
-              data-ui="list-adapters"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6" />
-                <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6" />
-              </svg>
-              <span className="sr-only">{ROOMS_COPY.adapters}</span>
-            </a>
           </div>
           <div className={styles.search}>
             <svg viewBox="0 0 16 16" aria-hidden="true">

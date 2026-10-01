@@ -7,8 +7,9 @@ import {
   listAdapters,
 } from "../../transport/adapters";
 import styles from "./Adapters.module.css";
-import { AdapterRooms } from "./rooms";
+import { KakaoCard, type KakaoStatus } from "./kakao";
 
+export type { KakaoStatus } from "./kakao";
 export { AdapterRoomBody, useAdapterRoom } from "./thread";
 
 const COPY = {
@@ -41,9 +42,7 @@ const COPY = {
   meta: (capabilities: Capabilities) =>
     `${capabilities.adapter.name} ${capabilities.adapter.version} · 계약 ${capabilities.contract.version}`,
   features: "제공하는 기능",
-  rooms: "방",
-  noFeatures:
-    "아직 이 어댑터가 제공하는 기능이 없습니다. 대화 목록과 메시지는 어댑터가 기능을 밝히면 여기서 열립니다.",
+  noFeatures: "아직 이 어댑터가 제공하는 기능이 없습니다.",
 } as const;
 
 /** The shared vocabulary in the adapter contract; ids a client does not know are ignored. */
@@ -96,13 +95,7 @@ function problem(state: CardState): string | null {
   }
 }
 
-function Declared({
-  id,
-  capabilities,
-}: {
-  id: string;
-  capabilities: Capabilities;
-}) {
+function Declared({ capabilities }: { capabilities: Capabilities }) {
   const known = Object.keys(capabilities.features).flatMap((id) => {
     const label = FEATURE_LABELS[id];
     return label ? [{ id, label }] : [];
@@ -124,15 +117,6 @@ function Declared({
       ) : (
         <p className={styles.line}>{COPY.noFeatures}</p>
       )}
-      {capabilities.features["rooms.list"] ? (
-        <>
-          <h3 className={styles.subheading}>{COPY.rooms}</h3>
-          <AdapterRooms
-            adapterId={id}
-            openable={Boolean(capabilities.features["messages.read"])}
-          />
-        </>
-      ) : null}
     </>
   );
 }
@@ -171,7 +155,7 @@ function AdapterCheck({ id, onRetry }: { id: string; onRetry: () => void }) {
         </span>
       </header>
       {state.kind === "connected" ? (
-        <Declared id={id} capabilities={state.capabilities} />
+        <Declared capabilities={state.capabilities} />
       ) : null}
       {trouble ? (
         <>
@@ -196,8 +180,18 @@ function AdapterCard({ id }: { id: string }) {
   );
 }
 
-/** Every adapter the proxy fronts, each drawn from what it declares; never from its name. */
-export function AdaptersPane() {
+/**
+ * 연결: the KakaoTalk core first, always, then every adapter the proxy fronts,
+ * each drawn from what it declares; never from its name. Rooms are in the
+ * list tabs, not here.
+ */
+export function AdaptersPane({
+  kakao,
+  onKakaoRetry,
+}: {
+  kakao: KakaoStatus;
+  onKakaoRetry: () => void;
+}) {
   const [index, setIndex] = useState<AdapterIndexOutcome | null>(null);
   useEffect(() => {
     const controller = new AbortController();
@@ -210,6 +204,7 @@ export function AdaptersPane() {
   return (
     <div className={styles.pane} data-ui="adapters-pane">
       <div className={styles.column}>
+        <KakaoCard status={kakao} onRetry={onKakaoRetry} />
         {index === null ? (
           <p className={styles.line} aria-live="polite">
             {COPY.checkingIndex}

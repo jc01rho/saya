@@ -1,13 +1,21 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { ClientStores } from "../core/stores";
 import { cx, UnreadBadge } from "../ui";
+import type { AdapterTab } from "./adapterTabs";
 import styles from "./Rail.module.css";
-import { ADAPTERS_HASH, ROOMS_HASH } from "./routes";
+import {
+  ADAPTERS_HASH,
+  ALL_HASH,
+  adapterListHash,
+  type ListMode,
+  ROOMS_HASH,
+} from "./routes";
 
 const RAIL_COPY = {
   nav: "메뉴",
   brand: "さや (saya)",
-  chats: "대화",
+  all: "전체",
+  kakao: "카카오",
   adapters: "연결",
   unread: (count: number) =>
     `데스크톱 기준 안 읽음 ${count.toLocaleString("ko-KR")}개`,
@@ -51,18 +59,30 @@ function useTotalUnread(stores: ClientStores): number {
   return useSyncExternalStore(source.subscribe, source.compute, source.compute);
 }
 
+/** A messenger's initial in an outlined squircle; no messenger artwork is drawn. */
+function Mark({ name }: { name: string }) {
+  return (
+    <span className={styles.mark} aria-hidden="true">
+      {[...name][0]?.toLocaleUpperCase("ko-KR")}
+    </span>
+  );
+}
+
 /**
- * The left rail of the messenger arrangement: the mark, then the sections —
- * 대화 (the KakaoTalk core) and 연결 (the messenger adapters). Nothing here claims a connection state — the rail draws no
- * status dot, because no slice reports one yet.
+ * The left rail of the messenger arrangement: the mark, then 전체 (every
+ * messenger, newest first), 카카오 (the KakaoTalk core), one item per adapter
+ * the proxy fronts, and 연결. Nothing here claims a connection state.
  */
 export function Rail({
   stores,
-  section,
+  mode,
+  adapters,
   className,
 }: {
   stores: ClientStores;
-  section: "chats" | "adapters";
+  /** The list on screen, or null on the connections view. */
+  mode: ListMode | null;
+  adapters: AdapterTab[];
   className?: string | undefined;
 }) {
   const unread = useTotalUnread(stores);
@@ -79,14 +99,24 @@ export function Rail({
       </span>
       <a
         className={styles.item}
-        href={ROOMS_HASH}
-        aria-current={section === "chats" || undefined}
-        data-ui="rail-chats"
+        href={ALL_HASH}
+        aria-current={mode?.kind === "all" || undefined}
+        data-ui="rail-all"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8.5L6 20.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z" />
+          <path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h9A1.5 1.5 0 0 1 16 6.5v6a1.5 1.5 0 0 1-1.5 1.5H9l-3.5 3v-3h0A1.5 1.5 0 0 1 4 12.5z" />
+          <path d="M19 9.5h.5A1.5 1.5 0 0 1 21 11v6a1.5 1.5 0 0 1-1.5 1.5H19v2.5l-3-2.5h-4.5A1.5 1.5 0 0 1 10 17v-1" />
         </svg>
-        <span className={styles.label}>{RAIL_COPY.chats}</span>
+        <span className={styles.label}>{RAIL_COPY.all}</span>
+      </a>
+      <a
+        className={styles.item}
+        href={ROOMS_HASH}
+        aria-current={mode?.kind === "kakao" || undefined}
+        data-ui="rail-kakao"
+      >
+        <Mark name="K" />
+        <span className={styles.label}>{RAIL_COPY.kakao}</span>
         {unread > 0 ? (
           <span className={styles.badge}>
             <UnreadBadge count={unread} />
@@ -94,10 +124,24 @@ export function Rail({
           </span>
         ) : null}
       </a>
+      {adapters.map((tab) => (
+        <a
+          key={tab.id}
+          className={styles.item}
+          href={adapterListHash(tab.id)}
+          aria-current={
+            (mode?.kind === "adapter" && mode.adapterId === tab.id) || undefined
+          }
+          data-ui="rail-adapter"
+        >
+          <Mark name={tab.name} />
+          <span className={styles.label}>{tab.name}</span>
+        </a>
+      ))}
       <a
         className={styles.item}
         href={ADAPTERS_HASH}
-        aria-current={section === "adapters" || undefined}
+        aria-current={mode === null || undefined}
         data-ui="rail-adapters"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">

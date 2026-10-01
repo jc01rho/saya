@@ -1,0 +1,217 @@
+/* The merged list: the list's own field, head over one scroller, as the KakaoTalk list is. */
+.pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--field-list);
+  color: var(--ink);
+}
+
+@media (min-width: 768px) {
+  .pane {
+    border-inline-end: var(--rule-width) solid var(--seam);
+  }
+}
+
+.head {
+  display: grid;
+  gap: 14px;
+  padding: 20px 18px var(--space-12);
+}
+
+.heading {
+  overflow: hidden;
+  font-size: var(--text-heading);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-field);
+  background: var(--fill-list);
+  color: var(--ink-muted);
+}
+
+@media (max-width: 767.98px) {
+  .search {
+    height: var(--touch-min);
+  }
+}
+
+.search:focus-within {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.search svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.search input:focus {
+  outline: none;
+}
+
+.scroller {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--space-8) var(--space-16);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+/* A messenger that could not answer: one line each, above the rows that did. */
+.lines {
+  display: grid;
+  gap: 6px;
+  padding: var(--space-8) 10px var(--space-12);
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
+
+.lines button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.list {
+  display: grid;
+  list-style: none;
+}
+
+.row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 70px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-width: 0;
+  padding: 11px 10px;
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--hover-list);
+}
+
+.active .link {
+  background: var(--active-list);
+}
+
+.avatar {
+  position: relative;
+  flex: none;
+  line-height: 0;
+}
+
+/* Which messenger a row belongs to: its initial on a small ink disc, named for screen readers. */
+.provider {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--field-list);
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--field-list);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.body {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.top,
+.bottom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.title,
+.preview {
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.time {
+  flex: none;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.preview {
+  min-height: 1.4em;
+  color: var(--ink-muted);
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+
+.badge {
+  flex: none;
+}
+
+.empty {
+  padding: var(--space-24) 10px;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  text-align: center;
+}

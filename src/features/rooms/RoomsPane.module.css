@@ -89,40 +89,8 @@
   line-height: 1;
 }
 
-/* 연결, for the width where the rail is not drawn; the rail carries it from 768px. */
-.adapters {
-  display: none;
-  flex: none;
-  place-items: center;
-  width: var(--touch-min);
-  height: var(--touch-min);
-  margin-inline-start: auto;
-  margin-inline-end: -10px;
-  border-radius: var(--radius-field);
-  color: var(--ink-muted);
-}
-
-.adapters:hover {
-  background: var(--hover-list);
-  color: var(--ink);
-}
-
-.adapters svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 @media (max-width: 767.98px) {
   .mark {
-    display: inline-grid;
-  }
-
-  .adapters {
     display: inline-grid;
   }
 

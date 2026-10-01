@@ -49,6 +49,19 @@
   }
 }
 
+/* The list column: the messenger tabs (below 768px) over whichever list is shown. */
+.listColumn {
+  display: flex;
+  flex-direction: column;
+  background: var(--field-list);
+}
+
+.listColumn > :last-child {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
 /* The connections view has no list column: it takes the list's and the thread's. */
 @media (min-width: 768px) {
   .wide {

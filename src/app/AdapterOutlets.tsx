@@ -1,6 +1,7 @@
 import {
   AdapterRoomBody,
   AdaptersPane,
+  type KakaoStatus,
   useAdapterRoom,
 } from "../features/adapters";
 import { cx, RoomAvatar } from "../ui";
@@ -9,7 +10,7 @@ import { ADAPTERS_HASH, ROOMS_HASH } from "./routes";
 
 const COPY = {
   adapters: "연결",
-  adaptersSubtitle: "메신저 어댑터",
+  adaptersSubtitle: "메신저 연결",
   back: "목록으로",
   toAdapterList: "연결로",
   untitled: "대화",
@@ -41,8 +42,14 @@ function Back({
   );
 }
 
-/** The connections view: a header like a room's, over every adapter the proxy fronts. */
-function AdaptersOutlet() {
+/** The connections view: a header like a room's, over the KakaoTalk core and every adapter. */
+function AdaptersOutlet({
+  kakao,
+  onKakaoRetry,
+}: {
+  kakao: KakaoStatus;
+  onKakaoRetry: () => void;
+}) {
   return (
     <>
       <header className={styles.threadHead}>
@@ -52,7 +59,7 @@ function AdaptersOutlet() {
           <p className={styles.subtitle}>{COPY.adaptersSubtitle}</p>
         </div>
       </header>
-      <AdaptersPane />
+      <AdaptersPane kakao={kakao} onKakaoRetry={onKakaoRetry} />
     </>
   );
 }
@@ -61,17 +68,23 @@ function AdaptersOutlet() {
 function AdapterRoomOutlet({
   adapterId,
   roomId,
+  backHref,
 }: {
   adapterId: string;
   roomId: string;
+  backHref: string | undefined;
 }) {
   const { room, capabilities } = useAdapterRoom(adapterId, roomId);
   const title = room?.title ?? COPY.untitled;
   return (
     <>
       <header className={styles.threadHead}>
-        {/* No list column beside an adapter room, so the way back shows at every width. */}
-        <Back href={ADAPTERS_HASH} label={COPY.toAdapterList} always />
+        {/* Beside a list the way back is the mobile one; alone, it shows at every width. */}
+        {backHref ? (
+          <Back href={backHref} label={COPY.back} />
+        ) : (
+          <Back href={ADAPTERS_HASH} label={COPY.toAdapterList} always />
+        )}
         <RoomAvatar name={title} size={40} />
         <div className={styles.identity}>
           <h1 className={styles.title}>{title}</h1>
@@ -94,13 +107,25 @@ function AdapterRoomOutlet({
 export default function AdapterOutlet({
   adapterId,
   roomId,
+  backHref,
+  kakao = { kind: "checking" },
+  onKakaoRetry = () => {},
 }: {
   adapterId?: string;
   roomId?: string;
+  /** The KakaoTalk core's state, for its card in 연결. */
+  kakao?: KakaoStatus;
+  onKakaoRetry?: () => void;
+  /** The list beside this room, if any; without it the way back is 연결. */
+  backHref?: string;
 }) {
   return adapterId !== undefined && roomId !== undefined ? (
-    <AdapterRoomOutlet adapterId={adapterId} roomId={roomId} />
+    <AdapterRoomOutlet
+      adapterId={adapterId}
+      roomId={roomId}
+      backHref={backHref}
+    />
   ) : (
-    <AdaptersOutlet />
+    <AdaptersOutlet kakao={kakao} onKakaoRetry={onKakaoRetry} />
   );
 }

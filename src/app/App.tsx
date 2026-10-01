@@ -29,9 +29,22 @@ import styles from "./App.module.css";
 
 // The adapter views and the adapter contract's validators load only when opened.
 const AdapterOutlet = lazy(() => import("./AdapterOutlets"));
+const Inbox = lazy(() => import("../features/inbox"));
 
+import type { KakaoStatus } from "../features/adapters";
+
+import { useAdapterTabs } from "./adapterTabs";
+import { ListTabs } from "./ListTabs";
 import { Rail } from "./Rail";
-import { ADAPTERS_HASH, ROOMS_HASH, useRoute } from "./routes";
+import {
+  ADAPTERS_HASH,
+  type ListMode,
+  listHash,
+  listModeOf,
+  type Route,
+  sameMode,
+  useRoute,
+} from "./routes";
 
 /** Everything a tab holds in memory. Nothing here touches disk. */
 export type Session = {
@@ -106,6 +119,7 @@ const APP_COPY = {
   capacityBody: (limit: string) =>
     `카탈로그 응답이 이 클라이언트의 ${limit} 정책을 넘어 표시하지 않았습니다.`,
   toAdapters: "다른 메신저 연결 보기",
+  all: "전체",
 } as const;
 
 /**
@@ -153,11 +167,14 @@ function RoomOutlet({
   windows,
   http,
   roomId,
+  backHref,
 }: {
   stores: ClientStores;
   windows: ContextWindows;
   http: HttpClient;
   roomId: string;
+  /** The list this room was opened from, for the mobile way back. */
+  backHref: string;
 }) {
   const snapshot = useSlice(stores, `room.${roomId}`);
   const subtitle = roomSubtitle(snapshot?.room);
@@ -176,7 +193,7 @@ function RoomOutlet({
     <>
       <div className={styles.top}>
         <header className={styles.threadHead}>
-          <a className={styles.back} href={ROOMS_HASH}>
+          <a className={styles.back} href={backHref}>
             <span className="sr-only">{APP_COPY.back}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -235,16 +252,69 @@ function RoomOutlet({
   );
 }
 
+/** The KakaoTalk catalog phase in the words the 연결 card uses. */
+function kakaoStatusOf(
+  phase: ReturnType<typeof useCatalog>["phase"],
+  rooms: number,
+): KakaoStatus {
+  switch (phase.kind) {
+    case "loading":
+      return { kind: "checking" };
+    case "ready":
+      return { kind: "connected", rooms };
+    case "unreachable":
+      return { kind: phase.reason === "protocol" ? "protocol" : "unreachable" };
+    case "over-capacity":
+      return { kind: "over-capacity" };
+    case "failed":
+      switch (phase.state.kind) {
+        case "unauthorized":
+          return { kind: "refused", code: "UNAUTHORIZED" };
+        case "permission-required":
+          return { kind: "refused", code: "PERMISSION_REQUIRED" };
+        case "host-not-ready":
+        case "default":
+          return { kind: "refused", code: phase.state.code };
+        default:
+          return { kind: "checking" };
+      }
+  }
+}
+
+/**
+ * Which list sits beside a room: the one the route names, or for a room the
+ * list it was opened from (전체 stays 전체; otherwise the room's own messenger).
+ */
+function modeFor(route: Route, last: ListMode): ListMode | null {
+  const named = listModeOf(route);
+  if (named) return named;
+  if (route.kind === "adapters") return null;
+  if (last.kind === "all") return last;
+  if (route.kind === "adapter-room")
+    return { kind: "adapter", adapterId: route.adapterId };
+  return { kind: "kakao" };
+}
+
 /**
  * The composition root: one session, the hash route, the catalog request, and
- * the two panes. The shell is 100dvh and never scrolls; the list and, later,
- * the conversation wall own their own scrolling.
+ * the panes. The shell is 100dvh and never scrolls; the list and the
+ * conversation wall own their own scrolling. 카카오 keeps the whole-screen
+ * notice when the core cannot answer; 전체 and the adapter lists do not wait
+ * on it, because the adapters are separate upstreams.
  */
 export function App({ session }: { session?: Session }) {
   const [own] = useState(() => session ?? createSession());
   const route = useRoute();
   const { phase, reload } = useCatalog(own.http, own.cache);
+  const adapters = useAdapterTabs();
+  const [last, setLast] = useState<ListMode>({ kind: "kakao" });
+  const mode = modeFor(route, last);
   const roomId = route.kind === "room" ? route.roomId : null;
+
+  useEffect(() => {
+    const named = listModeOf(route);
+    if (named && !sameMode(named, last)) setLast(named);
+  }, [route, last]);
 
   // The active room is pinned against eviction and keeps the larger window.
   useEffect(() => {
@@ -261,41 +331,39 @@ export function App({ session }: { session?: Session }) {
     };
   }, [own]);
 
-  // Reachable whatever the KakaoTalk core is doing: the adapters are separate upstreams.
-  if (route.kind === "adapter-room")
+  if (mode === null)
     return (
-      <div className={styles.shell} data-ui="app" data-route="adapter-room">
-        <Rail className={styles.rail} stores={own.stores} section="adapters" />
-        <main className={cx(styles.thread, styles.wide)} data-ui="adapter-room">
+      <div className={styles.shell} data-ui="app" data-route="adapters">
+        <Rail
+          className={styles.rail}
+          stores={own.stores}
+          mode={null}
+          adapters={adapters}
+        />
+        <main className={cx(styles.thread, styles.wide)} data-ui="adapters">
           <Suspense fallback={null}>
             <AdapterOutlet
-              key={`${route.adapterId}/${route.roomId}`}
-              adapterId={route.adapterId}
-              roomId={route.roomId}
+              kakao={kakaoStatusOf(
+                phase,
+                own.stores.getSnapshot("rooms.order").length,
+              )}
+              onKakaoRetry={reload}
             />
           </Suspense>
         </main>
       </div>
     );
-  if (route.kind === "adapters")
-    return (
-      <div className={styles.shell} data-ui="app" data-route="adapters">
-        <Rail className={styles.rail} stores={own.stores} section="adapters" />
-        <main className={cx(styles.thread, styles.wide)} data-ui="adapters">
-          <Suspense fallback={null}>
-            <AdapterOutlet />
-          </Suspense>
-        </main>
-      </div>
-    );
 
-  if (phase.kind === "failed")
+  if (mode.kind === "kakao" && phase.kind === "failed")
     return (
       <Notice>
         <ConnectionScreen state={phase.state} onRetry={reload} />
       </Notice>
     );
-  if (phase.kind === "unreachable" || phase.kind === "over-capacity") {
+  if (
+    mode.kind === "kakao" &&
+    (phase.kind === "unreachable" || phase.kind === "over-capacity")
+  ) {
     const protocol =
       phase.kind === "unreachable" && phase.reason === "protocol";
     const title =
@@ -325,25 +393,88 @@ export function App({ session }: { session?: Session }) {
     );
   }
 
-  return (
-    <div className={styles.shell} data-ui="app" data-route={route.kind}>
-      <Rail className={styles.rail} stores={own.stores} section="chats" />
+  const back = listHash(mode);
+  const tabs = <ListTabs mode={mode} adapters={adapters} />;
+  const thread = route.kind === "room" || route.kind === "adapter-room";
+  const list =
+    mode.kind === "kakao" ? (
       <RoomsPane
         className={styles.list}
         stores={own.stores}
         activeRoomId={roomId}
         loading={phase.kind === "loading"}
       />
+    ) : (
+      <Suspense fallback={null}>
+        <Inbox
+          className={styles.list}
+          stores={own.stores}
+          mode={mode}
+          adapters={adapters}
+          kakao={{
+            state:
+              phase.kind === "ready"
+                ? "ready"
+                : phase.kind === "loading"
+                  ? "loading"
+                  : "unavailable",
+            onRetry: reload,
+          }}
+          active={
+            route.kind === "room"
+              ? { provider: "kakao", roomId: route.roomId }
+              : route.kind === "adapter-room"
+                ? { provider: route.adapterId, roomId: route.roomId }
+                : null
+          }
+          heading={
+            mode.kind === "all"
+              ? APP_COPY.all
+              : (adapters.find((tab) => tab.id === mode.adapterId)?.name ??
+                mode.adapterId)
+          }
+        />
+      </Suspense>
+    );
+
+  return (
+    <div
+      className={styles.shell}
+      data-ui="app"
+      data-route={thread ? "room" : "rooms"}
+      data-list={mode.kind}
+    >
+      <Rail
+        className={styles.rail}
+        stores={own.stores}
+        mode={mode}
+        adapters={adapters}
+      />
+      {/* The tabs sit above the list, outside its navigation, so the list stays the rooms alone. */}
+      <div className={cx(styles.list, styles.listColumn)}>
+        {tabs}
+        {list}
+      </div>
       <main className={styles.thread} data-ui="thread-outlet">
-        {roomId === null ? (
-          <EmptyOutlet />
-        ) : (
+        {route.kind === "room" ? (
           <RoomOutlet
             stores={own.stores}
             windows={own.windows}
             http={own.http}
-            roomId={roomId}
+            roomId={route.roomId}
+            backHref={back}
           />
+        ) : route.kind === "adapter-room" ? (
+          <Suspense fallback={null}>
+            <AdapterOutlet
+              key={`${route.adapterId}/${route.roomId}`}
+              adapterId={route.adapterId}
+              roomId={route.roomId}
+              backHref={back}
+            />
+          </Suspense>
+        ) : (
+          <EmptyOutlet />
         )}
       </main>
     </div>

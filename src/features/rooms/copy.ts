@@ -6,8 +6,6 @@ export const ROOMS_COPY = {
   nav: "대화 목록",
   /** r4: the list's own heading, the h1 of the index view. */
   heading: "대화",
-  /** The way to the connections view where there is no rail (below 768px). */
-  adapters: "연결",
   search: "대화방 이름 검색",
   searchPlaceholder: "대화방 검색",
   filter: "목록 필터",
