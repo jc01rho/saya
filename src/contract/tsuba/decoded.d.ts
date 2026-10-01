@@ -106,7 +106,7 @@ export interface paths {
         };
         /**
          * New messages as Server-Sent Events.
-         * @description Feature `messages.stream`. The same shape the KakaoTalk cores use: `ready` once, then `message` per message with a `cursor` after the messages it covers, `ping` while quiet, and `error` once before the stream ends. With `resume: cursor`, a reconnection hands back the last cursor as repeated `since=<roomId>:<messageId>` (split at the last colon) and the adapter sends what each named room received after that id before going live; a room not named starts from now. A cursor the adapter cannot honour is refused, never downgraded to now. An `error` event carries any code a read can answer. A client skips an event this version does not list; names in use or reserved for later versions are in tsuba's `docs/contract.md`.
+         * @description Feature `messages.stream`. The same shape the KakaoTalk cores use: `ready` once, then `message` per message with a `cursor` after the messages it covers, `ping` while quiet, and `error` once before the stream ends. With `resume: cursor`, a reconnection hands back the last cursor as repeated `since=<roomId>:<messageId>` (split at the last colon) and the adapter sends what each named room received after that id before going live; a room not named starts from now. A cursor the adapter cannot honour is refused, never downgraded to now. An `error` event carries any code a read can answer. Besides these, an adapter sends the events its `messages.stream` lists in `events`: `message.edited`, the whole message as it now is after an edit or any other change to it; `message.deleted`, the ids of messages gone from a room, sent for the deletions the adapter can place in a room, so its absence is no proof that a message still exists; and `reactions.updated`, a message's reactions as they now are. Resume replays `message` only. A client skips an event this version does not list; names reserved for later versions are in tsuba's `docs/contract.md`.
          */
         get: operations["stream"];
         put?: never;
@@ -128,9 +128,89 @@ export interface paths {
         put?: never;
         /**
          * Send text to a room.
-         * @description Feature `messages.send`. Sends are one at a time per adapter; at most four wait, and a fifth is `429 RATE_LIMITED` having changed nothing. Text that is empty or longer than the feature's `maxLength` code points is `400 INVALID_REQUEST`. With `receipt: stored` the answer carries the message the messenger stored. Every error but `INTERNAL` means nothing was sent; a send whose outcome is uncertain is never retried by the adapter.
+         * @description Feature `messages.send`. Sends share the adapter's one write line: one at a time, at most four admitted, and the next is `429 RATE_LIMITED` having changed nothing. With `messages.reply`, `replyTo` names the message in the same room this one answers; an adapter without it answers `replyTo` with `501 NOT_SUPPORTED`. Text that is empty or longer than the feature's `maxLength` code points is `400 INVALID_REQUEST`. With `receipt: stored` the answer carries the message the messenger stored. Every error but `INTERNAL` means nothing was sent; a send whose outcome is uncertain is never retried by the adapter.
          */
         post: operations["send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Replace the text of a message this account sent.
+         * @description Feature `messages.edit`. Text that is empty or longer than the feature's `maxLength` code points is `400 INVALID_REQUEST`, and so is text the message already has; a message older than `maxAgeSeconds`, or one the messenger does not let this account edit, is `403 FORBIDDEN`. The answer carries the message as the messenger now stores it. Edits share the write line with `/send`, and an edit whose outcome is uncertain is never retried.
+         */
+        post: operations["edit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete a message.
+         * @description Feature `messages.delete`. With the feature's `forEveryone: true` the message is removed for every participant, otherwise only for this account. A message the messenger does not let this account delete is `403 FORBIDDEN`; one this account cannot see is `404 NOT_FOUND`. Deletes share the write line with `/send`, and a delete whose outcome is uncertain is never retried.
+         */
+        post: operations["delete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/react": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set this account's reactions on a message.
+         * @description Feature `reactions.send`. `emojis` becomes this account's reactions on the message, replacing what it had; `[]` removes them. More than `maxPerMessage`, or the same emoji twice, is `400 INVALID_REQUEST`; an emoji the room does not allow is `403 FORBIDDEN`. The answer carries the message's reactions afterwards. Reactions share the write line with `/send`.
+         */
+        post: operations["react"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark a room read up to a message.
+         * @description Feature `read.mark`. Marks the room read up to and including `messageId`, as the messenger's own client does when a person reads it; the messenger may tell the other participants. Marking what is already read changes nothing and succeeds. Read marks share the write line with `/send`.
+         */
+        post: operations["read"];
         delete?: never;
         options?: never;
         head?: never;
@@ -227,6 +307,8 @@ export interface components {
         FeatureMessagesStream: {
             /** @description `none`: a reconnection starts from now. `cursor`: a reconnection resumes from per-room cursors without a gap. */
             resume: string;
+            /** @description The events this adapter sends besides `ready`, `message`, `cursor`, `ping` and `error`: any of `message.edited`, `message.deleted` and `reactions.updated`, or a provider's own `x-<provider>.` events. Absent means none of them. Resume replays `message` only: an edit, a deletion or a reaction missed while disconnected is not sent again, so a client that must be exact rereads `/messages`. */
+            events?: string[];
         };
         /** @description Send text: `POST /send`. */
         FeatureMessagesSend: {
@@ -235,26 +317,28 @@ export interface components {
             /** @description `accepted`: the messenger took the request, nothing more is known. `stored`: the answer carries the id of the message the messenger stored. */
             receipt: string;
         };
-        /** @description Reserved. Send a message as a reply to another: `replyTo` on `POST /send`. */
+        /** @description Send a message as a reply to another in the same room: `replyTo` on `POST /send`. Declared only beside `messages.send`. */
         FeatureMessagesReply: Record<string, never>;
-        /** @description Reserved. Edit a message the account sent: `POST /edit`. */
+        /** @description Replace the text of a message this account sent: `POST /edit`. */
         FeatureMessagesEdit: {
-            /** @description Absent when the messenger sets no age limit. */
+            /** @description Longest text the messenger accepts in an edit, in Unicode code points. */
+            maxLength: components["schemas"]["PositiveInteger"];
+            /** @description How long after sending a message can still be edited. Absent when the messenger sets no age limit. */
             maxAgeSeconds?: components["schemas"]["PositiveInteger"];
         };
-        /** @description Reserved. Delete a message: `POST /delete`. */
+        /** @description Delete a message: `POST /delete`. The messenger decides whose messages this account may delete; where it does not let it, the answer is `403 FORBIDDEN`. */
         FeatureMessagesDelete: {
             /** @description Whether deletion removes it for every participant rather than only this account. */
             forEveryone: boolean;
         };
-        /** @description Reserved. Messages carry their reactions: `Message.reactions`. */
+        /** @description Messages carry their reactions: `Message.reactions`, and `reactions.updated` on the stream when `messages.stream` lists it in `events`. */
         FeatureReactionsRead: Record<string, never>;
-        /** @description Reserved. Add or remove a reaction: `POST /react`. */
+        /** @description Set this account's reactions on a message: `POST /react`. Declared only beside `reactions.read`. */
         FeatureReactionsSend: {
-            /** @description Absent when the messenger sets no limit. */
+            /** @description Most reactions this account may leave on one message. Absent when the messenger sets no limit. */
             maxPerMessage?: components["schemas"]["PositiveInteger"];
         };
-        /** @description Reserved. Mark a room read up to a message, as the messenger's own client would: `POST /read`. */
+        /** @description Mark a room read up to a message, as the messenger's own client does when a person reads it: `POST /read`. */
         FeatureReadMark: Record<string, never>;
         /** @description Reserved. Show that the account is typing: `POST /typing`. */
         FeatureTypingSend: Record<string, never>;
@@ -336,6 +420,15 @@ export interface components {
             height?: components["schemas"]["PositiveInteger"];
             durationSeconds?: number;
         };
+        /** @description One reaction on a message: an emoji, how many accounts chose it, and whether this account is one of them. Only reactions the adapter can name as a Unicode emoji appear; a messenger's custom or paid reactions may be left out. */
+        Reaction: {
+            /** @description The emoji as Unicode text, exactly as `POST /react` takes it back. */
+            emoji: string;
+            /** @description How many accounts chose it. */
+            count: components["schemas"]["PositiveInteger"];
+            /** @description Whether this account chose it. */
+            mine: boolean;
+        };
         /** @description A key that does not apply is absent. */
         Message: {
             /** @description Opaque; send it back as is. */
@@ -357,6 +450,8 @@ export interface components {
             replyTo?: string;
             /** @description The files the message carries, in the order the messenger shows them. Present only when the adapter declares `attachments.read` and the message carries a file it can describe. */
             attachments?: components["schemas"]["Attachment"][];
+            /** @description The reactions on the message, in the order the messenger shows them. Present only when the adapter declares `reactions.read` and the message has reactions it can name. */
+            reactions?: components["schemas"]["Reaction"][];
         };
         MessagesAnswer: {
             /** @constant */
@@ -379,6 +474,21 @@ export interface components {
             ok: true;
             message: components["schemas"]["Message"];
         };
+        StreamMessagesDeleted: {
+            /** @constant */
+            ok: true;
+            roomId: string;
+            /** @description Messages gone from the room. */
+            messageIds: string[];
+        };
+        StreamReactionsUpdated: {
+            /** @constant */
+            ok: true;
+            roomId: string;
+            messageId: string;
+            /** @description The message's reactions as they now are; empty when it has none the adapter can name. */
+            reactions: components["schemas"]["Reaction"][];
+        };
         StreamCursor: {
             /** @constant */
             ok: true;
@@ -391,11 +501,51 @@ export interface components {
         SendRequest: {
             roomId: string;
             text: string;
+            /** @description With `messages.reply`: the id of the message in the same room this one answers. An adapter that does not declare `messages.reply` answers it with `501 NOT_SUPPORTED` and sends nothing. */
+            replyTo?: string;
         };
         SendAnswer: {
             /** @constant */
             ok: true;
             message: components["schemas"]["Message"];
+        };
+        EditRequest: {
+            roomId: string;
+            messageId: string;
+            /** @description The whole new text, at most the feature's `maxLength` code points. */
+            text: string;
+        };
+        EditAnswer: {
+            /** @constant */
+            ok: true;
+            /** @description The message as the messenger now stores it. */
+            message: components["schemas"]["Message"];
+        };
+        DeleteRequest: {
+            roomId: string;
+            messageId: string;
+        };
+        ReactRequest: {
+            roomId: string;
+            messageId: string;
+            /** @description This account's reactions on the message after the write, replacing whatever it had; `[]` removes them. At most the feature's `maxPerMessage`. */
+            emojis: string[];
+        };
+        ReactAnswer: {
+            /** @constant */
+            ok: true;
+            /** @description The message's reactions after the write; empty when it has none the adapter can name. */
+            reactions: components["schemas"]["Reaction"][];
+        };
+        ReadRequest: {
+            roomId: string;
+            /** @description The newest message read: it and every message before it in the room are marked read. */
+            messageId: string;
+        };
+        /** @description The write was performed. */
+        Done: {
+            /** @constant */
+            ok: true;
         };
     };
     responses: {
@@ -673,6 +823,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SendAnswer"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["Internal"];
+            501: components["responses"]["NotSupported"];
+            503: components["responses"]["ReauthRequired"];
+        };
+    };
+    edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditRequest"];
+            };
+        };
+        responses: {
+            /** @description Edited. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditAnswer"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["Internal"];
+            501: components["responses"]["NotSupported"];
+            503: components["responses"]["ReauthRequired"];
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Deleted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Done"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["Internal"];
+            501: components["responses"]["NotSupported"];
+            503: components["responses"]["ReauthRequired"];
+        };
+    };
+    react: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactRequest"];
+            };
+        };
+        responses: {
+            /** @description Set. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactAnswer"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["Internal"];
+            501: components["responses"]["NotSupported"];
+            503: components["responses"]["ReauthRequired"];
+        };
+    };
+    read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Marked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Done"];
                 };
             };
             400: components["responses"]["InvalidRequest"];

@@ -5,13 +5,17 @@ import {
   type AdapterStreamEvent,
   type Capabilities,
   compatibleVersion,
+  deleteMessage,
+  editMessage,
   fetchCapabilities,
   fetchMessages,
   fetchRooms,
   listAdapters,
+  markRead,
   mediaUrl,
   roomFeature,
   sendMessage,
+  setReactions,
   streamAdapter,
 } from "../../src/transport/adapters";
 
@@ -424,5 +428,169 @@ describe("the adapter stream", () => {
         onEvent: () => {},
       }),
     ).toEqual({ kind: "aborted" });
+  });
+});
+
+describe("writes through the proxy", () => {
+  const turn = {
+    id: "7",
+    roomId: "-100123",
+    sender: "Synthetic",
+    text: "Edited",
+    kind: "text",
+    sentAt: "2026-09-18T00:21:30Z",
+    editedAt: "2026-09-18T00:22:00Z",
+    fromMe: true,
+  };
+  function posting(answers: Response[]) {
+    const posts: { url: string; method: string | undefined; body: unknown }[] =
+      [];
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      posts.push({
+        url: String(input),
+        method: init?.method,
+        body: JSON.parse(String(init?.body)),
+      });
+      return Promise.resolve(answers.shift() ?? html(500));
+    }) as unknown as FetchStub;
+    return posts;
+  }
+
+  test("a reply, an edit, a delete, reactions and a read mark post JSON once each and keep the answer", async () => {
+    const posts = posting([
+      json({ ok: true, message: { ...turn, replyTo: "6" } }),
+      json({ ok: true, message: turn }),
+      json({ ok: true }),
+      json({
+        ok: true,
+        reactions: [{ emoji: "\u{1F44D}", count: 2, mine: true }],
+      }),
+      json({ ok: true }),
+    ]);
+    const ids = { roomId: "-100123", messageId: "7" };
+    expect(
+      (
+        await sendMessage(
+          "example",
+          { roomId: "-100123", text: "Hi", replyTo: "6" },
+          signal(),
+        )
+      ).kind,
+    ).toBe("ok");
+    const edited = await editMessage(
+      "example",
+      { ...ids, text: "Edited" },
+      signal(),
+    );
+    expect(edited.kind === "ok" && edited.data.message.editedAt).toBe(
+      turn.editedAt,
+    );
+    expect((await deleteMessage("example", ids, signal())).kind).toBe("ok");
+    const reacted = await setReactions(
+      "example",
+      { ...ids, emojis: ["\u{1F44D}"] },
+      signal(),
+    );
+    expect(reacted.kind === "ok" && reacted.data.reactions).toEqual([
+      { emoji: "\u{1F44D}", count: 2, mine: true },
+    ]);
+    expect((await markRead("example", ids, signal())).kind).toBe("ok");
+    expect(posts).toEqual([
+      {
+        url: "/adapters/example/send",
+        method: "POST",
+        body: { roomId: "-100123", text: "Hi", replyTo: "6" },
+      },
+      {
+        url: "/adapters/example/edit",
+        method: "POST",
+        body: { ...ids, text: "Edited" },
+      },
+      { url: "/adapters/example/delete", method: "POST", body: ids },
+      {
+        url: "/adapters/example/react",
+        method: "POST",
+        body: { ...ids, emojis: ["\u{1F44D}"] },
+      },
+      { url: "/adapters/example/read", method: "POST", body: ids },
+    ]);
+  });
+
+  test("a refusal keeps its code, an answer outside the contract is a protocol failure, and neither is retried", async () => {
+    const posts = posting([
+      json(
+        { ok: false, error: { code: "FORBIDDEN", message: "ignored" } },
+        403,
+      ),
+      json({
+        ok: true,
+        reactions: [{ emoji: "\u{1F44D}", count: 0, mine: true }],
+      }),
+      html(502),
+    ]);
+    const ids = { roomId: "-100123", messageId: "7" };
+    expect(await deleteMessage("example", ids, signal())).toEqual({
+      kind: "refused",
+      status: 403,
+      code: "FORBIDDEN",
+    });
+    expect(
+      (await setReactions("example", { ...ids, emojis: [] }, signal())).kind,
+    ).toBe("protocol");
+    expect(
+      (await editMessage("example", { ...ids, text: "x" }, signal())).kind,
+    ).toBe("unreachable");
+    expect(posts).toHaveLength(3);
+  });
+});
+
+describe("the adapter stream's change events", () => {
+  const frame = (event: string, data: unknown) =>
+    new TextEncoder().encode(
+      `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+    );
+  const turn = {
+    id: "7",
+    roomId: "-100123",
+    sender: "Synthetic",
+    text: "Edited",
+    kind: "text",
+    sentAt: "2026-09-18T00:21:30Z",
+    fromMe: false,
+  };
+
+  test("edits, deletions and reactions arrive as their own events", () => {
+    const seen: AdapterStreamEvent[] = [];
+    const parser = new AdapterSseParser((event) => seen.push(event));
+    parser.push(frame("message.edited", { ok: true, message: turn }));
+    parser.push(
+      frame("message.deleted", {
+        ok: true,
+        roomId: "-100123",
+        messageIds: ["7"],
+      }),
+    );
+    parser.push(
+      frame("reactions.updated", {
+        ok: true,
+        roomId: "-100123",
+        messageId: "7",
+        reactions: [],
+      }),
+    );
+    expect(parser.outcome).toBeUndefined();
+    expect(seen.map((event) => event.type)).toEqual([
+      "message.edited",
+      "message.deleted",
+      "reactions.updated",
+    ]);
+  });
+
+  test("a deletion that names no message is outside the contract", () => {
+    const parser = new AdapterSseParser(() => {});
+    parser.push(
+      frame("message.deleted", { ok: true, roomId: "-100123", messageIds: [] }),
+    );
+    expect(parser.outcome).toEqual({ kind: "protocol" });
   });
 });

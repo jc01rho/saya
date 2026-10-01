@@ -86,7 +86,7 @@ export const contracts: readonly ContractSpec[] = [
   {
     // The tsuba adapter contract, byte-identical to tsuba's contract/openapi.json.
     source: "contracts/tsuba.openapi.json",
-    hash: "82a1688f1e2fdb2bd092d42ed9849004a860b6855bbb51905a229732fc4125ab",
+    hash: "99316a2659f7cb8f3cb3b315a1e422187efc1aeb2712c83bc5c15760487e2b28",
     directory: new URL("../src/contract/tsuba/", import.meta.url),
     sse: true,
     widen(_document, decoded) {

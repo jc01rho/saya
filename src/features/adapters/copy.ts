@@ -2,7 +2,10 @@ import { CONTRACT_VERSION } from "../../contract/tsuba/version";
 import type { AdapterProblem } from "../../transport/adapters";
 
 /** One sentence per way an adapter request can fail; codes, never messages, drive it. */
-export function problemSentence(problem: AdapterProblem): string {
+export function problemSentence(
+  problem: AdapterProblem,
+  subject: "room" | "message" = "room",
+): string {
   switch (problem.kind) {
     case "refused":
       switch (problem.code) {
@@ -11,7 +14,9 @@ export function problemSentence(problem: AdapterProblem): string {
         case "RATE_LIMITED":
           return "메신저가 잠시 쉬어 가라고 했습니다. 조금 뒤에 다시 시도하세요.";
         case "NOT_FOUND":
-          return "이 계정에서 그 방을 찾을 수 없습니다.";
+          return subject === "message"
+            ? "그 메시지를 찾을 수 없습니다. 이미 지워졌을 수 있습니다."
+            : "이 계정에서 그 방을 찾을 수 없습니다.";
         case "NOT_SUPPORTED":
           return "이 어댑터는 그 기능을 제공하지 않습니다.";
         case "FORBIDDEN":

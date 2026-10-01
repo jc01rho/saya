@@ -2,8 +2,11 @@ import type { components } from "../contract/tsuba/decoded";
 import { type SseEventName, sseValidators } from "../contract/tsuba/sse";
 import {
   validateCapabilities,
+  validateDone,
+  validateEditAnswer,
   validateErrorEnvelope,
   validateMessagesAnswer,
+  validateReactAnswer,
   validateRoomsAnswer,
   validateSendAnswer,
 } from "../contract/tsuba/validators.js";
@@ -14,6 +17,7 @@ export type Capabilities = Schema["Capabilities"];
 export type AdapterRoom = Schema["Room"];
 export type AdapterMessage = Schema["Message"];
 export type AdapterAttachment = Schema["Attachment"];
+export type AdapterReaction = Schema["Reaction"];
 export type RoomsAnswer = Schema["RoomsAnswer"];
 export type MessagesAnswer = Schema["MessagesAnswer"];
 export type SendAnswer = Schema["SendAnswer"];
@@ -233,10 +237,13 @@ export function fetchMessages(
   );
 }
 
-/** One attempt, never retried here: an uncertain send is the person's to repeat. */
+/**
+ * One attempt, never retried here: an uncertain write is the person's to
+ * repeat. `replyTo` is sent only where `messages.reply` is declared.
+ */
 export function sendMessage(
   id: string,
-  body: { roomId: string; text: string },
+  body: { roomId: string; text: string; replyTo?: string },
   signal: AbortSignal,
 ) {
   return request<SendAnswer>(
@@ -247,12 +254,68 @@ export function sendMessage(
   );
 }
 
+export function editMessage(
+  id: string,
+  body: { roomId: string; messageId: string; text: string },
+  signal: AbortSignal,
+) {
+  return request<Schema["EditAnswer"]>(
+    adapterPath(id, "/edit"),
+    validateEditAnswer,
+    signal,
+    body,
+  );
+}
+
+export function deleteMessage(
+  id: string,
+  body: { roomId: string; messageId: string },
+  signal: AbortSignal,
+) {
+  return request<Schema["Done"]>(
+    adapterPath(id, "/delete"),
+    validateDone,
+    signal,
+    body,
+  );
+}
+
+/** `emojis` becomes this account's whole set of reactions on the message. */
+export function setReactions(
+  id: string,
+  body: { roomId: string; messageId: string; emojis: string[] },
+  signal: AbortSignal,
+) {
+  return request<Schema["ReactAnswer"]>(
+    adapterPath(id, "/react"),
+    validateReactAnswer,
+    signal,
+    body,
+  );
+}
+
+export function markRead(
+  id: string,
+  body: { roomId: string; messageId: string },
+  signal: AbortSignal,
+) {
+  return request<Schema["Done"]>(
+    adapterPath(id, "/read"),
+    validateDone,
+    signal,
+    body,
+  );
+}
+
 const FRAME_LIMIT = 256 * 1024;
 
 export type AdapterStreamEvent =
   | { type: "ready"; data: Schema["StreamReady"] }
   | { type: "message"; data: Schema["StreamMessage"] }
-  | { type: "cursor"; data: Schema["StreamCursor"] };
+  | { type: "cursor"; data: Schema["StreamCursor"] }
+  | { type: "message.edited"; data: Schema["StreamMessage"] }
+  | { type: "message.deleted"; data: Schema["StreamMessagesDeleted"] }
+  | { type: "reactions.updated"; data: Schema["StreamReactionsUpdated"] };
 
 export type AdapterStreamEnd =
   | { kind: "eof" }

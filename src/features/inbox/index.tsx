@@ -19,7 +19,7 @@ import {
 } from "../../transport/adapters";
 import { cx, formatTime, RoomAvatar, UnreadBadge, unreadName } from "../../ui";
 import { problemSentence } from "../adapters/copy";
-import { rememberRooms } from "../adapters/rooms";
+import { onRead, rememberRooms } from "../adapters/rooms";
 import styles from "./Inbox.module.css";
 
 const COPY = {
@@ -151,6 +151,23 @@ function pause(ms: number, signal: AbortSignal) {
 function useAdapterRooms(ids: string[]): Map<string, AdapterRooms> {
   const [rooms, setRooms] = useState(() => new Map<string, AdapterRooms>());
   const key = ids.join(",");
+  // A room view that marks a room read zeroes its count here at once.
+  useEffect(
+    () =>
+      onRead((adapterId, roomId) =>
+        setRooms((current) => {
+          const entry = current.get(adapterId);
+          if (entry?.state !== "ready") return current;
+          return new Map(current).set(adapterId, {
+            state: "ready",
+            rooms: entry.rooms.map((room) =>
+              room.id === roomId ? { ...room, unread: 0 } : room,
+            ),
+          });
+        }),
+      ),
+    [],
+  );
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -193,6 +210,14 @@ function useAdapterRooms(ids: string[]): Map<string, AdapterRooms> {
             signal,
             onEvent(event) {
               if (event.type === "ready") failures = 0;
+              if (
+                event.type === "message.edited" ||
+                event.type === "message.deleted"
+              ) {
+                clearTimeout(refresh);
+                refresh = setTimeout(load, 3000);
+                return;
+              }
               if (event.type !== "message") return;
               const { message } = event.data;
               setRooms((current) => {

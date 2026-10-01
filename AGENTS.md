@@ -95,7 +95,12 @@ line above deliberately, and only this far:
   feature means unsupported, never "probably fine". Do not branch on the
   provider's name where a capability says the same thing.
 - **A feature an adapter should expose is an issue on `tsuba`**, the same way
-  a missing KakaoTalk feature is an issue on the cores. The rules and every name
+  a missing KakaoTalk feature is an issue on the cores.
+- **KakaoTalk is never wrapped in an adapter** (owner, 2026-10-01). saya talks
+  to `kanao`/`kamado` directly; a tsuba translator for them was considered and
+  refused, because their digest, notice, attachment, revision and send-check
+  routes have no counterpart in the adapter contract. The comparison and what
+  would reopen it are in tsuba's `docs/contract.md`. The rules and every name
   in use or reserved are in tsuba's `docs/contract.md`; updating the copy here
   follows its `contract/CHANGELOG.md`.
 - **The caret range decides who is drawn.** An adapter is drawn only when its
@@ -143,7 +148,9 @@ They apply here for the same reasons they apply there.
 
 - `submitted` means the client's input box emptied, **not** that anything was
   delivered. Say "보냈습니다" only after reading the message back.
-- An uncertain send is never retried automatically.
+- An uncertain send is never retried automatically, and neither is an
+  adapter's edit, delete, reaction or read mark: a refusal says why, anything
+  else says the outcome is unknown.
 - A draft the send would clear is reported before it is cleared, not after.
 - An empty result is not proof that a conversation never happened; the cores
   read only what the client cached locally.

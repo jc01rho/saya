@@ -206,6 +206,9 @@ describe("generated adapter (tsuba) boundary", () => {
       "ready",
       "message",
       "cursor",
+      "message.edited",
+      "message.deleted",
+      "reactions.updated",
       "ping",
       "error",
     ]);

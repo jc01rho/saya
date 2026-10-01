@@ -264,3 +264,228 @@
   font-size: 12.5px;
   line-height: var(--leading-meta);
 }
+
+/* The quoted message a reply answers: a rule, the speaker, one line. */
+.quote {
+  display: grid;
+  gap: 1px;
+  margin-bottom: 4px;
+  padding: 2px 0 2px 10px;
+  border-left: var(--quote-rule-width) solid var(--rule);
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
+
+.quoteSender {
+  font-weight: 700;
+}
+
+.quoteText {
+  overflow: hidden;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The door to a message's tools: quiet until the turn is pointed at or focused. */
+.more {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.more svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.turn:hover .more,
+.turn:focus-within .more,
+.more[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.more:hover,
+.more[aria-expanded="true"] {
+  background: var(--hover-wall);
+}
+
+@media (hover: none) {
+  .more {
+    width: var(--touch-min);
+    height: var(--touch-min);
+    opacity: 0.6;
+  }
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: min(62ch, 92vw);
+  margin: 0;
+  padding: 4px 0 2px;
+  border: 0;
+}
+
+.mine .tools {
+  justify-content: flex-end;
+}
+
+.tool {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tool:hover {
+  background: var(--hover-wall);
+}
+
+.tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.toolEmoji {
+  min-width: 40px;
+  padding: 0 8px;
+}
+
+.toolDanger {
+  background: var(--ink);
+  color: var(--field-list);
+}
+
+.toolDanger:hover {
+  background: var(--ink);
+}
+
+@media (max-width: 767.98px) {
+  .tool {
+    min-height: var(--touch-min);
+  }
+}
+
+.toolsLine {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toolsNote {
+  flex-basis: 100%;
+  max-width: min(62ch, 82vw);
+  padding: 2px 4px 0;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
+
+/* Reactions under a bubble: the emoji and its count, mine filled. */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: min(62ch, 82vw);
+  list-style: none;
+}
+
+.mine .reactions {
+  justify-content: flex-end;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+button.chip {
+  cursor: pointer;
+}
+
+button.chip:hover {
+  background: var(--hover-wall);
+}
+
+.chipMine,
+button.chipMine:hover {
+  background: var(--active-list);
+}
+
+.emoji {
+  font-family:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", var(--font-sans);
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* What the composer is doing besides sending: replying or editing. */
+.mode {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: 0 4px 6px 16px;
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
+
+.modeLabel {
+  flex: none;
+  font-weight: 700;
+}
+
+.modeText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.modeCancel {
+  flex: none;
+  margin-left: auto;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 767.98px) {
+  .modeCancel {
+    min-height: var(--touch-min);
+  }
+}

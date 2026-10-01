@@ -6,25 +6,33 @@ import {
   useState,
 } from "react";
 import {
-  type AdapterAttachment,
   type AdapterMessage,
   type AdapterOutcome,
   type AdapterProblem,
+  type AdapterReaction,
   type AdapterRoom,
   type Capabilities,
+  deleteMessage,
+  editMessage,
   fetchCapabilities,
   fetchMessages,
   fetchRooms,
-  mediaUrl,
+  markRead,
   roomFeature,
   sendMessage,
+  setReactions,
   streamAdapter,
 } from "../../transport/adapters";
-import { cx, formatTime } from "../../ui";
-import { formatSize } from "../attachments/pages";
 import { problemSentence } from "./copy";
-import { rememberedRoom, rememberRooms } from "./rooms";
+import { noteRead, rememberedRoom, rememberRooms } from "./rooms";
 import styles from "./Thread.module.css";
+import {
+  gist,
+  type MessageAbilities,
+  type ToolAction,
+  Turn,
+  toggledReactions,
+} from "./turn";
 
 const COPY = {
   checking: "어댑터를 확인하는 중입니다.",
@@ -33,33 +41,35 @@ const COPY = {
   noRead: "이 어댑터는 아직 메시지 읽기를 제공하지 않습니다.",
   earlier: "이전 메시지 더 보기",
   loadingEarlier: "불러오는 중",
-  media: "사진·파일 등",
-  service: "알림",
-  edited: "수정됨",
   placeholder: "메시지 입력",
   send: "보내기",
   sending: "보내는 중",
   input: "보낼 메시지",
+  save: "수정",
+  saving: "수정하는 중",
+  editInput: "고칠 메시지",
   tooLong: (max: number) =>
     `${max.toLocaleString("ko-KR")}자를 넘어 보낼 수 없습니다.`,
   uncertain:
     "보냈는지 알 수 없습니다. 대화에 나타나는지 확인한 뒤 필요하면 다시 보내세요.",
+  uncertainEdit:
+    "수정됐는지 알 수 없습니다. 대화에서 확인한 뒤 필요하면 다시 수정하세요.",
+  uncertainDelete: "삭제됐는지 알 수 없습니다. 대화에서 확인하세요.",
+  uncertainReact: "반응이 남았는지 알 수 없습니다. 대화에서 확인하세요.",
+  replyingTo: (name: string) => `${name}에게 답장`,
+  editing: "메시지 수정",
+  cancelMode: "취소",
   noSend: "이 어댑터는 메시지 보내기를 제공하지 않습니다.",
   noSendHere: "이 방에는 이 계정으로 보낼 수 없습니다.",
-  unshown: "불러오지 못했습니다",
-  kinds: {
-    file: "파일",
-    image: "사진",
-    video: "동영상",
-    audio: "오디오",
-    voice: "음성 메시지",
-    sticker: "스티커",
-    animation: "움직이는 이미지",
-  } as Record<string, string>,
   reconnecting: "실시간 연결이 끊겨 다시 잇는 중입니다.",
 } as const;
 
 type Features = Capabilities["features"];
+
+type Mode =
+  | { kind: "send" }
+  | { kind: "reply"; message: AdapterMessage }
+  | { kind: "edit"; message: AdapterMessage };
 
 function withNewer(
   current: AdapterMessage[],
@@ -78,6 +88,30 @@ function withOlder(
   return [...older.filter((message) => !known.has(message.id)), ...current];
 }
 
+function withEdited(
+  current: AdapterMessage[],
+  message: AdapterMessage,
+): AdapterMessage[] {
+  return current.map((held) => (held.id === message.id ? message : held));
+}
+
+function without(current: AdapterMessage[], ids: string[]): AdapterMessage[] {
+  const gone = new Set(ids);
+  return current.filter((message) => !gone.has(message.id));
+}
+
+function withReactions(
+  current: AdapterMessage[],
+  id: string,
+  reactions: AdapterReaction[],
+): AdapterMessage[] {
+  return current.map((message) => {
+    if (message.id !== id) return message;
+    const { reactions: _held, ...rest } = message;
+    return reactions.length ? { ...rest, reactions } : rest;
+  });
+}
+
 /** The reconnect backoff: waits `ms`, or less when the view goes away. */
 function pause(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve) => {
@@ -93,166 +127,90 @@ function pause(ms: number, signal: AbortSignal) {
   });
 }
 
-/** Types `/media` serves inline, so an `<img>` can draw them; anything else is a download. */
-const DRAWABLE = /^image\/(?:jpeg|png|gif|webp|avif)$/;
-
-function Attachment({
-  adapterId,
-  attachment,
-}: {
-  adapterId: string;
-  attachment: AdapterAttachment;
-}) {
-  const [broken, setBroken] = useState(false);
-  const href = mediaUrl(adapterId, attachment.id);
-  const label = COPY.kinds[attachment.kind] ?? COPY.kinds.file;
-  const drawable =
-    (attachment.kind === "image" || attachment.kind === "sticker") &&
-    DRAWABLE.test(attachment.mimeType ?? "");
-  if (drawable && !broken)
-    return (
-      <a
-        className={cx(
-          styles.picture,
-          attachment.kind === "sticker" && styles.sticker,
-        )}
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        data-ui="adapter-picture"
-      >
-        <img
-          src={href}
-          alt={attachment.name ?? label}
-          width={attachment.width}
-          height={attachment.height}
-          loading="lazy"
-          decoding="async"
-          onError={() => setBroken(true)}
-        />
-      </a>
-    );
-  const seconds = attachment.durationSeconds;
-  const meta = [
-    attachment.name ? label : null,
-    seconds === undefined
-      ? null
-      : `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`,
-    broken ? COPY.unshown : formatSize(attachment.size),
-  ].filter(Boolean);
-  return (
-    <a
-      className={styles.file}
-      href={href}
-      download={attachment.name ?? ""}
-      data-ui="adapter-file"
-    >
-      <span className={styles.fileName}>{attachment.name ?? label}</span>
-      <span className={styles.fileMeta}>{meta.join(" · ")}</span>
-    </a>
-  );
-}
-
-function Turn({
-  adapterId,
-  files,
-  message,
-  previous,
-  now,
-}: {
-  adapterId: string;
-  /** Whether the adapter declares `attachments.read`, so `/media` answers. */
-  files: boolean;
-  message: AdapterMessage;
-  previous: AdapterMessage | undefined;
-  now: Date;
-}) {
-  if (message.kind === "service")
-    return (
-      <li className={styles.service} data-ui="adapter-service">
-        {message.text || COPY.service}
-      </li>
-    );
-  const continued =
-    previous !== undefined &&
-    previous.kind !== "service" &&
-    previous.fromMe === message.fromMe &&
-    (previous.senderId ?? previous.sender) ===
-      (message.senderId ?? message.sender);
-  const time = formatTime(message.sentAt, now);
-  const bare =
-    files &&
-    !message.text &&
-    message.attachments?.length === 1 &&
-    message.attachments[0]?.kind === "sticker";
-  return (
-    <li
-      className={cx(styles.turn, message.fromMe && styles.mine)}
-      data-ui="adapter-turn"
-    >
-      {!message.fromMe && !continued ? (
-        <span className={styles.sender}>{message.sender}</span>
-      ) : null}
-      <div className={styles.line}>
-        <div className={cx(styles.bubble, bare && styles.bare)}>
-          {files && message.attachments ? (
-            message.attachments.map((attachment) => (
-              <Attachment
-                key={attachment.id}
-                adapterId={adapterId}
-                attachment={attachment}
-              />
-            ))
-          ) : message.kind === "media" ? (
-            <span className={styles.media}>{COPY.media}</span>
-          ) : null}
-          {message.text ? (
-            <span className={styles.text}>{message.text}</span>
-          ) : null}
-        </div>
-        <time className={styles.time} dateTime={message.sentAt}>
-          {time.label}
-          {message.editedAt ? ` · ${COPY.edited}` : null}
-        </time>
-      </div>
-    </li>
-  );
-}
-
 function Composer({
   adapterId,
   roomId,
-  maxLength,
+  sendLimit,
+  editLimit,
+  mode,
+  onCancelMode,
   onStored,
+  onEdited,
 }: {
   adapterId: string;
   roomId: string;
-  maxLength: number;
+  sendLimit: number;
+  editLimit: number | undefined;
+  mode: Mode;
+  onCancelMode: () => void;
   onStored: (message: AdapterMessage) => void;
+  onEdited: (message: AdapterMessage) => void;
 }) {
-  const [text, setText] = useState("");
+  // The unsent draft survives an edit: editing works on its own copy.
+  const [draft, setDraft] = useState("");
+  const [revision, setRevision] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const over = [...text].length > maxLength;
+  const field = useRef<HTMLTextAreaElement>(null);
+  const editing = mode.kind === "edit";
+
+  useEffect(() => {
+    if (mode.kind === "edit") setRevision(mode.message.text);
+    setNote(null);
+    if (mode.kind !== "send") field.current?.focus();
+  }, [mode]);
+
+  const text = editing ? revision : draft;
+  const limit = editing ? (editLimit ?? sendLimit) : sendLimit;
+  const over = [...text].length > limit;
+  const unchanged = mode.kind === "edit" && text === mode.message.text;
+  const blocked = busy || over || !text.trim() || unchanged;
 
   async function submit() {
-    if (busy || over || !text.trim()) return;
+    if (blocked) return;
     setBusy(true);
     setNote(null);
+    const signal = new AbortController().signal;
+    if (mode.kind === "edit") {
+      let result: Awaited<ReturnType<typeof editMessage>>;
+      try {
+        result = await editMessage(
+          adapterId,
+          { roomId, messageId: mode.message.id, text },
+          signal,
+        );
+      } catch {
+        result = { kind: "unreachable" };
+      }
+      setBusy(false);
+      if (result.kind === "ok") {
+        onEdited(result.data.message);
+        onCancelMode();
+        return;
+      }
+      setNote(
+        result.kind === "refused"
+          ? problemSentence(result, "message")
+          : COPY.uncertainEdit,
+      );
+      return;
+    }
+    const replyTo = mode.kind === "reply" ? mode.message.id : undefined;
     let result: Awaited<ReturnType<typeof sendMessage>>;
     try {
       result = await sendMessage(
         adapterId,
-        { roomId, text },
-        new AbortController().signal,
+        { roomId, text, ...(replyTo === undefined ? {} : { replyTo }) },
+        signal,
       );
     } catch {
       result = { kind: "unreachable" };
     }
     setBusy(false);
     if (result.kind === "ok") {
-      setText("");
+      setDraft("");
       onStored(result.data.message);
+      if (replyTo !== undefined) onCancelMode();
       return;
     }
     // Refused means nothing was sent; anything else leaves the outcome unknown.
@@ -262,7 +220,10 @@ function Composer({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (
+    if (event.key === "Escape" && mode.kind !== "send") {
+      event.preventDefault();
+      onCancelMode();
+    } else if (
       event.key === "Enter" &&
       !event.shiftKey &&
       !event.nativeEvent.isComposing
@@ -273,30 +234,65 @@ function Composer({
   }
 
   return (
-    <div className={styles.composer} data-ui="adapter-composer">
+    <div
+      className={styles.composer}
+      data-ui="adapter-composer"
+      data-mode={mode.kind}
+    >
+      {mode.kind !== "send" ? (
+        <div className={styles.mode} data-ui="adapter-composer-mode">
+          <span className={styles.modeLabel}>
+            {mode.kind === "edit"
+              ? COPY.editing
+              : COPY.replyingTo(mode.message.sender)}
+          </span>
+          {mode.kind === "reply" ? (
+            <span className={styles.modeText}>{gist(mode.message)}</span>
+          ) : null}
+          <button
+            type="button"
+            className={styles.modeCancel}
+            onClick={onCancelMode}
+            data-ui="adapter-composer-cancel"
+          >
+            {COPY.cancelMode}
+          </button>
+        </div>
+      ) : null}
       <div className={styles.box}>
         <textarea
+          ref={field}
           className={styles.field}
-          aria-label={COPY.input}
+          aria-label={editing ? COPY.editInput : COPY.input}
           placeholder={COPY.placeholder}
           rows={1}
           value={text}
-          onChange={(event) => setText(event.currentTarget.value)}
+          onChange={(event) =>
+            editing
+              ? setRevision(event.currentTarget.value)
+              : setDraft(event.currentTarget.value)
+          }
           onKeyDown={onKeyDown}
         />
         <button
           type="button"
           className={styles.send}
-          disabled={busy || over || !text.trim()}
+          disabled={blocked}
           onClick={() => void submit()}
           data-ui="adapter-send"
         >
-          {busy ? COPY.sending : COPY.send}
+          {busy
+            ? editing
+              ? COPY.saving
+              : COPY.sending
+            : editing
+              ? COPY.save
+              : COPY.send}
         </button>
       </div>
       {over ? (
         <p className={styles.note} role="status">
-          {COPY.tooLong(maxLength)}
+          {COPY.tooLong(limit)}
         </p>
       ) : note ? (
         <p className={styles.note} role="status">
@@ -307,7 +303,7 @@ function Composer({
   );
 }
 
-/** One room's messages, the way back in time, live arrivals and the composer. */
+/** One room's messages, the way back in time, live changes, the tools and the composer. */
 export function AdapterThread({
   adapterId,
   roomId,
@@ -324,6 +320,20 @@ export function AdapterThread({
   const live = features["messages.stream"];
   const send = roomFeature(features, room, "messages.send");
   const files = roomFeature(features, room, "attachments.read") !== undefined;
+  const edit = send ? roomFeature(features, room, "messages.edit") : undefined;
+  const react = roomFeature(features, room, "reactions.send");
+  const abilities: MessageAbilities = {
+    reply:
+      send !== undefined &&
+      roomFeature(features, room, "messages.reply") !== undefined,
+    edit,
+    delete: roomFeature(features, room, "messages.delete"),
+    react:
+      react !== undefined &&
+      roomFeature(features, room, "reactions.read") !== undefined,
+  };
+  const readMark = roomFeature(features, room, "read.mark") !== undefined;
+  const openedRead = room?.unread === 0;
   const limit = Math.min(50, read?.maxLimit ?? 50);
   const canPage = read?.paging === "before-id";
 
@@ -334,10 +344,16 @@ export function AdapterThread({
   const [hasEarlier, setHasEarlier] = useState(false);
   const [earlier, setEarlier] = useState<"idle" | "busy" | string>("idle");
   const [reconnecting, setReconnecting] = useState(false);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>({ kind: "send" });
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
   const wall = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const fromBottom = useRef<number | null>(null);
   const newest = useRef<string | null>(null);
+  const marked = useRef<string | null>(null);
+  const markNewest = useRef<() => void>(() => {});
 
   useEffect(() => {
     newest.current = messages.at(-1)?.id ?? newest.current;
@@ -369,6 +385,14 @@ export function AdapterThread({
     if (!ready || !streaming) return;
     const controller = new AbortController();
     const { signal } = controller;
+    const forget = (ids: string[]) => {
+      setMenu((open) => (open !== null && ids.includes(open) ? null : open));
+      setMode((current) =>
+        current.kind !== "send" && ids.includes(current.message.id)
+          ? { kind: "send" }
+          : current,
+      );
+    };
     void (async () => {
       let failures = 0;
       while (!signal.aborted) {
@@ -387,6 +411,28 @@ export function AdapterThread({
             ) {
               setMessages((current) =>
                 withNewer(current, [event.data.message]),
+              );
+            } else if (
+              event.type === "message.edited" &&
+              event.data.message.roomId === roomId
+            ) {
+              setMessages((current) => withEdited(current, event.data.message));
+            } else if (
+              event.type === "message.deleted" &&
+              event.data.roomId === roomId
+            ) {
+              setMessages((current) => without(current, event.data.messageIds));
+              forget(event.data.messageIds);
+            } else if (
+              event.type === "reactions.updated" &&
+              event.data.roomId === roomId
+            ) {
+              setMessages((current) =>
+                withReactions(
+                  current,
+                  event.data.messageId,
+                  event.data.reactions,
+                ),
               );
             }
           },
@@ -420,6 +466,45 @@ export function AdapterThread({
     })();
     return () => controller.abort();
   }, [ready, streaming, resumable, adapterId, roomId, limit]);
+
+  // Read marks follow what a person can see: the newest message, from someone
+  // else, with the wall at its foot and the page in front.
+  useEffect(() => {
+    if (!readMark || !ready) {
+      markNewest.current = () => {};
+      return;
+    }
+    const last = messages.at(-1);
+    // A room the list already showed as read needs no mark until something new arrives.
+    if (openedRead && marked.current === null && last) marked.current = last.id;
+    markNewest.current = () => {
+      if (
+        !last ||
+        last.fromMe ||
+        last.id === marked.current ||
+        !stick.current ||
+        document.visibilityState !== "visible"
+      )
+        return;
+      marked.current = last.id;
+      markRead(
+        adapterId,
+        { roomId, messageId: last.id },
+        new AbortController().signal,
+      ).then(
+        (result) => {
+          if (result.kind === "ok") noteRead(adapterId, roomId);
+        },
+        () => {
+          // Only an abort rejects.
+        },
+      );
+    };
+    markNewest.current();
+    const onVisible = () => markNewest.current();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [readMark, ready, messages, adapterId, roomId, openedRead]);
 
   useLayoutEffect(() => {
     const element = wall.current;
@@ -458,6 +543,87 @@ export function AdapterThread({
     setEarlier("idle");
   }
 
+  function say(id: string, text: string | null) {
+    setNotes((current) => {
+      const next = { ...current };
+      if (text === null) delete next[id];
+      else next[id] = text;
+      return next;
+    });
+  }
+
+  // Each write is one attempt: a refusal says why, anything else says the
+  // outcome is unknown, and nothing is retried on the person's behalf.
+  async function act(message: AdapterMessage, action: ToolAction) {
+    say(message.id, null);
+    if (action.kind === "reply" || action.kind === "edit") {
+      setMode({ kind: action.kind, message });
+      setMenu(null);
+      return;
+    }
+    setBusyId(message.id);
+    const signal = new AbortController().signal;
+    if (action.kind === "delete") {
+      let result: Awaited<ReturnType<typeof deleteMessage>>;
+      try {
+        result = await deleteMessage(
+          adapterId,
+          { roomId, messageId: message.id },
+          signal,
+        );
+      } catch {
+        result = { kind: "unreachable" };
+      }
+      setBusyId(null);
+      if (result.kind === "ok") {
+        setMessages((current) => without(current, [message.id]));
+        setMenu(null);
+        setMode((current) =>
+          current.kind !== "send" && current.message.id === message.id
+            ? { kind: "send" }
+            : current,
+        );
+        return;
+      }
+      say(
+        message.id,
+        result.kind === "refused"
+          ? problemSentence(result, "message")
+          : COPY.uncertainDelete,
+      );
+      return;
+    }
+    const emojis = toggledReactions(
+      message.reactions,
+      action.emoji,
+      react?.maxPerMessage,
+    );
+    let result: Awaited<ReturnType<typeof setReactions>>;
+    try {
+      result = await setReactions(
+        adapterId,
+        { roomId, messageId: message.id, emojis },
+        signal,
+      );
+    } catch {
+      result = { kind: "unreachable" };
+    }
+    setBusyId(null);
+    if (result.kind === "ok") {
+      const { reactions } = result.data;
+      setMessages((current) => withReactions(current, message.id, reactions));
+      setMenu(null);
+      return;
+    }
+    say(
+      message.id,
+      result.kind === "refused"
+        ? problemSentence(result, "message")
+        : COPY.uncertainReact,
+    );
+  }
+
+  const byId = new Map(messages.map((message) => [message.id, message]));
   const now = new Date();
   return (
     <div className={styles.thread} data-ui="adapter-thread">
@@ -469,6 +635,7 @@ export function AdapterThread({
           stick.current =
             element.scrollHeight - element.scrollTop - element.clientHeight <
             80;
+          if (stick.current) markNewest.current();
         }}
       >
         {phase.kind === "loading" ? (
@@ -499,7 +666,18 @@ export function AdapterThread({
                     files={files}
                     message={message}
                     previous={messages[index - 1]}
+                    quoted={
+                      message.replyTo === undefined
+                        ? undefined
+                        : byId.get(message.replyTo)
+                    }
                     now={now}
+                    abilities={abilities}
+                    open={menu === message.id}
+                    note={notes[message.id] ?? null}
+                    busy={busyId === message.id}
+                    onOpen={(open) => setMenu(open ? message.id : null)}
+                    onAction={(action) => void act(message, action)}
                   />
                 ))}
               </ol>
@@ -518,11 +696,17 @@ export function AdapterThread({
         <Composer
           adapterId={adapterId}
           roomId={roomId}
-          maxLength={send.maxLength}
+          sendLimit={send.maxLength}
+          editLimit={edit?.maxLength}
+          mode={mode}
+          onCancelMode={() => setMode({ kind: "send" })}
           onStored={(message) => {
             stick.current = true;
             setMessages((current) => withNewer(current, [message]));
           }}
+          onEdited={(message) =>
+            setMessages((current) => withEdited(current, message))
+          }
         />
       ) : (
         <p className={styles.reconnecting} data-ui="adapter-no-send">
