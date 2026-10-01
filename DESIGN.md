@@ -218,8 +218,16 @@ The tsuba adapters are separate upstreams with their own contract
 | 연결 view (`#/adapters`) | The room header's form (title 연결, subtitle 메신저 어댑터, back chevron below 768px), then one card per adapter in the `62ch` column, spanning the list and thread columns from 768px. Reachable whatever the KakaoTalk core is doing. |
 | Adapter card | `--field-list` fill, radius 14, no rule. The provider's initial on a 36px ink squircle (no messenger artwork), name 17/800, and the state as a **word** on a pill: 확인 중 · 연결됨 · 인증 필요 · 거절됨 · 닿지 않음 · 응답 이상 (연결됨 on `--active-list`, never colour alone). Connected: the account kind as a sentence (a bot says it sees only the rooms it was added to), adapter and contract versions, then the declared features as pills in the contract's vocabulary. Nothing declared: one sentence saying so. Otherwise one sentence on what to check and 다시 확인. |
 
+| Adapter rooms | Under the card's features, when `rooms.list` is declared: rows as the list's are (44px monogram, title 15/700, time 12/500, preview 13px with 나: for my own, unread badge), filled on hover, no rule. A row is a link only when `messages.read` is declared. `complete: false` adds one sentence saying more rooms exist. |
+| Adapter room (`#/adapters/<id>/<roomId>`) | The room header (back chevron at every width, since no list sits beside it; 40px monogram; title; the provider's name as subtitle). The wall: turns oldest first, others left with the name once per run, mine right; bubble radius 18 with a 4px tail corner, the stamp outside at the foot with 수정됨 when edited; media turns say 사진·파일 등 above their caption; service turns are a centred pill. 이전 메시지 더 보기 at the top when `paging: before-id` and earlier messages exist; the scroll position holds when they arrive. |
+| Adapter composer | One filled box (radius 18) with the field and a 보내기 pill. Enter sends (not while composing Hangul; Shift+Enter is a new line). Over `maxLength` code points it says so and does not send. A refused send says why and keeps the text; an unanswered one says it is unknown whether it went and is never retried. A stored message appears once, whether the answer or the stream brings it first. Without `messages.send`, one sentence instead of the box. |
+
 The card reads the provider's name from the declaration and never branches on
-it: a second messenger is a second card, not new code.
+it: a second messenger is a second card, not new code. Live arrivals come from
+one `/stream` per open adapter room, resumed by cursor after a drop with a
+backoff, and the drop is said in one line above the composer while it lasts.
+Read marks are not sent (`read.mark` is not used yet), so unread counts are the
+messenger's own.
 
 ## Embedded tokens
 

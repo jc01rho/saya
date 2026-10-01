@@ -1,5 +1,7 @@
 import {
+  lazy,
   type ReactNode,
+  Suspense,
   useCallback,
   useEffect,
   useId,
@@ -13,7 +15,6 @@ import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
 import { Reconciler } from "../core/reconcile";
 import type { ClientStores, Immutable } from "../core/stores";
-import { AdaptersPane } from "../features/adapters";
 import { AttachmentsPanel, AttachmentsToggle } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
@@ -25,6 +26,10 @@ import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
 import { Cat, COPY, cx, RoomAvatar } from "../ui";
 import styles from "./App.module.css";
+
+// The adapter views and the adapter contract's validators load only when opened.
+const AdapterOutlet = lazy(() => import("./AdapterOutlets"));
+
 import { Rail } from "./Rail";
 import { ADAPTERS_HASH, ROOMS_HASH, useRoute } from "./routes";
 
@@ -100,8 +105,6 @@ const APP_COPY = {
   capacityTitle: "목록이 표시 가능한 범위를 넘었습니다",
   capacityBody: (limit: string) =>
     `카탈로그 응답이 이 클라이언트의 ${limit} 정책을 넘어 표시하지 않았습니다.`,
-  adapters: "연결",
-  adaptersSubtitle: "메신저 어댑터",
   toAdapters: "다른 메신저 연결 보기",
 } as const;
 
@@ -232,34 +235,6 @@ function RoomOutlet({
   );
 }
 
-/** The connections view: a header like a room's, over every adapter the proxy fronts. */
-function AdaptersOutlet() {
-  return (
-    <>
-      <header className={styles.threadHead}>
-        <a className={styles.back} href={ROOMS_HASH}>
-          <span className="sr-only">{APP_COPY.back}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M15 5l-7 7 7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </a>
-        <div className={styles.identity}>
-          <h1 className={styles.title}>{APP_COPY.adapters}</h1>
-          <p className={styles.subtitle}>{APP_COPY.adaptersSubtitle}</p>
-        </div>
-      </header>
-      <AdaptersPane />
-    </>
-  );
-}
-
 /**
  * The composition root: one session, the hash route, the catalog request, and
  * the two panes. The shell is 100dvh and never scrolls; the list and, later,
@@ -287,12 +262,29 @@ export function App({ session }: { session?: Session }) {
   }, [own]);
 
   // Reachable whatever the KakaoTalk core is doing: the adapters are separate upstreams.
+  if (route.kind === "adapter-room")
+    return (
+      <div className={styles.shell} data-ui="app" data-route="adapter-room">
+        <Rail className={styles.rail} stores={own.stores} section="adapters" />
+        <main className={cx(styles.thread, styles.wide)} data-ui="adapter-room">
+          <Suspense fallback={null}>
+            <AdapterOutlet
+              key={`${route.adapterId}/${route.roomId}`}
+              adapterId={route.adapterId}
+              roomId={route.roomId}
+            />
+          </Suspense>
+        </main>
+      </div>
+    );
   if (route.kind === "adapters")
     return (
       <div className={styles.shell} data-ui="app" data-route="adapters">
         <Rail className={styles.rail} stores={own.stores} section="adapters" />
         <main className={cx(styles.thread, styles.wide)} data-ui="adapters">
-          <AdaptersOutlet />
+          <Suspense fallback={null}>
+            <AdapterOutlet />
+          </Suspense>
         </main>
       </div>
     );

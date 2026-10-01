@@ -126,3 +126,73 @@
 .retry:hover {
   background: var(--hover-wall);
 }
+
+/* The adapter's rooms: rows as the list's are, filled on hover, no rule between. */
+.rooms {
+  display: grid;
+  gap: 2px;
+  margin-inline: -8px;
+  list-style: none;
+}
+
+.roomRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-width: 0;
+  padding: 8px;
+  border-radius: var(--radius-row);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.roomRow:hover {
+  background: var(--hover-list);
+}
+
+.roomBody {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.roomTop,
+.roomBottom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.roomTitle,
+.roomPreview {
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.roomTitle {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.roomTime {
+  flex: none;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.roomPreview {
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.roomBadge {
+  flex: none;
+}

@@ -85,9 +85,9 @@ export const contracts: readonly ContractSpec[] = [
   {
     // The tsuba adapter contract, byte-identical to tsuba's contract/openapi.json.
     source: "contracts/tsuba.openapi.json",
-    hash: "a5e6c1e394f31211c3ae65f2a27eaf0b9890510dc556062670f905d3fef9210c",
+    hash: "e1bb8df6f5c5e5702bb8390f25a5e38b60a29169581edf0c9485195c90170d10",
     directory: new URL("../src/contract/tsuba/", import.meta.url),
-    sse: false,
+    sse: true,
     widen(_document, decoded) {
       // Its prose: error codes grow, and an enum value a client does not know
       // means the least that field can mean. No closed enum is decoded.

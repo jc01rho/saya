@@ -8,6 +8,8 @@
 
 ### 추가
 
+**메신저 어댑터의 방을 열고, 읽고, 보냅니다(tsuba 계약 0.2.0).** `rooms.list` 를 밝힌 어댑터는 연결 카드에 방 목록이 나오고, `messages.read` 가 있으면 방을 열어 최신 메시지와 그 이전(`before-id`)을 읽습니다. `messages.stream` 으로 새 메시지가 실시간으로 들어오고 끊기면 커서로 이어 받습니다. `messages.send` 가 있으면 입력창이 생기며, 저장된 메시지(`receipt: stored`)만 대화에 나타나고 응답이 없으면 "보냈는지 알 수 없습니다"라고 말할 뿐 다시 보내지 않습니다. 화면 검증은 가상 데이터를 답하는 합성 어댑터로 1440×900·390×844 에서 했습니다(방 목록 → 방 열기 → 이전 메시지 → 전송·실시간 반영, 중복 없음).
+
 **메신저 어댑터(tsuba)에 연결합니다.** 레일의 **연결**(768px 미만은 목록 머리의 아이콘)에서 프록시가 맡은 어댑터마다 카드 하나를 그립니다. 이름은 어댑터가 `GET /capabilities` 로 밝힌 것을 쓰고, 상태(연결됨 · 인증 필요 · 거절됨 · 닿지 않음 · 응답 이상), 계정 종류, 밝힌 기능을 보여 줍니다. 메신저 이름으로 분기하지 않으므로 두 번째 메신저는 카드가 하나 더 늘 뿐입니다. 카카오톡 코어가 꺼져 있어도 열립니다. tsuba 의 계약을 `contracts/tsuba.openapi.json`(0.1.0)으로 복사해 해시를 고정하고, `contract:generate`·`contract:check` 가 두 계약을 함께 다룹니다(카카오 생성물은 바이트 단위로 그대로). 프록시는 `SAYA_ADAPTERS`·`SAYA_ADAPTER_<ID>_URL`·`SAYA_ADAPTER_<ID>_TOKEN` 으로 `/adapters/<id>/*` 를 어댑터에 넘기고 토큰을 넣으며, 브라우저에는 id 만 담은 `/adapters` 색인만 줍니다.
 
 검증: `contract:check`·`typecheck`·`lint`·`build` 통과, `bun test` 213 pass / 0 fail. 실제 VPS 의 tsuba Telegram 어댑터에 Tailscale(`tailscale serve`, tailnet 전용)로 붙은 개발 서버를 Chrome 에서 1440×900 과 390×844 로 보고 연결됨을 확인했고, 레일과 모바일 목록 머리의 진입점은 합성 브리지 위에서 확인했습니다. 실제 `kanao serve` 에는 붙이지 않았습니다.

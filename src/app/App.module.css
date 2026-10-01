@@ -131,6 +131,10 @@
   }
 }
 
+.back.always {
+  display: inline-flex;
+}
+
 /* Title over subtitle, both clipped to one line so the header never grows. */
 .identity {
   display: grid;

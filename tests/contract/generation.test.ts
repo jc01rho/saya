@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { components } from "../../src/contract/decoded";
 import { sseEventSchemas, sseValidators } from "../../src/contract/sse";
+import { sseValidators as adapterSse } from "../../src/contract/tsuba/sse";
 import {
   validateErrorEnvelope as validateAdapterError,
   validateCapabilities,
+  validateMessagesAnswer,
+  validateRoomsAnswer,
 } from "../../src/contract/tsuba/validators.js";
 import {
   validateCursor,
@@ -157,6 +160,54 @@ describe("generated adapter (tsuba) boundary", () => {
         features: { "x-example.pins": "yes" },
       }),
     ).toBe(false);
+  });
+
+  test("rooms and messages keep required keys and string ids, and accept additive ones", () => {
+    const room = {
+      id: "-100123",
+      title: "Synthetic",
+      kind: "future-kind",
+      unread: 0,
+      futureKey: 1,
+    };
+    expect(
+      validateRoomsAnswer({ ok: true, complete: true, rooms: [room] }),
+    ).toBe(true);
+    expect(validateRoomsAnswer({ ok: true, rooms: [room] })).toBe(false);
+    expect(
+      validateRoomsAnswer({
+        ok: true,
+        complete: true,
+        rooms: [{ ...room, id: -100123 }],
+      }),
+    ).toBe(false);
+    const turn = {
+      id: "1",
+      roomId: "-100123",
+      sender: "Synthetic",
+      text: "",
+      kind: "media",
+      sentAt: "2026-09-18T00:21:30Z",
+      fromMe: false,
+    };
+    expect(
+      validateMessagesAnswer({ ok: true, hasEarlier: false, messages: [turn] }),
+    ).toBe(true);
+    const { sentAt: _sentAt, ...undated } = turn;
+    expect(
+      validateMessagesAnswer({
+        ok: true,
+        hasEarlier: false,
+        messages: [undated],
+      }),
+    ).toBe(false);
+    expect(Object.keys(adapterSse)).toEqual([
+      "ready",
+      "message",
+      "cursor",
+      "ping",
+      "error",
+    ]);
   });
 
   test("an error code it does not know is still an error envelope", () => {

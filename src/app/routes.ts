@@ -7,10 +7,17 @@ import { useMemo, useSyncExternalStore } from "react";
 export type Route =
   | { kind: "rooms" }
   | { kind: "room"; roomId: string }
-  | { kind: "adapters" };
+  | { kind: "adapters" }
+  | { kind: "adapter-room"; adapterId: string; roomId: string };
 
 export const ROOMS_HASH = "#/rooms";
 export const ADAPTERS_HASH = "#/adapters";
+
+export function adapterRoomHash(adapterId: string, roomId: string): string {
+  return `#/adapters/${encodeURIComponent(adapterId)}/${encodeURIComponent(roomId)}`;
+}
+
+const ADAPTER_ROOM = /^\/adapters\/([^/]+)\/([^/]+)$/;
 
 export function roomHash(roomId: string): string {
   return `#/room/${encodeURIComponent(roomId)}`;
@@ -24,6 +31,18 @@ const ROOM = /^\/rooms?\/([^/]+)$/;
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "").replace(/\?.*$/, "");
   if (path === "/adapters") return { kind: "adapters" };
+  const adapterRoom = ADAPTER_ROOM.exec(path);
+  if (adapterRoom?.[1] && adapterRoom[2]) {
+    try {
+      return {
+        kind: "adapter-room",
+        adapterId: decodeURIComponent(adapterRoom[1]),
+        roomId: decodeURIComponent(adapterRoom[2]),
+      };
+    } catch {
+      return { kind: "adapters" };
+    }
+  }
   const match = ROOM.exec(path);
   if (!match?.[1]) return INDEX;
   try {

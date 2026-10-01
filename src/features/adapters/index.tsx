@@ -7,6 +7,9 @@ import {
   listAdapters,
 } from "../../transport/adapters";
 import styles from "./Adapters.module.css";
+import { AdapterRooms } from "./rooms";
+
+export { AdapterRoomBody, useAdapterRoom } from "./thread";
 
 const COPY = {
   checkingIndex: "연결된 어댑터를 확인하는 중입니다.",
@@ -38,6 +41,7 @@ const COPY = {
   meta: (capabilities: Capabilities) =>
     `${capabilities.adapter.name} ${capabilities.adapter.version} · 계약 ${capabilities.contract.version}`,
   features: "제공하는 기능",
+  rooms: "방",
   noFeatures:
     "아직 이 어댑터가 제공하는 기능이 없습니다. 대화 목록과 메시지는 어댑터가 기능을 밝히면 여기서 열립니다.",
 } as const;
@@ -92,7 +96,13 @@ function problem(state: CardState): string | null {
   }
 }
 
-function Declared({ capabilities }: { capabilities: Capabilities }) {
+function Declared({
+  id,
+  capabilities,
+}: {
+  id: string;
+  capabilities: Capabilities;
+}) {
   const known = Object.keys(capabilities.features).flatMap((id) => {
     const label = FEATURE_LABELS[id];
     return label ? [{ id, label }] : [];
@@ -114,6 +124,15 @@ function Declared({ capabilities }: { capabilities: Capabilities }) {
       ) : (
         <p className={styles.line}>{COPY.noFeatures}</p>
       )}
+      {capabilities.features["rooms.list"] ? (
+        <>
+          <h3 className={styles.subheading}>{COPY.rooms}</h3>
+          <AdapterRooms
+            adapterId={id}
+            openable={Boolean(capabilities.features["messages.read"])}
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -152,7 +171,7 @@ function AdapterCheck({ id, onRetry }: { id: string; onRetry: () => void }) {
         </span>
       </header>
       {state.kind === "connected" ? (
-        <Declared capabilities={state.capabilities} />
+        <Declared id={id} capabilities={state.capabilities} />
       ) : null}
       {trouble ? (
         <>

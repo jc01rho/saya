@@ -1,0 +1,204 @@
+/* An adapter room: the wall owns its scroll; the composer stays on the ground. */
+.thread {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.wall {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-16) 18px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  list-style: none;
+}
+
+.status {
+  margin: auto;
+  padding: var(--space-24);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  text-align: center;
+}
+
+.earlier {
+  align-self: center;
+  margin-bottom: var(--space-12);
+  min-height: var(--touch-min);
+  padding: var(--space-8) var(--space-16);
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.earlier:hover {
+  background: var(--hover-wall);
+}
+
+.turn {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+}
+
+.mine {
+  justify-items: end;
+}
+
+/* The speaker's name sits above the bubble, once per run. */
+.sender {
+  margin-top: var(--space-8);
+  padding-inline: 4px;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.line {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.mine .line {
+  flex-direction: row-reverse;
+}
+
+.bubble {
+  display: grid;
+  gap: 2px;
+  max-width: min(62ch, 82vw);
+  padding: 11px 15px;
+  border-radius: 18px 18px 18px 4px;
+  background: var(--bubble-other);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mine .bubble {
+  border-radius: 18px 18px 4px 18px;
+  background: var(--bubble-self);
+}
+
+.media {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.time {
+  flex: none;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* A join, a title change: a quiet centred pill, not a turn. */
+.service {
+  align-self: center;
+  margin: var(--space-8) 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.reconnecting {
+  padding: 6px 18px;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
+
+.composer {
+  padding: var(--space-8) 18px var(--space-16);
+}
+
+/* One filled box: the field, then the send door at its end. */
+.box {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+  padding: 8px 8px 8px 16px;
+  border-radius: 18px;
+  background: var(--field-input);
+}
+
+.box:focus-within {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  max-height: 160px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: 1.6;
+  resize: none;
+  field-sizing: content;
+}
+
+.field:focus {
+  outline: none;
+}
+
+.send {
+  flex: none;
+  min-height: 40px;
+  padding: 0 var(--space-16);
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-send);
+  color: var(--door-ink);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (max-width: 767.98px) {
+  .send {
+    min-height: var(--touch-min);
+  }
+}
+
+.note {
+  padding: 6px 4px 0;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
