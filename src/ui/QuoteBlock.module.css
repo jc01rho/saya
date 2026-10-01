@@ -23,3 +23,19 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* A quote that can lead to its original is a quiet button: the rule darkens on hover. */
+.quote[data-jump] {
+  border-radius: 0 var(--radius-tile) var(--radius-tile) 0;
+  cursor: pointer;
+}
+
+.quote[data-jump]:hover {
+  border-inline-start-color: var(--ink);
+  background: var(--hover-wall);
+}
+
+.quote[data-jump]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
