@@ -21,6 +21,7 @@ export const validateFeatureReadMark: ValidateFunction<components["schemas"]["Fe
 export const validateFeatureTypingSend: ValidateFunction<components["schemas"]["FeatureTypingSend"]>;
 export const validateFeatureThreadsRead: ValidateFunction<components["schemas"]["FeatureThreadsRead"]>;
 export const validateFeatureAttachmentsRead: ValidateFunction<components["schemas"]["FeatureAttachmentsRead"]>;
+export const validateFeatureAvatarsRead: ValidateFunction<components["schemas"]["FeatureAvatarsRead"]>;
 export const validateFeatureAttachmentsSend: ValidateFunction<components["schemas"]["FeatureAttachmentsSend"]>;
 export const validateRoomFeatures: ValidateFunction<components["schemas"]["RoomFeatures"]>;
 export const validateRoom: ValidateFunction<components["schemas"]["Room"]>;

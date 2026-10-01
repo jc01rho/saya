@@ -322,6 +322,7 @@ export function AdapterThread({
   const live = features["messages.stream"];
   const send = roomFeature(features, room, "messages.send");
   const files = roomFeature(features, room, "attachments.read") !== undefined;
+  const avatars = roomFeature(features, room, "avatars.read") !== undefined;
   const edit = send ? roomFeature(features, room, "messages.edit") : undefined;
   const react = roomFeature(features, room, "reactions.send");
   const abilities: MessageAbilities = {
@@ -666,6 +667,7 @@ export function AdapterThread({
                     key={message.id}
                     adapterId={adapterId}
                     files={files}
+                    avatars={avatars}
                     message={message}
                     previous={messages[index - 1]}
                     quoted={

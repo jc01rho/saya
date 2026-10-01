@@ -86,7 +86,7 @@ export interface paths {
         };
         /**
          * The bytes of a file a message carries.
-         * @description Feature `attachments.read`. `id` is the `id` of an entry in a message's `attachments`. The bytes are someone else's, so the answer is made safe to open at the client's own origin: `content-security-policy: default-src 'none'; sandbox` and `x-content-type-options: nosniff` always; the attachment's own type, served `inline`, only when it is one a browser draws or plays without running anything (JPEG, PNG, GIF, WebP and AVIF images; MP4, WebM and Ogg video; MPEG, Ogg, MP4, AAC, WebM, WAV and FLAC audio); anything else as `application/octet-stream` and `attachment`. An id answers the same bytes for as long as it answers at all (a message whose file is replaced carries a new id), so the answer may be kept in a private cache.
+         * @description Feature `attachments.read`. `id` is the `id` of an entry in a message's `attachments`, or a message's `senderAvatar` when the adapter also declares `avatars.read`. The bytes are someone else's, so the answer is made safe to open at the client's own origin: `content-security-policy: default-src 'none'; sandbox` and `x-content-type-options: nosniff` always; the attachment's own type, served `inline`, only when it is one a browser draws or plays without running anything (JPEG, PNG, GIF, WebP and AVIF images; MP4, WebM and Ogg video; MPEG, Ogg, MP4, AAC, WebM, WAV and FLAC audio); anything else as `application/octet-stream` and `attachment`. An id answers the same bytes for as long as it answers at all (a message whose file is replaced, or a sender who changes their picture, carries a new id), so the answer may be kept in a private cache.
          */
         get: operations["media"];
         put?: never;
@@ -294,6 +294,7 @@ export interface components {
             "typing.send"?: components["schemas"]["FeatureTypingSend"];
             "threads.read"?: components["schemas"]["FeatureThreadsRead"];
             "attachments.read"?: components["schemas"]["FeatureAttachmentsRead"];
+            "avatars.read"?: components["schemas"]["FeatureAvatarsRead"];
             "attachments.send"?: components["schemas"]["FeatureAttachmentsSend"];
         } & {
             [key: string]: Record<string, never>;
@@ -359,6 +360,8 @@ export interface components {
         FeatureThreadsRead: Record<string, never>;
         /** @description Messages carry `attachments`, and `GET /media` answers their bytes. */
         FeatureAttachmentsRead: Record<string, never>;
+        /** @description Messages carry their sender's profile picture: `Message.senderAvatar`, an id `GET /media` answers. Declared only beside `attachments.read`, whose route serves the bytes. */
+        FeatureAvatarsRead: Record<string, never>;
         /** @description Reserved. Send a file: `POST /upload`. */
         FeatureAttachmentsSend: {
             /** @description Largest file the messenger accepts from this account. */
@@ -381,6 +384,7 @@ export interface components {
             "typing.send"?: false | components["schemas"]["FeatureTypingSend"];
             "threads.read"?: false | components["schemas"]["FeatureThreadsRead"];
             "attachments.read"?: false | components["schemas"]["FeatureAttachmentsRead"];
+            "avatars.read"?: false | components["schemas"]["FeatureAvatarsRead"];
             "attachments.send"?: false | components["schemas"]["FeatureAttachmentsSend"];
         } & {
             [key: string]: false | Record<string, never>;
@@ -456,6 +460,8 @@ export interface components {
             senderId?: string;
             /** @description The name the messenger shows for the sender (a channel's own title for its posts). */
             sender: string;
+            /** @description The sender's profile picture as the messenger shows it: an opaque id for `GET /media`, like an attachment's. A new picture carries a new id. Present only when the adapter declares `avatars.read` and the sender has a picture it can serve; absent, a client draws its own placeholder. */
+            senderAvatar?: string;
             /** @description Empty when the message carries no text. */
             text: string;
             /**

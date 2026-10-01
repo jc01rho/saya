@@ -39,13 +39,19 @@ const everything: MessageAbilities = {
 const render = (
   value: AdapterMessage,
   abilities: MessageAbilities,
-  options: { open?: boolean; quoted?: AdapterMessage } = {},
+  options: {
+    open?: boolean;
+    quoted?: AdapterMessage;
+    files?: boolean;
+    avatars?: boolean;
+  } = {},
 ) =>
   renderToStaticMarkup(
     <ol>
       <Turn
         adapterId="example"
-        files={false}
+        files={options.files ?? false}
+        avatars={options.avatars ?? false}
         message={value}
         previous={undefined}
         quoted={options.quoted}
@@ -59,6 +65,28 @@ const render = (
       />
     </ol>,
   );
+
+describe("sender pictures", () => {
+  test("only draws an opaque media id when both features allow it", () => {
+    const value = message({ senderAvatar: "synthetic:a&b=c#d" });
+    for (const files of [false, true]) {
+      for (const avatars of [false, true]) {
+        const html = render(value, nothing, { files, avatars });
+        expect(html.includes("<img")).toBe(files && avatars);
+        if (files && avatars)
+          expect(html).toContain(
+            'src="/adapters/example/media?id=synthetic%3Aa%26b%3Dc%23d"',
+          );
+      }
+    }
+  });
+
+  test("without a picture the existing name-only placeholder is unchanged", () => {
+    expect(render(message(), nothing, { files: true, avatars: true })).toBe(
+      render(message(), nothing),
+    );
+  });
+});
 
 describe("which reactions a tap leaves", () => {
   const reactions = [

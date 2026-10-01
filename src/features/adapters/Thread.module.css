@@ -71,6 +71,12 @@
   font-weight: 700;
 }
 
+.senderWithAvatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .line {
   display: flex;
   align-items: flex-end;

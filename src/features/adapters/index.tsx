@@ -63,6 +63,7 @@ const FEATURE_LABELS: Record<string, string> = {
   "typing.send": "입력 중 표시",
   "threads.read": "스레드 읽기",
   "attachments.read": "첨부 받기",
+  "avatars.read": "프로필 사진",
   "attachments.send": "첨부 보내기",
 };
 

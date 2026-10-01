@@ -5,7 +5,7 @@ import {
   type AdapterReaction,
   mediaUrl,
 } from "../../transport/adapters";
-import { cx, formatTime } from "../../ui";
+import { Avatar, cx, formatTime } from "../../ui";
 import { formatSize } from "../attachments/pages";
 import styles from "./Thread.module.css";
 
@@ -361,6 +361,7 @@ function Tools({
 export function Turn({
   adapterId,
   files,
+  avatars,
   message,
   previous,
   quoted,
@@ -375,6 +376,8 @@ export function Turn({
   adapterId: string;
   /** Whether the adapter declares `attachments.read`, so `/media` answers. */
   files: boolean;
+  /** Whether this room declares `avatars.read`; pictures also require `files`. */
+  avatars: boolean;
   message: AdapterMessage;
   previous: AdapterMessage | undefined;
   /** The message this one replies to, when it is in the loaded window. */
@@ -399,6 +402,10 @@ export function Turn({
     previous.fromMe === message.fromMe &&
     (previous.senderId ?? previous.sender) ===
       (message.senderId ?? message.sender);
+  const avatar =
+    files && avatars && message.senderAvatar
+      ? mediaUrl(adapterId, message.senderAvatar)
+      : undefined;
   const time = formatTime(message.sentAt, now);
   const bare =
     files &&
@@ -419,7 +426,12 @@ export function Turn({
       data-message-id={message.id}
     >
       {!message.fromMe && !continued ? (
-        <span className={styles.sender}>{message.sender}</span>
+        <span className={cx(styles.sender, avatar && styles.senderWithAvatar)}>
+          {avatar ? (
+            <Avatar name={message.sender} size={24} src={avatar} />
+          ) : null}
+          {message.sender}
+        </span>
       ) : null}
       <div className={styles.line}>
         <div className={cx(styles.bubble, bare && styles.bare)}>
