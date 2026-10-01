@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { ClientStores, Immutable, StoreSlices } from "../../core/stores";
+import { arrangeRoomIds, EMPTY_ORGANIZE, type Organize } from "./organize";
 
 /** One store slice as React state. Unchanged slices return the identical reference, so nothing rerenders. */
 export function useSlice<K extends keyof StoreSlices>(
@@ -52,16 +53,21 @@ function createVisibleRoomIds(
   stores: ClientStores,
   filter: RoomFilter,
   query: string,
+  organize: Organize,
+  folder: string | null,
+  hidden: boolean,
 ) {
   let cached: readonly string[] | null = null;
   let dirty = true;
   const narrowed = filter !== "all" || query !== "";
   const compute = (): readonly string[] => {
     const order = stores.getSnapshot("rooms.order");
-    if (!narrowed) return order;
-    return order.filter((id) =>
-      passes(stores.getSnapshot(`room.${id}`), filter, query),
-    );
+    const matched = narrowed
+      ? order.filter((id) =>
+          passes(stores.getSnapshot(`room.${id}`), filter, query),
+        )
+      : order;
+    return arrangeRoomIds(matched, organize, { folder, hidden });
   };
   const getSnapshot = (): readonly string[] => {
     if (!dirty && cached) return cached;
@@ -104,11 +110,14 @@ export function useVisibleRoomIds(
   stores: ClientStores,
   filter: RoomFilter,
   query = "",
+  organize: Organize = EMPTY_ORGANIZE,
+  folder: string | null = null,
+  hidden = false,
 ): readonly string[] {
   const words = query.trim().toLocaleLowerCase("ko-KR");
   const source = useMemo(
-    () => createVisibleRoomIds(stores, filter, words),
-    [stores, filter, words],
+    () => createVisibleRoomIds(stores, filter, words, organize, folder, hidden),
+    [stores, filter, words, organize, folder, hidden],
   );
   return useSyncExternalStore(
     source.subscribe,

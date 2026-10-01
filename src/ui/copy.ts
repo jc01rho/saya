@@ -35,6 +35,7 @@ export const COPY = {
   covered: "세이프봇이 가린 메시지입니다",
   coveredShown: "세이프봇이 가림",
   edited: "수정됨",
+  pinned: "고정됨",
   editedOpen: "수정됨, 수정 기록 보기",
   reactions: "공감",
   /** Who reacted is not stored by the client, only how many chose each kind. */
