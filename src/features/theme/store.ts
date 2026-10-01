@@ -1,28 +1,25 @@
-import { BUILTIN_THEMES, type BuiltinThemeId } from "./builtin";
 import {
-  parseTheme,
-  THEME_VAR_NAMES,
-  type ThemeDefinition,
-  themeVars,
-} from "./schema";
+  CUSTOM_PREFIX,
+  isThemeChoice,
+  type StoredTheme,
+  THEME_KEY,
+  type ThemeChoice,
+} from "./apply";
+import { parseTheme, type ThemeDefinition, themeVars } from "./schema";
 
-/**
- * What survives a reload. `public/theme-boot.js` reads THEME_KEY before the
- * first paint and must agree with `applyTheme` below (tests/theme/boot.test.ts).
- */
-export const THEME_KEY = "saya.theme";
+export {
+  applyTheme,
+  CUSTOM_PREFIX,
+  resolvedTheme,
+  type StoredTheme,
+  THEME_KEY,
+  type ThemeChoice,
+  type ThemeRoot,
+} from "./apply";
+
+/** Saved custom themes. Only the lazily loaded sheet reads or writes them. */
 export const CUSTOM_KEY = "saya.themes";
-export const CUSTOM_PREFIX = "custom:";
 export const CUSTOM_LIMIT = 20;
-
-export type ThemeChoice = "system" | BuiltinThemeId | `custom:${string}`;
-
-/** The stored selection. A custom theme carries its resolved variables so the boot script needs no parser. */
-export interface StoredTheme {
-  choice: ThemeChoice;
-  mode?: "light" | "dark";
-  vars?: Record<string, string>;
-}
 
 type ReadStorage = Pick<Storage, "getItem">;
 type WriteStorage = Pick<Storage, "getItem" | "setItem">;
@@ -44,16 +41,6 @@ function writeJson(storage: WriteStorage | null, key: string, value: unknown) {
   } catch {
     return false;
   }
-}
-
-export function isThemeChoice(value: unknown): value is ThemeChoice {
-  return (
-    value === "system" ||
-    (typeof value === "string" &&
-      (Object.hasOwn(BUILTIN_THEMES, value) ||
-        (value.startsWith(CUSTOM_PREFIX) &&
-          value.length > CUSTOM_PREFIX.length)))
-  );
 }
 
 /** Saved custom themes, each re-checked: a hand-edited entry that no longer parses is dropped. */
@@ -139,40 +126,4 @@ export function deleteCustomTheme(
   const next = customs.filter((theme) => theme.name !== name);
   writeJson(storage, CUSTOM_KEY, next);
   return next;
-}
-
-/** The `data-theme` a stored selection draws under on this device. */
-export function resolvedTheme(
-  stored: StoredTheme,
-  prefersDark: boolean,
-): BuiltinThemeId | "custom" {
-  if (stored.choice === "system") return prefersDark ? "dark" : "light";
-  if (stored.choice.startsWith(CUSTOM_PREFIX))
-    return stored.vars ? "custom" : prefersDark ? "dark" : "light";
-  return stored.choice as BuiltinThemeId;
-}
-
-export interface ThemeRoot {
-  dataset: DOMStringMap;
-  style: Pick<CSSStyleDeclaration, "setProperty" | "removeProperty">;
-}
-
-/** Draws a stored selection on the document root. */
-export function applyTheme(
-  root: ThemeRoot,
-  stored: StoredTheme,
-  prefersDark: boolean,
-): BuiltinThemeId | "custom" {
-  const theme = resolvedTheme(stored, prefersDark);
-  for (const name of THEME_VAR_NAMES) root.style.removeProperty(name);
-  if (theme === "custom" && stored.vars) {
-    root.style.setProperty(
-      "color-scheme",
-      stored.mode === "dark" ? "dark" : "light",
-    );
-    for (const [name, value] of Object.entries(stored.vars))
-      if (name.startsWith("--")) root.style.setProperty(name, value);
-  }
-  root.dataset.theme = theme;
-  return theme;
 }

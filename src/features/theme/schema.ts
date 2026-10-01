@@ -232,14 +232,6 @@ export function themeVars(theme: ThemeDefinition): Record<string, string> {
   return vars;
 }
 
-/** Every property `themeVars` can set, so switching away can clear them all. */
-export const THEME_VAR_NAMES: readonly string[] = [
-  ...TOKEN_SPECS.map((spec) => spec.cssVar),
-  "--accent-send-inset",
-  "--seam",
-  "color-scheme",
-];
-
 export interface ContrastWarning {
   text: TokenKey;
   background: TokenKey;

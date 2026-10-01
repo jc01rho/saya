@@ -11,7 +11,6 @@ export const tokenLabel = (key: TokenKey) =>
   TOKEN_SPECS.find((spec) => spec.key === key)?.label ?? key;
 
 export const THEME_COPY = {
-  open: "테마 바꾸기",
   title: "테마",
   close: "닫기",
   choices: "테마 선택",

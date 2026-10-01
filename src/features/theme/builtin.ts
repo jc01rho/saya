@@ -84,5 +84,3 @@ export const BUILTIN_THEMES = {
   dark: DARK,
   kakao: KAKAO,
 } as const;
-
-export type BuiltinThemeId = keyof typeof BUILTIN_THEMES;

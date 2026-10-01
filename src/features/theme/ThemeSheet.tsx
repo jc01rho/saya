@@ -8,7 +8,17 @@ import {
   type ThemeDefinition,
   themeVars,
 } from "./schema";
-import { customChoice, type ThemeChoice } from "./store";
+import {
+  customChoice,
+  deleteCustomTheme,
+  loadChoice,
+  loadCustomThemes,
+  type StoredTheme,
+  saveChoice,
+  saveCustomTheme,
+  type ThemeChoice,
+} from "./store";
+import { themeStorage } from "./ThemeControl";
 import styles from "./ThemeSheet.module.css";
 
 /** A small screen drawn in the candidate's colours, with made-up words only. */
@@ -184,22 +194,20 @@ function ThemeMaker({ onSave }: { onSave: (theme: ThemeDefinition) => void }) {
 
 /** The sheet itself: built-in and saved themes, then the maker. */
 export default function ThemeSheet({
-  choice,
-  customs,
-  status,
-  onChoose,
-  onRemove,
-  onSave,
+  onChange,
   onClose,
 }: {
-  choice: ThemeChoice;
-  customs: readonly ThemeDefinition[];
-  status: string | null;
-  onChoose: (choice: ThemeChoice) => void;
-  onRemove: (name: string) => void;
-  onSave: (theme: ThemeDefinition) => void;
+  /** Called with what was stored, so the button's owner draws it. */
+  onChange: (stored: StoredTheme) => void;
   onClose: () => void;
 }) {
+  const [customs, setCustoms] = useState(() =>
+    loadCustomThemes(themeStorage()),
+  );
+  const [choice, setChoice] = useState<ThemeChoice>(() =>
+    loadChoice(themeStorage(), customs),
+  );
+  const [status, setStatus] = useState<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const headingId = useId();
   const group = useId();
@@ -207,6 +215,31 @@ export default function ThemeSheet({
     const element = dialog.current;
     if (element && !element.open) element.showModal();
   }, []);
+  const choose = (
+    next: ThemeChoice,
+    themes: readonly ThemeDefinition[] = customs,
+  ) => {
+    const stored = saveChoice(themeStorage(), next, themes);
+    setChoice(stored.choice);
+    onChange(stored);
+  };
+  const save = (theme: ThemeDefinition) => {
+    const saved = saveCustomTheme(themeStorage(), customs, theme);
+    if (!saved.ok) {
+      setStatus(
+        saved.reason === "limit" ? THEME_COPY.limit : THEME_COPY.storage,
+      );
+      return;
+    }
+    setCustoms(saved.customs);
+    choose(customChoice(theme), saved.customs);
+    setStatus(THEME_COPY.saved(theme.name));
+  };
+  const remove = (name: string) => {
+    const next = deleteCustomTheme(themeStorage(), customs, name);
+    setCustoms(next);
+    if (choice === `custom:${name}`) choose("system", next);
+  };
   const options: { value: ThemeChoice; label: string }[] = [
     { value: "system", label: THEME_COPY.system },
     { value: "light", label: THEME_COPY.builtin.light },
@@ -250,7 +283,7 @@ export default function ThemeSheet({
                   name={group}
                   value={value}
                   checked={choice === value}
-                  onChange={() => onChoose(value)}
+                  onChange={() => choose(value)}
                 />
                 <span>{label}</span>
               </label>
@@ -259,7 +292,7 @@ export default function ThemeSheet({
                   type="button"
                   className={reads.action}
                   aria-label={THEME_COPY.remove(label)}
-                  onClick={() => onRemove(label)}
+                  onClick={() => remove(label)}
                   data-ui="theme-remove"
                 >
                   {THEME_COPY.removeShort}
@@ -271,7 +304,7 @@ export default function ThemeSheet({
         <p role="status" className={reads.muted} data-ui="theme-status">
           {status}
         </p>
-        <ThemeMaker onSave={onSave} />
+        <ThemeMaker onSave={save} />
       </div>
     </dialog>
   );
