@@ -73,13 +73,14 @@
   border-radius: var(--radius-talk) var(--radius-talk) var(--radius-talk)
     var(--radius-tail);
   background: var(--bubble-other);
-  color: var(--ink);
+  color: var(--bubble-other-ink, var(--ink));
 }
 
 .self .bubble {
   border-radius: var(--radius-talk) var(--radius-talk) var(--radius-tail)
     var(--radius-talk);
   background: var(--bubble-self);
+  color: var(--bubble-self-ink, var(--ink));
 }
 
 /* Speaker name and the addressed-me chips, above the bubble. */

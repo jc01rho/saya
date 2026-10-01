@@ -1,6 +1,6 @@
-/* A link in a message body: underlined, in ink, and breakable mid-address. */
+/* A link in a message body: underlined, in ink (or the theme's link colour), and breakable mid-address. */
 .link {
-  color: var(--ink);
+  color: var(--link, var(--ink));
   text-decoration: underline;
   text-underline-offset: 2px;
   overflow-wrap: anywhere;
