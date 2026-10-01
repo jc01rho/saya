@@ -106,6 +106,37 @@
   background: var(--bubble-self);
 }
 
+.mediaBubble {
+  width: 320px;
+  min-width: 0;
+  max-width: min(320px, calc(100vw - 140px));
+}
+
+.animation {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.members {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 6px;
+  max-width: min(320px, calc(100vw - 140px));
+}
+
+.member {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.member:has(.tools) {
+  flex-basis: 100%;
+}
+
 .media {
   color: var(--ink-muted);
   font-size: 12px;

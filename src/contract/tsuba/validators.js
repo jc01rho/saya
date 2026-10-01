@@ -2877,31 +2877,17 @@ function validate121(data, { instancePath = "", parentData, parentDataProperty, 
                               var valid0 = true;
                             }
                             if (valid0) {
-                              if (data.attachments !== undefined) {
-                                let data11 = data.attachments;
+                              if (data.groupId !== undefined) {
+                                let data11 = data.groupId;
                                 const _errs23 = errors;
                                 if (errors === _errs23) {
-                                  if (Array.isArray(data11)) {
-                                    if (data11.length < 1) {
-                                      validate121.errors = [{ instancePath: instancePath + "/attachments", schemaPath: "#/properties/attachments/minItems", keyword: "minItems", params: { limit: 1 }, message: "must NOT have fewer than 1 items" }];
+                                  if (typeof data11 === "string") {
+                                    if (func1(data11) < 1) {
+                                      validate121.errors = [{ instancePath: instancePath + "/groupId", schemaPath: "#/properties/groupId/minLength", keyword: "minLength", params: { limit: 1 }, message: "must NOT have fewer than 1 characters" }];
                                       return false;
-                                    } else {
-                                      var valid1 = true;
-                                      const len0 = data11.length;
-                                      for (let i0 = 0;i0 < len0; i0++) {
-                                        const _errs25 = errors;
-                                        if (!validate116(data11[i0], { instancePath: instancePath + "/attachments/" + i0, parentData: data11, parentDataProperty: i0, rootData, dynamicAnchors })) {
-                                          vErrors = vErrors === null ? validate116.errors : vErrors.concat(validate116.errors);
-                                          errors = vErrors.length;
-                                        }
-                                        var valid1 = _errs25 === errors;
-                                        if (!valid1) {
-                                          break;
-                                        }
-                                      }
                                     }
                                   } else {
-                                    validate121.errors = [{ instancePath: instancePath + "/attachments", schemaPath: "#/properties/attachments/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
+                                    validate121.errors = [{ instancePath: instancePath + "/groupId", schemaPath: "#/properties/groupId/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
                                     return false;
                                   }
                                 }
@@ -2910,37 +2896,71 @@ function validate121(data, { instancePath = "", parentData, parentDataProperty, 
                                 var valid0 = true;
                               }
                               if (valid0) {
-                                if (data.reactions !== undefined) {
-                                  let data13 = data.reactions;
-                                  const _errs26 = errors;
-                                  if (errors === _errs26) {
-                                    if (Array.isArray(data13)) {
-                                      if (data13.length < 1) {
-                                        validate121.errors = [{ instancePath: instancePath + "/reactions", schemaPath: "#/properties/reactions/minItems", keyword: "minItems", params: { limit: 1 }, message: "must NOT have fewer than 1 items" }];
+                                if (data.attachments !== undefined) {
+                                  let data12 = data.attachments;
+                                  const _errs25 = errors;
+                                  if (errors === _errs25) {
+                                    if (Array.isArray(data12)) {
+                                      if (data12.length < 1) {
+                                        validate121.errors = [{ instancePath: instancePath + "/attachments", schemaPath: "#/properties/attachments/minItems", keyword: "minItems", params: { limit: 1 }, message: "must NOT have fewer than 1 items" }];
                                         return false;
                                       } else {
-                                        var valid2 = true;
-                                        const len1 = data13.length;
-                                        for (let i1 = 0;i1 < len1; i1++) {
-                                          const _errs28 = errors;
-                                          if (!validate119(data13[i1], { instancePath: instancePath + "/reactions/" + i1, parentData: data13, parentDataProperty: i1, rootData, dynamicAnchors })) {
-                                            vErrors = vErrors === null ? validate119.errors : vErrors.concat(validate119.errors);
+                                        var valid1 = true;
+                                        const len0 = data12.length;
+                                        for (let i0 = 0;i0 < len0; i0++) {
+                                          const _errs27 = errors;
+                                          if (!validate116(data12[i0], { instancePath: instancePath + "/attachments/" + i0, parentData: data12, parentDataProperty: i0, rootData, dynamicAnchors })) {
+                                            vErrors = vErrors === null ? validate116.errors : vErrors.concat(validate116.errors);
                                             errors = vErrors.length;
                                           }
-                                          var valid2 = _errs28 === errors;
-                                          if (!valid2) {
+                                          var valid1 = _errs27 === errors;
+                                          if (!valid1) {
                                             break;
                                           }
                                         }
                                       }
                                     } else {
-                                      validate121.errors = [{ instancePath: instancePath + "/reactions", schemaPath: "#/properties/reactions/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
+                                      validate121.errors = [{ instancePath: instancePath + "/attachments", schemaPath: "#/properties/attachments/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
                                       return false;
                                     }
                                   }
-                                  var valid0 = _errs26 === errors;
+                                  var valid0 = _errs25 === errors;
                                 } else {
                                   var valid0 = true;
+                                }
+                                if (valid0) {
+                                  if (data.reactions !== undefined) {
+                                    let data14 = data.reactions;
+                                    const _errs28 = errors;
+                                    if (errors === _errs28) {
+                                      if (Array.isArray(data14)) {
+                                        if (data14.length < 1) {
+                                          validate121.errors = [{ instancePath: instancePath + "/reactions", schemaPath: "#/properties/reactions/minItems", keyword: "minItems", params: { limit: 1 }, message: "must NOT have fewer than 1 items" }];
+                                          return false;
+                                        } else {
+                                          var valid2 = true;
+                                          const len1 = data14.length;
+                                          for (let i1 = 0;i1 < len1; i1++) {
+                                            const _errs30 = errors;
+                                            if (!validate119(data14[i1], { instancePath: instancePath + "/reactions/" + i1, parentData: data14, parentDataProperty: i1, rootData, dynamicAnchors })) {
+                                              vErrors = vErrors === null ? validate119.errors : vErrors.concat(validate119.errors);
+                                              errors = vErrors.length;
+                                            }
+                                            var valid2 = _errs30 === errors;
+                                            if (!valid2) {
+                                              break;
+                                            }
+                                          }
+                                        }
+                                      } else {
+                                        validate121.errors = [{ instancePath: instancePath + "/reactions", schemaPath: "#/properties/reactions/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
+                                        return false;
+                                      }
+                                    }
+                                    var valid0 = _errs28 === errors;
+                                  } else {
+                                    var valid0 = true;
+                                  }
                                 }
                               }
                             }
@@ -2963,7 +2983,7 @@ function validate121(data, { instancePath = "", parentData, parentDataProperty, 
   validate121.errors = vErrors;
   return errors === 0;
 }
-validate121.evaluated = { props: { id: true, roomId: true, senderId: true, sender: true, senderAvatar: true, text: true, kind: true, sentAt: true, editedAt: true, fromMe: true, replyTo: true, attachments: true, reactions: true }, dynamicProps: false, dynamicItems: false };
+validate121.evaluated = { props: { id: true, roomId: true, senderId: true, sender: true, senderAvatar: true, text: true, kind: true, sentAt: true, editedAt: true, fromMe: true, replyTo: true, groupId: true, attachments: true, reactions: true }, dynamicProps: false, dynamicItems: false };
 var validateMessagesAnswer = validate124;
 function validate124(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;

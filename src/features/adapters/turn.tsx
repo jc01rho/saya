@@ -6,7 +6,11 @@ import {
   mediaUrl,
 } from "../../transport/adapters";
 import { Avatar, cx, formatTime } from "../../ui";
+import { firstUrl, linkify } from "../../ui/linkify";
+import { Photo } from "../../ui/Photo";
+import { Video } from "../../ui/Video";
 import { formatSize } from "../attachments/pages";
+import { LinkCard } from "../linkcard";
 import styles from "./Thread.module.css";
 
 export const COPY = {
@@ -90,6 +94,78 @@ export function toggledReactions(
 /** Types `/media` serves inline, so an `<img>` can draw them; anything else is a download. */
 const DRAWABLE = /^image\/(?:jpeg|png|gif|webp|avif)$/;
 
+const PLAYABLE = /^video\/(?:mp4|webm|ogg)$/;
+
+export function drawableImage(attachment: AdapterAttachment): boolean {
+  return (
+    attachment.kind === "image" && DRAWABLE.test(attachment.mimeType ?? "")
+  );
+}
+
+export function photoData(adapterId: string, attachments: AdapterAttachment[]) {
+  const images = attachments.filter(drawableImage).map((attachment) => ({
+    url: mediaUrl(adapterId, attachment.id),
+    width: attachment.width ?? 0,
+    height: attachment.height ?? 0,
+  }));
+  return {
+    url: images[0]?.url ?? "",
+    width: images[0]?.width ?? 0,
+    height: images[0]?.height ?? 0,
+    count: images.length,
+    images,
+  };
+}
+
+function Animation({
+  attachment,
+  href,
+}: {
+  attachment: AdapterAttachment;
+  href: string;
+}) {
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  if (reduced)
+    return (
+      <a className={styles.file} href={href} download={attachment.name ?? ""}>
+        {attachment.name ?? attachmentLabel(attachment.kind)}
+      </a>
+    );
+  return attachment.mimeType === "image/gif" ? (
+    <img
+      className={styles.animation}
+      src={href}
+      alt={attachment.name ?? ""}
+      width={attachment.width}
+      height={attachment.height}
+      data-ui="adapter-animation"
+    />
+  ) : (
+    <video
+      className={styles.animation}
+      src={href}
+      width={attachment.width}
+      height={attachment.height}
+      loop
+      muted
+      autoPlay
+      playsInline
+      data-ui="adapter-animation"
+    />
+  );
+}
+
 export function attachmentLabel(kind: string): string {
   return COPY.kinds[kind] ?? COPY.kinds.file ?? "";
 }
@@ -97,13 +173,34 @@ export function attachmentLabel(kind: string): string {
 function Attachment({
   adapterId,
   attachment,
+  now,
 }: {
   adapterId: string;
   attachment: AdapterAttachment;
+  now: Date;
 }) {
   const [broken, setBroken] = useState(false);
   const href = mediaUrl(adapterId, attachment.id);
   const label = attachmentLabel(attachment.kind);
+  if (attachment.kind === "video" && PLAYABLE.test(attachment.mimeType ?? ""))
+    return (
+      <Video
+        now={now}
+        video={{
+          url: href,
+          width: attachment.width ?? 0,
+          height: attachment.height ?? 0,
+          duration: attachment.durationSeconds ?? 0,
+          size: attachment.size ?? 0,
+        }}
+      />
+    );
+  if (
+    attachment.kind === "animation" &&
+    (PLAYABLE.test(attachment.mimeType ?? "") ||
+      attachment.mimeType === "image/gif")
+  )
+    return <Animation attachment={attachment} href={href} />;
   const drawable =
     (attachment.kind === "image" || attachment.kind === "sticker") &&
     DRAWABLE.test(attachment.mimeType ?? "");
@@ -358,6 +455,14 @@ function Tools({
   );
 }
 
+export interface MemberControls {
+  open: boolean;
+  note: string | null;
+  busy: boolean;
+  onOpen: (open: boolean) => void;
+  onAction: (action: ToolAction) => void;
+}
+
 export function Turn({
   adapterId,
   files,
@@ -372,6 +477,8 @@ export function Turn({
   busy,
   onOpen,
   onAction,
+  members = [message],
+  controlsFor,
 }: {
   adapterId: string;
   /** Whether the adapter declares `attachments.read`, so `/media` answers. */
@@ -389,6 +496,8 @@ export function Turn({
   busy: boolean;
   onOpen: (open: boolean) => void;
   onAction: (action: ToolAction) => void;
+  members?: AdapterMessage[];
+  controlsFor?: (member: AdapterMessage) => MemberControls;
 }) {
   if (message.kind === "service")
     return (
@@ -406,8 +515,35 @@ export function Turn({
     files && avatars && message.senderAvatar
       ? mediaUrl(adapterId, message.senderAvatar)
       : undefined;
-  const time = formatTime(message.sentAt, now);
+  const last = members.at(-1) ?? message;
+  // An album's other members keep their own doors, but only once this turn's
+  // menu (or one of theirs) is open: a closed album reads as one picture post.
+  const others = members.filter((member) => member.id !== message.id);
+  const doors =
+    open ||
+    others.some((member) => {
+      const controls = controlsFor?.(member);
+      return Boolean(controls?.open || controls?.note);
+    });
+  const memberReactions = others.some((member) => member.reactions?.length);
+  const time = formatTime(last.sentAt, now);
+  const attachments = members.flatMap((member) => member.attachments ?? []);
+  const photo = photoData(adapterId, attachments);
+  const caption = members
+    .map((member) => member.text)
+    .filter(Boolean)
+    .join("\n");
+  const linked = firstUrl(caption);
+  const media =
+    files &&
+    attachments.some(
+      (attachment) =>
+        drawableImage(attachment) ||
+        attachment.kind === "video" ||
+        attachment.kind === "animation",
+    );
   const bare =
+    members.length === 1 &&
     files &&
     !message.text &&
     !message.replyTo &&
@@ -434,24 +570,37 @@ export function Turn({
         </span>
       ) : null}
       <div className={styles.line}>
-        <div className={cx(styles.bubble, bare && styles.bare)}>
+        <div
+          className={cx(
+            styles.bubble,
+            bare && styles.bare,
+            media && styles.mediaBubble,
+          )}
+        >
           {message.replyTo !== undefined ? <Quote quoted={quoted} /> : null}
-          {files && message.attachments ? (
-            message.attachments.map((attachment) => (
-              <Attachment
-                key={attachment.id}
-                adapterId={adapterId}
-                attachment={attachment}
-              />
-            ))
+          {files && photo.images.length ? (
+            <Photo photo={photo} now={now} />
+          ) : null}
+          {files && attachments.length ? (
+            attachments
+              .filter((attachment) => !drawableImage(attachment))
+              .map((attachment) => (
+                <Attachment
+                  key={attachment.id}
+                  adapterId={adapterId}
+                  attachment={attachment}
+                  now={now}
+                />
+              ))
           ) : message.kind === "media" ? (
             <span className={styles.media}>{COPY.media}</span>
           ) : null}
-          {message.text ? (
-            <span className={styles.text}>{message.text}</span>
+          {caption ? (
+            <span className={styles.text}>{linkify(caption)}</span>
           ) : null}
+          {linked ? <LinkCard url={linked} /> : null}
         </div>
-        <time className={styles.time} dateTime={message.sentAt}>
+        <time className={styles.time} dateTime={last.sentAt}>
           {time.label}
           {message.editedAt ? ` · ${COPY.edited}` : null}
         </time>
@@ -472,6 +621,68 @@ export function Turn({
           </button>
         ) : null}
       </div>
+      {members.length > 1 && (doors || memberReactions) ? (
+        <div className={styles.members}>
+          {members
+            .filter((member) => member.id !== message.id)
+            .map((member) => {
+              const controls = controlsFor?.(member);
+              const position = members.indexOf(member) + 1;
+              const kindName = attachmentLabel(
+                member.attachments?.[0]?.kind ?? "file",
+              );
+              const memberEditable = canEdit(
+                member,
+                abilities.edit,
+                now.getTime(),
+              );
+              return (
+                <div
+                  key={member.id}
+                  className={styles.member}
+                  data-message-id={member.id}
+                >
+                  {controls && actionable && doors ? (
+                    <button
+                      type="button"
+                      className={styles.tool}
+                      aria-label={`${COPY.more}: ${kindName} ${position}`}
+                      aria-expanded={controls.open}
+                      onClick={() => controls.onOpen(!controls.open)}
+                      data-ui="adapter-member-more"
+                    >
+                      {kindName} · {position}
+                    </button>
+                  ) : null}
+                  {member.reactions?.length ? (
+                    <Reactions
+                      reactions={member.reactions}
+                      onToggle={
+                        abilities.react && controls && !controls.busy
+                          ? (emoji) =>
+                              controls.onAction({ kind: "react", emoji })
+                          : undefined
+                      }
+                    />
+                  ) : null}
+                  {controls?.open ? (
+                    <Tools
+                      message={member}
+                      abilities={abilities}
+                      editable={memberEditable}
+                      {...controls}
+                      onClose={() => controls.onOpen(false)}
+                    />
+                  ) : controls?.note ? (
+                    <p className={styles.toolsNote} role="status">
+                      {controls.note}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+        </div>
+      ) : null}
       {message.reactions?.length ? (
         <Reactions
           reactions={message.reactions}

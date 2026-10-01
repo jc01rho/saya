@@ -476,6 +476,8 @@ export interface components {
             fromMe: boolean;
             /** @description The id of the message this replies to. */
             replyTo?: string;
+            /** @description Shared by messages the messenger shows as one album (such as a Telegram media group): they come from one sender and are consecutive in the room, so a client may draw them as one. Each stays its own message for replies, reactions, edits and deletion. Absent when the message stands alone. */
+            groupId?: string;
             /** @description The files the message carries, in the order the messenger shows them. Present only when the adapter declares `attachments.read` and the message carries a file it can describe. */
             attachments?: components["schemas"]["Attachment"][];
             /** @description The reactions on the message, in the order the messenger shows them. Present only when the adapter declares `reactions.read` and the message has reactions it can name. */

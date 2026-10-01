@@ -25,6 +25,7 @@ import {
   streamAdapter,
 } from "../../transport/adapters";
 import { problemSentence } from "./copy";
+import { actionMember, groupMessages } from "./group";
 import { adapterConnections, subscribeAdapterRooms } from "./liveRooms";
 import { noteRead, rememberedRoom, rememberRooms } from "./rooms";
 import styles from "./Thread.module.css";
@@ -627,6 +628,7 @@ export function AdapterThread({
   }
 
   const byId = new Map(messages.map((message) => [message.id, message]));
+  const groups = groupMessages(messages);
   const now = new Date();
   return (
     <div className={styles.thread} data-ui="adapter-thread">
@@ -662,28 +664,39 @@ export function AdapterThread({
             ) : null}
             {messages.length ? (
               <ol className={styles.list}>
-                {messages.map((message, index) => (
-                  <Turn
-                    key={message.id}
-                    adapterId={adapterId}
-                    files={files}
-                    avatars={avatars}
-                    message={message}
-                    previous={messages[index - 1]}
-                    quoted={
-                      message.replyTo === undefined
-                        ? undefined
-                        : byId.get(message.replyTo)
-                    }
-                    now={now}
-                    abilities={abilities}
-                    open={menu === message.id}
-                    note={notes[message.id] ?? null}
-                    busy={busyId === message.id}
-                    onOpen={(open) => setMenu(open ? message.id : null)}
-                    onAction={(action) => void act(message, action)}
-                  />
-                ))}
+                {groups.map((members, index) => {
+                  const message = actionMember(members);
+                  return (
+                    <Turn
+                      key={message.id}
+                      adapterId={adapterId}
+                      files={files}
+                      avatars={avatars}
+                      message={message}
+                      previous={groups[index - 1]?.at(-1)}
+                      members={members}
+                      controlsFor={(member) => ({
+                        open: menu === member.id,
+                        note: notes[member.id] ?? null,
+                        busy: busyId === member.id,
+                        onOpen: (open) => setMenu(open ? member.id : null),
+                        onAction: (action) => void act(member, action),
+                      })}
+                      quoted={
+                        message.replyTo === undefined
+                          ? undefined
+                          : byId.get(message.replyTo)
+                      }
+                      now={now}
+                      abilities={abilities}
+                      open={menu === message.id}
+                      note={notes[message.id] ?? null}
+                      busy={busyId === message.id}
+                      onOpen={(open) => setMenu(open ? message.id : null)}
+                      onAction={(action) => void act(message, action)}
+                    />
+                  );
+                })}
               </ol>
             ) : (
               <p className={styles.status}>{COPY.empty}</p>
