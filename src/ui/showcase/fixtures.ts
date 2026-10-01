@@ -89,7 +89,7 @@ export const ROOMS: {
   {
     room: room(8, {
       title: "알림 · 정기 점검과 서비스 안내를 모아 두는 아주 긴 제목의 채널",
-      kind: "plus",
+      kind: "channel",
       type: "PlusChat",
       unread: 99,
       lastActivityAt: "2025-12-24T03:00:00+09:00",

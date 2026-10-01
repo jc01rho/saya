@@ -21,7 +21,7 @@ type RoomOf = Immutable<StoreSlices[`room.${string}`]>;
 /**
  * Each filter reads only members the contract carries. 안읽음 is the desktop's
  * count (G2); 사람 is `kind: "direct"`, because there is no contacts route;
- * 그룹 is the two group kinds the contract names, `group` and `open`. A kind
+ * 그룹 is the two group kinds the contract names, `group` and `open-group`. A kind
  * the contract does not name is listed under 전체 only, never guessed into one.
  */
 function passes(snapshot: RoomOf, filter: RoomFilter, query: string): boolean {
@@ -29,7 +29,7 @@ function passes(snapshot: RoomOf, filter: RoomFilter, query: string): boolean {
   const { room } = snapshot;
   if (filter === "unread" && room.unread <= 0) return false;
   if (filter === "people" && room.kind !== "direct") return false;
-  if (filter === "group" && room.kind !== "group" && room.kind !== "open")
+  if (filter === "group" && room.kind !== "group" && room.kind !== "open-group")
     return false;
   return query === "" || room.title.toLocaleLowerCase("ko-KR").includes(query);
 }

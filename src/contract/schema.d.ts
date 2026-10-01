@@ -652,7 +652,7 @@ export interface components {
             id: string;
             /** @description What this reader composes for the room, which is not always what the client's window is titled. */
             title: string;
-            /** @description A stable name an agent can branch on. */
+            /** @description A stable name an agent can branch on. Every client type either build has seen maps to one of these. `channel` (the client's `PlusChat`) comes from the Windows build only: the macOS build decides a room's kind from its shape and has no channel room to name. A type neither build has seen would be passed through as the client's own word, the same string as `type`, so branch with a default rather than rejecting the room. Until 0.19.0 this listed `open`, `plus` and `unknown`, which neither build ever sent, and left out `channel`, `open-group` and `open-direct`, which they do. */
             kind: string;
             /**
              * @description The client's own word for it, passed through.
