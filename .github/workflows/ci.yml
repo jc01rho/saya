@@ -31,12 +31,14 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      # tests/security/proxy-boundary.test.ts scans dist/, so the build comes first.
+      # tests/security/proxy-boundary.test.ts scans dist/, so the build comes
+      # first. The size check runs before the tests because the QA harness test
+      # (tests/harness/cleanup.test.ts) rebuilds dist/ under NODE_ENV=test.
       - name: Production build
         run: bun run build
 
-      - name: Test
-        run: bun test
-
       - name: Size check
         run: bun run size:check
+
+      - name: Test
+        run: bun test
