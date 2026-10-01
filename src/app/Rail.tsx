@@ -19,6 +19,8 @@ const RAIL_COPY = {
   adapters: "연결",
   unread: (count: number) =>
     `데스크톱 기준 안 읽음 ${count.toLocaleString("ko-KR")}개`,
+  adapterUnread: (name: string, count: number) =>
+    `${name} 기준 안 읽음 ${count.toLocaleString("ko-KR")}개`,
 } as const;
 
 /**
@@ -136,6 +138,14 @@ export function Rail({
         >
           <Mark name={tab.name} />
           <span className={styles.label}>{tab.name}</span>
+          {tab.unread ? (
+            <span className={styles.badge}>
+              <UnreadBadge count={tab.unread} />
+              <span className="sr-only">
+                {RAIL_COPY.adapterUnread(tab.name, tab.unread)}
+              </span>
+            </span>
+          ) : null}
         </a>
       ))}
       <a

@@ -10,16 +10,14 @@ import {
 import type { AdapterTab } from "../../app/adapterTabs";
 import { adapterRoomHash, roomHash } from "../../app/routes";
 import type { ClientStores, Immutable, RoomSnapshot } from "../../core/stores";
-import {
-  type AdapterProblem,
-  type AdapterRoom,
-  fetchCapabilities,
-  fetchRooms,
-  streamAdapter,
-} from "../../transport/adapters";
 import { cx, formatTime, RoomAvatar, UnreadBadge, unreadName } from "../../ui";
 import { problemSentence } from "../adapters/copy";
-import { onRead, rememberRooms } from "../adapters/rooms";
+import {
+  type AdapterRooms,
+  adapterRoomsSnapshot,
+  subscribeAdapterRooms,
+  watchAdapterRooms,
+} from "../adapters/liveRooms";
 import styles from "./Inbox.module.css";
 
 const COPY = {
@@ -41,8 +39,6 @@ const COPY = {
     `안 읽음 ${count.toLocaleString("ko-KR")}개`,
   from: (name: string) => `${name} 대화`,
 } as const;
-
-const PREVIEW = 200;
 
 export type InboxMode =
   | { kind: "all" }
@@ -124,138 +120,15 @@ function useKakaoSnapshots(
   return useSyncExternalStore(subscribe, read, read);
 }
 
-type AdapterRooms =
-  | { state: "loading" }
-  | { state: "ready"; rooms: AdapterRoom[] }
-  | { state: "problem"; problem: AdapterProblem };
-
-function pause(ms: number, signal: AbortSignal) {
-  return new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        resolve();
-      },
-      { once: true },
-    );
-  });
-}
-
-/**
- * Each adapter's rooms, kept current: a live message moves its room up and
- * becomes its preview at once, and the list is asked again shortly after so
- * the unread count stays the messenger's own.
- */
-function useAdapterRooms(ids: string[]): Map<string, AdapterRooms> {
-  const [rooms, setRooms] = useState(() => new Map<string, AdapterRooms>());
+/** Every adapter's rooms from the shared live store, watched while this list is shown. */
+function useAdapterRooms(ids: string[]): ReadonlyMap<string, AdapterRooms> {
   const key = ids.join(",");
-  // A room view that marks a room read zeroes its count here at once.
-  useEffect(
-    () =>
-      onRead((adapterId, roomId) =>
-        setRooms((current) => {
-          const entry = current.get(adapterId);
-          if (entry?.state !== "ready") return current;
-          return new Map(current).set(adapterId, {
-            state: "ready",
-            rooms: entry.rooms.map((room) =>
-              room.id === roomId ? { ...room, unread: 0 } : room,
-            ),
-          });
-        }),
-      ),
-    [],
+  useEffect(() => watchAdapterRooms(key ? key.split(",") : []), [key]);
+  return useSyncExternalStore(
+    subscribeAdapterRooms,
+    adapterRoomsSnapshot,
+    adapterRoomsSnapshot,
   );
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
-    const set = (id: string, value: AdapterRooms) =>
-      setRooms((current) => new Map(current).set(id, value));
-    for (const id of key ? key.split(",") : []) {
-      set(id, { state: "loading" });
-      let refresh: ReturnType<typeof setTimeout> | undefined;
-      const load = () =>
-        fetchRooms(id, signal).then(
-          (result) => {
-            if (result.kind === "ok") rememberRooms(id, result.data.rooms);
-            set(
-              id,
-              result.kind === "ok"
-                ? { state: "ready", rooms: result.data.rooms }
-                : { state: "problem", problem: result },
-            );
-          },
-          () => {
-            // Only an abort rejects.
-          },
-        );
-      signal.addEventListener("abort", () => clearTimeout(refresh), {
-        once: true,
-      });
-      void (async () => {
-        // An adapter outside this client's contract range is drawn from nothing.
-        const declared = await fetchCapabilities(id, signal).catch(() => null);
-        if (signal.aborted) return;
-        if (declared?.kind === "incompatible") {
-          set(id, { state: "problem", problem: declared });
-          return;
-        }
-        void load();
-        let failures = 0;
-        while (!signal.aborted) {
-          const end = await streamAdapter(id, {
-            since: {},
-            signal,
-            onEvent(event) {
-              if (event.type === "ready") failures = 0;
-              if (
-                event.type === "message.edited" ||
-                event.type === "message.deleted"
-              ) {
-                clearTimeout(refresh);
-                refresh = setTimeout(load, 3000);
-                return;
-              }
-              if (event.type !== "message") return;
-              const { message } = event.data;
-              setRooms((current) => {
-                const entry = current.get(id);
-                if (entry?.state !== "ready") return current;
-                const next = entry.rooms.map((room) =>
-                  room.id === message.roomId
-                    ? {
-                        ...room,
-                        lastActivityAt: message.sentAt,
-                        lastMessage: {
-                          text: [...message.text].slice(0, PREVIEW).join(""),
-                          fromMe: message.fromMe,
-                        },
-                      }
-                    : room,
-                );
-                return new Map(current).set(id, {
-                  state: "ready",
-                  rooms: next,
-                });
-              });
-              clearTimeout(refresh);
-              refresh = setTimeout(load, 3000);
-            },
-          });
-          if (end.kind === "aborted" || signal.aborted) return;
-          failures += 1;
-          await pause(
-            Math.min(30_000, 1000 * 2 ** Math.min(failures, 5)),
-            signal,
-          );
-        }
-      })();
-    }
-    return () => controller.abort();
-  }, [key]);
-  return rooms;
 }
 
 function sortRows(rows: Row[]): Row[] {
