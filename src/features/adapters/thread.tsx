@@ -295,6 +295,24 @@ export function AdapterThread({
           },
         });
         if (end.kind === "aborted" || signal.aborted) return;
+        if (
+          (end.kind === "error" || end.kind === "refused") &&
+          end.code === "NOT_FOUND" &&
+          newest.current
+        ) {
+          // The cursor's message is gone, so the adapter refuses to resume from
+          // it. Refill the newest window and resume from a message that exists.
+          const refill = await fetchMessages(
+            adapterId,
+            { roomId, limit },
+            signal,
+          ).catch(() => null);
+          if (signal.aborted) return;
+          if (refill?.kind === "ok") {
+            newest.current = refill.data.messages.at(-1)?.id ?? null;
+            setMessages((current) => withNewer(current, refill.data.messages));
+          } else newest.current = null;
+        }
         failures += 1;
         setReconnecting(true);
         await pause(
@@ -304,7 +322,7 @@ export function AdapterThread({
       }
     })();
     return () => controller.abort();
-  }, [ready, streaming, resumable, adapterId, roomId]);
+  }, [ready, streaming, resumable, adapterId, roomId, limit]);
 
   useLayoutEffect(() => {
     const element = wall.current;
