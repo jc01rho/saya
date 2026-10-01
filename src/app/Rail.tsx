@@ -1,6 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { ClientStores } from "../core/stores";
-import { cx, UnreadBadge } from "../ui";
+import { adapterMark, cx, UnreadBadge } from "../ui";
 import type { AdapterTab } from "./adapterTabs";
 import styles from "./Rail.module.css";
 import {
@@ -61,12 +61,8 @@ function useTotalUnread(stores: ClientStores): number {
   return useSyncExternalStore(source.subscribe, source.compute, source.compute);
 }
 
-/** A messenger's initial in an outlined squircle; no messenger artwork is drawn. */
-function Mark({ name, id }: { name: string; id?: string }) {
-  const text =
-    id === "discord-user"
-      ? "Dp"
-      : ([...name][0]?.toLocaleUpperCase("ko-KR") ?? "?");
+/** A messenger's mark in an outlined squircle; no messenger artwork is drawn. */
+function Mark({ text }: { text: string }) {
   return (
     <span className={styles.mark} aria-hidden="true">
       {text}
@@ -121,7 +117,7 @@ export function Rail({
         aria-current={mode?.kind === "kakao" || undefined}
         data-ui="rail-kakao"
       >
-        <Mark name="K" />
+        <Mark text="K" />
         <span className={styles.label}>{RAIL_COPY.kakao}</span>
         {unread > 0 ? (
           <span className={styles.badge}>
@@ -140,7 +136,7 @@ export function Rail({
           }
           data-ui="rail-adapter"
         >
-          <Mark name={tab.name} id={tab.id} />
+          <Mark text={adapterMark(tab.id, tab.name)} />
           <span className={styles.label}>{tab.name}</span>
           {tab.unread ? (
             <span className={styles.badge}>

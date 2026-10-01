@@ -25,6 +25,7 @@ export {
   type MessageBubbleProps,
   type SendState,
 } from "./MessageBubble";
+export { adapterMark } from "./mark";
 export { Photo } from "./Photo";
 export { QuoteBlock, type QuoteBlockProps } from "./QuoteBlock";
 export { RoomRow, type RoomRowProps } from "./RoomRow";

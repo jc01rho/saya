@@ -6,6 +6,7 @@ import {
   fetchCapabilities,
   listAdapters,
 } from "../../transport/adapters";
+import { adapterMark } from "../../ui";
 import styles from "./Adapters.module.css";
 import { problemSentence } from "./copy";
 import { KakaoCard, type KakaoStatus } from "./kakao";
@@ -149,7 +150,7 @@ function AdapterCheck({ id, onRetry }: { id: string; onRetry: () => void }) {
     >
       <header className={styles.cardHead}>
         <span className={styles.mark} aria-hidden="true">
-          {[...name][0]?.toLocaleUpperCase("ko-KR")}
+          {adapterMark(id, name)}
         </span>
         <h2 className={styles.name}>{name}</h2>
         <span

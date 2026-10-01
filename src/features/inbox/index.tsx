@@ -10,7 +10,14 @@ import {
 import type { AdapterTab } from "../../app/adapterTabs";
 import { adapterRoomHash, roomHash } from "../../app/routes";
 import type { ClientStores, Immutable, RoomSnapshot } from "../../core/stores";
-import { cx, formatTime, RoomAvatar, UnreadBadge, unreadName } from "../../ui";
+import {
+  adapterMark,
+  cx,
+  formatTime,
+  RoomAvatar,
+  UnreadBadge,
+  unreadName,
+} from "../../ui";
 import { problemSentence } from "../adapters/copy";
 import {
   type AdapterRooms,
@@ -143,10 +150,6 @@ function sortRows(rows: Row[]): Row[] {
   });
 }
 
-function initial(name: string): string {
-  return [...name][0]?.toLocaleUpperCase("ko-KR") ?? "?";
-}
-
 function InboxRow({
   row,
   active,
@@ -261,7 +264,7 @@ export default function Inbox({
           key: `${id}:${room.id}`,
           provider: id,
           providerName,
-          mark: id === "discord-user" ? "Dp" : initial(providerName),
+          mark: adapterMark(id, providerName),
           title: room.title,
           at: room.lastActivityAt ?? null,
           preview: room.lastMessage
