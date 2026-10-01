@@ -1,5 +1,6 @@
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import {
+  type MutableRefObject,
   type ReactNode,
   useEffect,
   useLayoutEffect,
@@ -32,9 +33,12 @@ const onServer = () => false;
 export function VirtualThreadTurns({
   order,
   renderRow,
+  scrollRef,
 }: {
   order: readonly string[];
   renderRow: (id: string) => ReactNode;
+  /** The wall's scroll owner, for controls outside the list that move the wall. */
+  scrollRef?: MutableRefObject<ThreadScroll | null> | undefined;
 }) {
   const list = useRef<HTMLOListElement>(null);
   const controller = useRef<ThreadScroll | null>(null);
@@ -93,7 +97,9 @@ export function VirtualThreadTurns({
       // when the user has read far away from it.
       const anchor = controller.current?.anchor;
       const index = anchor ? rendered.indexes.get(anchor.id) : undefined;
-      if (index !== undefined && !indexes.includes(index)) indexes.push(index);
+      if (index !== undefined && !indexes.includes(index)) {
+        indexes.push(index);
+      }
       return indexes.sort((a, b) => a - b);
     },
   });
@@ -126,6 +132,7 @@ export function VirtualThreadTurns({
       () => setEvicted(true),
     );
     controller.current = scroll;
+    if (scrollRef) scrollRef.current = scroll;
     const geometry = () => {
       // Heights are invalidated per row, not globally: every mounted row is
       // re-measured by its own ResizeObserver on a width, theme or font change,
@@ -148,11 +155,12 @@ export function VirtualThreadTurns({
     geometry();
     return () => {
       controller.current = null;
+      if (scrollRef?.current === scroll) scrollRef.current = null;
       scroll.dispose();
       resize.disconnect();
       document.fonts.removeEventListener("loadingdone", geometry);
     };
-  }, [virtualizer]);
+  }, [virtualizer, scrollRef]);
 
   useLayoutEffect(() => {
     held.current = rendered;

@@ -48,6 +48,10 @@ export class ThreadScroll {
   /** The last scroll offset this owner knows the wall was placed at. */
   private seenTop = 0;
   private userScrolling = false;
+  /** A smooth glide this owner started toward the end; it is not corrected mid-flight. */
+  private gliding = false;
+  /** A row asked to be shown, placed once the settled window has indexed it. */
+  private pending: ReadingAnchor | null = null;
   private neighbors: ReadingAnchor[] = [];
   private disposed = false;
   private revision = 0;
@@ -70,6 +74,8 @@ export class ThreadScroll {
   private intent = () => {
     this.generation++;
     this.userScrolling = true;
+    this.gliding = false;
+    this.pending = null;
     cancelAnimationFrame(this.frame);
     cancelAnimationFrame(this.settledFrame);
     this.frame = 0;
@@ -89,12 +95,51 @@ export class ThreadScroll {
         "End",
         " ",
       ].includes(event.key)
-    )
+    ) {
       this.intent();
+    }
   };
   private scrollEnd = () => {
     this.userScrolling = false;
+    if (this.gliding) {
+      this.gliding = false;
+      this.request();
+    }
   };
+
+  /**
+   * Show one row a third of the way down the wall, or put a reading anchor
+   * back where it was. The row becomes the reading anchor, so measurement and
+   * widening hold it in place exactly as they hold a row the reader chose.
+   */
+  reveal(anchor: ReadingAnchor) {
+    this.generation++;
+    this.gliding = false;
+    this.landing = false;
+    this.mode = "reading-anchor";
+    this.pending = anchor;
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
+    this.request();
+  }
+
+  /** Where a revealed row lands: a third of the way down, above the dock. */
+  revealOffset(): number {
+    return Math.round(this.wall.clientHeight / 3);
+  }
+
+  /** A smooth glide to the newest row; arriving there arms follow-tail like a reader's own scroll. */
+  glideToEnd() {
+    this.generation++;
+    this.pending = null;
+    this.landing = false;
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
+    const top = this.wall.scrollHeight - this.wall.clientHeight;
+    if (Math.abs(this.wall.scrollTop - top) < 1) return;
+    this.gliding = true;
+    this.wall.scrollTo({ top, behavior: "smooth" });
+  }
   private scroll = () => {
     // The browser can coalesce or repeat scroll notifications, so a correction
     // is recognised by the offset this owner last wrote, not by one pending
@@ -128,8 +173,12 @@ export class ThreadScroll {
       this.wall.scrollHeight - this.wall.clientHeight - this.wall.scrollTop <=
       48;
     // Only the user's own scroll arms follow-tail; a programmatic scroll,
-    // including this owner's corrections, never turns it back on.
-    this.mode = this.userScrolling && atTail ? "follow-tail" : "reading-anchor";
+    // including this owner's corrections, never turns it back on. The glide
+    // to the end is the reader's own request, made through the button.
+    this.mode =
+      (this.userScrolling || this.gliding) && atTail
+        ? "follow-tail"
+        : "reading-anchor";
     this.capture();
     this.publishMode();
     this.request();
@@ -205,11 +254,19 @@ export class ThreadScroll {
 
   private restore() {
     const { virtualizer, indexes, virtual, stale } = this.source();
+    // Mid-glide the browser owns the offset; correcting it would stop the glide.
+    if (this.gliding) return;
+    if (this.pending && !stale && indexes.has(this.pending.id)) {
+      this.anchor = this.pending;
+      this.neighbors = [];
+      this.pending = null;
+    }
     // A window that widens or trims under a reader who never scrolled ends the
     // landing: from here the reading position is held, not re-pinned to the tail.
     if (this.landing && this.lastIndexes !== indexes) {
-      if (this.lastIndexes !== null && this.lastIndexes.size > 0)
+      if (this.lastIndexes !== null && this.lastIndexes.size > 0) {
         this.landing = false;
+      }
       this.lastIndexes = indexes;
     }
     // Only a settled window can prove a row is gone; a window still being
@@ -226,9 +283,9 @@ export class ThreadScroll {
       this.wall.getBoundingClientRect().top +
       this.wall.scrollTop;
     let target = this.wall.scrollTop;
-    if (this.landing || this.mode === "follow-tail")
+    if (this.landing || this.mode === "follow-tail") {
       target = this.wall.scrollHeight - this.wall.clientHeight;
-    else if (this.anchor) {
+    } else if (this.anchor) {
       // The anchor row is pinned into the rendered range, so its own laid-out
       // box is the truth: it already reflects this frame's measurements, a font
       // swap, a reflowed 100k-character body and a changed viewport width. The
@@ -239,17 +296,18 @@ export class ThreadScroll {
       const index = indexes.get(this.anchor.id);
       const item =
         index === undefined ? undefined : virtualizer.measurementsCache[index];
-      if (row)
+      if (row) {
         target +=
           row.getBoundingClientRect().top -
           this.wall.getBoundingClientRect().top -
           this.anchor.offset;
-      else if (virtual && item)
+      } else if (virtual && item) {
         target =
           listTop +
           item.start -
           virtualizer.options.scrollMargin -
           this.anchor.offset;
+      }
     }
     target = Math.max(
       0,
@@ -264,9 +322,9 @@ export class ThreadScroll {
     }
     this.ownTop = this.wall.scrollTop;
     this.seenTop = this.wall.scrollTop;
-    if (!this.anchor || this.landing || this.mode === "follow-tail")
+    if (!this.anchor || this.landing || this.mode === "follow-tail") {
       this.capture();
-    // While an order is still being indexed, rows whose record already left the
+    } // While an order is still being indexed, rows whose record already left the
     // window render as placeholders, so that layout is not a reading position.
     else if (!stale) this.capture(true);
     this.publishMode();

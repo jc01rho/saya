@@ -22,4 +22,11 @@ export const THREAD_COPY = {
   hostNotReady: "호스트를 아직 사용할 수 없습니다",
   unreadableHint: "데스크톱 앱에서 이 방을 한 번 열면 읽을 수 있습니다",
   permission: "macOS 권한이 필요합니다",
+  jumpSearching: (shown: number, ceiling: number) =>
+    `원본 찾는 중 · ${shown.toLocaleString("ko-KR")}/${ceiling.toLocaleString("ko-KR")}개`,
+  jumpCancel: "취소",
+  jumpMissing: "원본을 찾을 수 없어요",
+  jumpBack: "원래 위치로",
+  toEnd: "맨 아래로 이동",
+  toEndFresh: (count: number) => `맨 아래로 이동, 새 메시지 ${count}개`,
 } as const;

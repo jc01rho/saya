@@ -68,6 +68,10 @@ export interface MessageBubbleProps {
   continued?: boolean;
   /** The last of its run, the one that shows the time. Defaults to true. */
   last?: boolean;
+  /** Present where the quoted original can be looked for on the wall. */
+  onQuote?: (() => void) | undefined;
+  /** The row a reply just led to, marked for a moment so the eye finds it. */
+  highlighted?: boolean;
 }
 
 function Reactions({
@@ -114,6 +118,8 @@ export function MessageBubble({
   onRevisions,
   continued = false,
   last = true,
+  onQuote,
+  highlighted = false,
 }: MessageBubbleProps) {
   const time = formatTime(message.sentAt, now);
   const kind = kindLabel(message.kind);
@@ -153,6 +159,7 @@ export function MessageBubble({
       data-state={state ?? (message.fromMe ? "read" : undefined)}
       data-continued={continued || undefined}
       data-run-last={last || undefined}
+      data-highlight={highlighted || undefined}
     >
       <div className={styles.row}>
         {message.fromMe ? null : continued ? (
@@ -182,7 +189,9 @@ export function MessageBubble({
           )}
           <div className={styles.line}>
             <div className={styles.bubble}>
-              {quoted ? <QuoteBlock source={message.replyTo ?? null} /> : null}
+              {quoted ? (
+                <QuoteBlock source={message.replyTo ?? null} onJump={onQuote} />
+              ) : null}
               {/*
             The core sends a photo as kind `photo` with the body text 사진. That
             word is a placeholder for the picture, so once the picture itself is

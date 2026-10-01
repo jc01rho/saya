@@ -206,3 +206,25 @@ button.edited {
   font-size: 11px;
   color: var(--ink-muted);
 }
+
+/* The row a reply led to: the bubble glows once in the wall's own ink, then settles. */
+.turn[data-highlight] .bubble {
+  animation: found 1.5s var(--ease);
+}
+
+@keyframes found {
+  0%,
+  60% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn[data-highlight] .bubble {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 45%, transparent);
+  }
+}
