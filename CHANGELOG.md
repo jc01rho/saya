@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-01
+
 ### 추가
 
 **0.15.0 계약의 새 읽기를 화면에 올렸습니다.** 방 머리 아래에 고정 공지 한 줄(`/notice`, 누르면 전체), 머리의 **모아보기** 시트(`/attachments`, 종류 필터와 `beforeId` 이전 페이지, 살펴본 범위를 문장으로 밝힘), 메시지의 공감 수(`reactions`), **수정됨**을 누르면 여는 수정 기록(`/revisions`), 세이프봇이 가린 메시지(`covered`), 파일 메시지와 모아보기의 **파일 받기**(`/file`, `410 FILE_EXPIRED`는 문장으로)를 추가했습니다. `MESSAGE_NOT_FOUND`·`FILE_EXPIRED`는 자기 문구가 있고, 경로를 모르는 코어(0.22.0 이전)의 404는 공지에서는 조용히, 시트에서는 "0.22.0 이상의 코어가 제공"한다고 말합니다. 공간 패턴은 StyleGallery(`4061d12`)의 badge-list·cluster·tab-strip·ram-grid·frame·media-object를 따랐습니다.
