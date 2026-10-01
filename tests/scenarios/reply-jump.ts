@@ -22,7 +22,12 @@ function wallShows(page: Page, target: { id: string } | "end") {
           fail(new Error("no wall"));
           return;
         }
-        const events = ["scroll", "scrollend", "thread-anchor-restored"];
+        // The end is reached when the glide has finished, not on a scroll
+        // frame passing through it: resizing mid-glide lets the glide win.
+        const events =
+          target === "end"
+            ? ["scrollend", "thread-anchor-restored"]
+            : ["scroll", "scrollend", "thread-anchor-restored"];
         const check = () => {
           if (target === "end") {
             const left = wall.scrollHeight - wall.clientHeight - wall.scrollTop;
