@@ -26,9 +26,11 @@ bun test tests/contract/generation.test.ts
 
 - `contract:generate` is the only writer of `src/contract/`. It derives raw
   `schema.d.ts`, consumer `decoded.d.ts`, standalone validators and the SSE map
-  from `openapi.json`, and the same (without SSE) into `src/contract/tsuba/`
-  from `contracts/tsuba.openapi.json`, each pinned by its own SHA-256. Consumer error codes are strings; known required fields
-  remain mandatory and unknown object members remain accepted.
+  from `openapi.json`, and the same into `src/contract/tsuba/` from
+  `contracts/tsuba.openapi.json`, each pinned by its own SHA-256, plus a
+  `version.ts` holding the `info.version` each was generated from. Consumer
+  error codes and enum values are strings; known required fields remain
+  mandatory and unknown object members remain accepted.
 - `contract:check` verifies the canonical SHA-256 and byte-for-byte generated
   artifact equality without changing files. `.gitattributes` preserves the
   canonical OpenAPI bytes on Windows. Do not format or edit that file.
@@ -93,7 +95,24 @@ line above deliberately, and only this far:
   feature means unsupported, never "probably fine". Do not branch on the
   provider's name where a capability says the same thing.
 - **A feature an adapter should expose is an issue on `tsuba`**, the same way
-  a missing KakaoTalk feature is an issue on the cores.
+  a missing KakaoTalk feature is an issue on the cores. The rules and every name
+  in use or reserved are in tsuba's `docs/contract.md`; updating the copy here
+  follows its `contract/CHANGELOG.md`.
+- **The caret range decides who is drawn.** An adapter is drawn only when its
+  `contract.version` has the same MAJOR as the copy here and, while MAJOR is 0,
+  the same MINOR (`compatibleVersion`). Outside it, 연결 says 버전 다름 and the
+  lists say so in one line; nothing else is drawn from it.
+- **A room narrows the declaration.** `Room.features` replaces a declared
+  feature for that room, and `false` removes it: a room without `messages.send`
+  has no composer. Read it through `roomFeature`, never the declaration alone.
+- **Only `INTERNAL` is unknown.** A write refused with any other code changed
+  nothing and says why; `INTERNAL` or no answer is uncertain and never retried.
+- **Attachment bytes are someone else's.** They are fetched same-origin from
+  `/adapters/<id>/media`, drawn as `<img>` only for the raster types the
+  contract serves inline, and otherwise offered as a download whose name is
+  text. The proxy forces `content-security-policy: default-src 'none'; sandbox`
+  and `nosniff` on every adapter answer (`server/adapters.ts`, the Caddyfile's
+  deferred headers) whatever the adapter sends. Do not remove that.
 
 ## `openapi.json` is copied, never edited
 

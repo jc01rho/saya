@@ -7,11 +7,13 @@ import {
   validateRoomsAnswer,
   validateSendAnswer,
 } from "../contract/tsuba/validators.js";
+import { CONTRACT_VERSION } from "../contract/tsuba/version";
 
 type Schema = components["schemas"];
 export type Capabilities = Schema["Capabilities"];
 export type AdapterRoom = Schema["Room"];
 export type AdapterMessage = Schema["Message"];
+export type AdapterAttachment = Schema["Attachment"];
 export type RoomsAnswer = Schema["RoomsAnswer"];
 export type MessagesAnswer = Schema["MessagesAnswer"];
 export type SendAnswer = Schema["SendAnswer"];
@@ -29,7 +31,9 @@ export type AdapterProblem =
   /** Nothing behind the proxy answered: the adapter or the path to it is down. */
   | { kind: "unreachable" }
   /** Something answered, but not the adapter contract. */
-  | { kind: "protocol" };
+  | { kind: "protocol" }
+  /** The adapter answers a contract version outside this client's range. */
+  | { kind: "incompatible"; version: string };
 
 export type AdapterResult<T> = { kind: "ok"; data: T } | AdapterProblem;
 
@@ -134,18 +138,76 @@ export async function listAdapters(
   return { kind: "listed", ids: reply.body.adapters.map(({ id }) => id) };
 }
 
+/**
+ * The contract's caret rule: the same MAJOR and, while MAJOR is 0, the same
+ * MINOR as the version this client was generated from.
+ */
+export function compatibleVersion(
+  version: string,
+  own: string = CONTRACT_VERSION,
+): boolean {
+  const parse = (value: string) =>
+    /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(value)?.slice(1, 3);
+  const theirs = parse(version);
+  const ours = parse(own);
+  if (!theirs || !ours) return false;
+  return theirs[0] === ours[0] && (ours[0] !== "0" || theirs[1] === ours[1]);
+}
+
+function contractVersion(body: unknown): string | null {
+  if (!body || typeof body !== "object" || !("contract" in body)) return null;
+  const { contract } = body;
+  return contract &&
+    typeof contract === "object" &&
+    "version" in contract &&
+    typeof contract.version === "string"
+    ? contract.version
+    : null;
+}
+
+/** The version is read before the shape: another range may shape it otherwise. */
 export async function fetchCapabilities(
   id: string,
   signal: AbortSignal,
 ): Promise<AdapterOutcome> {
-  const result = await request<Capabilities>(
+  const result = await request<unknown>(
     adapterPath(id, "/capabilities"),
-    validateCapabilities,
+    () => true,
     signal,
   );
-  return result.kind === "ok"
+  if (result.kind !== "ok") return result;
+  const version = contractVersion(result.data);
+  if (version !== null && !compatibleVersion(version))
+    return { kind: "incompatible", version };
+  return validateCapabilities(result.data)
     ? { kind: "connected", capabilities: result.data }
-    : result;
+    : { kind: "protocol" };
+}
+
+type KnownKeys<T> = keyof {
+  [K in keyof T as string extends K ? never : K]: T[K];
+};
+export type FeatureId = KnownKeys<Schema["RoomFeatures"]>;
+
+/** What a room allows: its own value where it narrows the declaration, else the declaration's. */
+export function roomFeature<K extends FeatureId>(
+  features: Capabilities["features"],
+  room: AdapterRoom | undefined,
+  id: K,
+): Exclude<Schema["RoomFeatures"][K], false> | undefined {
+  const own = room?.features?.[id];
+  if (own === false) return undefined;
+  return (own ?? features[id]) as
+    | Exclude<Schema["RoomFeatures"][K], false>
+    | undefined;
+}
+
+/** Same-origin, so the proxy adds the token; the adapter's headers keep the bytes inert. */
+export function mediaUrl(adapterId: string, mediaId: string): string {
+  return adapterPath(
+    adapterId,
+    `/media?${new URLSearchParams({ id: mediaId })}`,
+  );
 }
 
 export function fetchRooms(id: string, signal: AbortSignal) {

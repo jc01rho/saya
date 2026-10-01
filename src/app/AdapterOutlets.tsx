@@ -98,6 +98,7 @@ function AdapterRoomOutlet({
       <AdapterRoomBody
         adapterId={adapterId}
         roomId={roomId}
+        room={room}
         capabilities={capabilities}
       />
     </>

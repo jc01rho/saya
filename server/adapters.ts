@@ -49,6 +49,16 @@ export function adapterIndex(upstreams: AdapterUpstream[]) {
   return { adapters: upstreams.map(({ id }) => ({ id })) };
 }
 
+/**
+ * Set on every adapter answer whatever the adapter says. `/media` answers with
+ * bytes somebody else sent; opened at this origin, they must never run, even
+ * from an adapter that forgot its own headers. JSON and SSE are unaffected.
+ */
+export const ADAPTER_RESPONSE_HEADERS: Readonly<Record<string, string>> = {
+  "content-security-policy": "default-src 'none'; sandbox",
+  "x-content-type-options": "nosniff",
+};
+
 export function adapterProxies(
   upstreams: AdapterUpstream[],
 ): Record<string, ProxyOptions> {
@@ -60,6 +70,11 @@ export function adapterProxies(
         changeOrigin: true,
         rewrite: (path) => path.slice(prefix.length),
         headers: { Authorization: `Bearer ${token}` },
+        configure(proxy) {
+          proxy.on("proxyRes", (response) => {
+            Object.assign(response.headers, ADAPTER_RESPONSE_HEADERS);
+          });
+        },
       };
       return [`${prefix}/`, options];
     }),

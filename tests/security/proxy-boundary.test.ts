@@ -69,6 +69,11 @@ describe("same-origin proxy boundary", () => {
       caddyfile.indexOf("reverse_proxy {env.SAYA_ADAPTER_TELEGRAM_URL}"),
     );
     expect(caddyfile).toContain("uri strip_prefix /adapters/telegram");
+    // Adapter answers include bytes somebody else sent: sandboxed after the upstream.
+    expect(caddyfile).toContain(
+      `>Content-Security-Policy "default-src 'none'; sandbox"`,
+    );
+    expect(caddyfile).toContain('>X-Content-Type-Options "nosniff"');
     expect(caddyfile).toContain("flush_interval -1");
     expect(caddyfile).toContain('Cache-Control "no-store"');
     expect(caddyfile).toContain("output discard");

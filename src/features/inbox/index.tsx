@@ -13,6 +13,7 @@ import type { ClientStores, Immutable, RoomSnapshot } from "../../core/stores";
 import {
   type AdapterProblem,
   type AdapterRoom,
+  fetchCapabilities,
   fetchRooms,
   streamAdapter,
 } from "../../transport/adapters";
@@ -173,11 +174,18 @@ function useAdapterRooms(ids: string[]): Map<string, AdapterRooms> {
             // Only an abort rejects.
           },
         );
-      void load();
       signal.addEventListener("abort", () => clearTimeout(refresh), {
         once: true,
       });
       void (async () => {
+        // An adapter outside this client's contract range is drawn from nothing.
+        const declared = await fetchCapabilities(id, signal).catch(() => null);
+        if (signal.aborted) return;
+        if (declared?.kind === "incompatible") {
+          set(id, { state: "problem", problem: declared });
+          return;
+        }
+        void load();
         let failures = 0;
         while (!signal.aborted) {
           const end = await streamAdapter(id, {

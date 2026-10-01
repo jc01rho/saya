@@ -106,6 +106,68 @@
   font-weight: 700;
 }
 
+/* A picture fills the bubble's width up to a cap; its own width and height
+   attributes reserve the space before the bytes arrive. */
+.picture {
+  display: block;
+  width: 300px;
+  max-width: 100%;
+  margin: -4px -8px 2px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--fill-wall);
+}
+
+.picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.sticker {
+  width: 160px;
+  margin: 0;
+  background: transparent;
+}
+
+/* A sticker alone stands on the wall, as the messenger draws it. */
+.bare {
+  padding: 0;
+  background: transparent;
+}
+
+/* A file: its name, then what it is and how big; the whole row downloads. */
+.file {
+  display: grid;
+  gap: 1px;
+  min-height: var(--touch-min);
+  padding: 8px 12px;
+  margin: 0 -6px 2px;
+  border-radius: 12px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: normal;
+}
+
+.file:hover {
+  background: var(--hover-wall);
+}
+
+.fileName {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.fileMeta {
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.fileMeta:empty {
+  display: none;
+}
+
 .time {
   flex: none;
   color: var(--ink-muted);

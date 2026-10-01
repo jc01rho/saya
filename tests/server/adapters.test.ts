@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { EventEmitter } from "node:events";
 import {
+  ADAPTER_RESPONSE_HEADERS,
   AdapterConfigError,
   adapterIndex,
   adapterProxies,
@@ -80,5 +82,30 @@ describe("what leaves the proxy", () => {
     expect(options?.rewrite?.("/adapters/telegram/capabilities?x=1")).toBe(
       "/capabilities?x=1",
     );
+  });
+});
+
+describe("what comes back through the proxy", () => {
+  test("every adapter answer is sandboxed and never sniffed, whatever the adapter sent", () => {
+    const options = adapterProxies([
+      { id: "telegram", url: "http://127.0.0.1:8790", token: TOKEN },
+    ])["/adapters/telegram/"];
+    const proxy = new EventEmitter();
+    options?.configure?.(proxy as never, options);
+    const response = {
+      headers: {
+        "content-type": "text/html",
+        "content-security-policy": "default-src *",
+      } as Record<string, string>,
+    };
+    proxy.emit("proxyRes", response, {}, {});
+    expect(response.headers).toEqual({
+      "content-type": "text/html",
+      ...ADAPTER_RESPONSE_HEADERS,
+    });
+    expect(ADAPTER_RESPONSE_HEADERS).toEqual({
+      "content-security-policy": "default-src 'none'; sandbox",
+      "x-content-type-options": "nosniff",
+    });
   });
 });

@@ -10,6 +10,7 @@ export const contractDirectory = new URL("../src/contract/", import.meta.url);
 const root = new URL("../", import.meta.url);
 type Schema = Record<string, unknown>;
 type OpenApi = {
+  info: { version: string };
   components: { schemas: Record<string, Schema> };
   paths: Record<
     string,
@@ -85,7 +86,7 @@ export const contracts: readonly ContractSpec[] = [
   {
     // The tsuba adapter contract, byte-identical to tsuba's contract/openapi.json.
     source: "contracts/tsuba.openapi.json",
-    hash: "e1bb8df6f5c5e5702bb8390f25a5e38b60a29169581edf0c9485195c90170d10",
+    hash: "82a1688f1e2fdb2bd092d42ed9849004a860b6855bbb51905a229732fc4125ab",
     directory: new URL("../src/contract/tsuba/", import.meta.url),
     sse: true,
     widen(_document, decoded) {
@@ -151,6 +152,10 @@ export async function generateContract(
   const decoded = structuredClone(document);
   spec.widen(document, decoded);
   const files = new Map<string, string>([
+    [
+      "version.ts",
+      `${header}/** The contract version these artifacts were generated from. */\nexport const CONTRACT_VERSION = ${JSON.stringify(document.info.version)};\n`,
+    ],
     [
       "schema.d.ts",
       header + astToString(await openapiTS(JSON.stringify(document))),

@@ -1,3 +1,4 @@
+import { CONTRACT_VERSION } from "../../contract/tsuba/version";
 import type { AdapterProblem } from "../../transport/adapters";
 
 /** One sentence per way an adapter request can fail; codes, never messages, drive it. */
@@ -13,6 +14,10 @@ export function problemSentence(problem: AdapterProblem): string {
           return "이 계정에서 그 방을 찾을 수 없습니다.";
         case "NOT_SUPPORTED":
           return "이 어댑터는 그 기능을 제공하지 않습니다.";
+        case "FORBIDDEN":
+          return "메신저가 이 계정에 그 일을 허락하지 않습니다. 읽기 전용이거나 제한된 방일 수 있습니다.";
+        case "REAUTH_REQUIRED":
+          return "메신저 로그인이 풀렸습니다. 어댑터가 도는 기계에서 다시 로그인하세요.";
         default:
           return `어댑터가 오류를 돌려주었습니다. 상태 코드: ${problem.code}`;
       }
@@ -20,5 +25,7 @@ export function problemSentence(problem: AdapterProblem): string {
       return "어댑터가 응답하지 않습니다. 어댑터가 실행 중인지, 프록시가 어댑터 주소에 닿는지 확인하세요.";
     case "protocol":
       return "응답이 어댑터 계약과 다릅니다. 프록시 대상과 어댑터의 계약 버전을 확인하세요.";
+    case "incompatible":
+      return `어댑터의 계약 버전(${problem.version})이 saya가 따르는 버전(${CONTRACT_VERSION})과 호환되지 않습니다. 뒤처진 쪽을 업데이트하세요.`;
   }
 }

@@ -7,6 +7,7 @@ import {
   listAdapters,
 } from "../../transport/adapters";
 import styles from "./Adapters.module.css";
+import { problemSentence } from "./copy";
 import { KakaoCard, type KakaoStatus } from "./kakao";
 
 export type { KakaoStatus } from "./kakao";
@@ -24,6 +25,7 @@ const COPY = {
   unauthorized: "인증 필요",
   unreachable: "닿지 않음",
   protocol: "응답 이상",
+  incompatible: "버전 다름",
   refusedBody: (code: string) =>
     `어댑터가 오류를 돌려주었습니다. 상태 코드: ${code}`,
   unauthorizedBody:
@@ -77,6 +79,8 @@ function statusLabel(state: CardState): string {
       return COPY.unreachable;
     case "protocol":
       return COPY.protocol;
+    case "incompatible":
+      return COPY.incompatible;
   }
 }
 
@@ -90,6 +94,8 @@ function problem(state: CardState): string | null {
       return COPY.unreachableBody;
     case "protocol":
       return COPY.protocolBody;
+    case "incompatible":
+      return problemSentence(state);
     default:
       return null;
   }

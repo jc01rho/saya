@@ -8,6 +8,7 @@ import {
   validateMessagesAnswer,
   validateRoomsAnswer,
 } from "../../src/contract/tsuba/validators.js";
+import { CONTRACT_VERSION as ADAPTER_CONTRACT_VERSION } from "../../src/contract/tsuba/version";
 import {
   validateCursor,
   validateErrorEnvelope,
@@ -217,5 +218,67 @@ describe("generated adapter (tsuba) boundary", () => {
         error: { code: "FUTURE_ADAPTER_ERROR", message: "Synthetic" },
       }),
     ).toBe(true);
+  });
+
+  test("a room's own features narrow with false or a value in the feature's shape", () => {
+    const room = { id: "r", title: "Synthetic", kind: "channel", unread: 0 };
+    const rooms = (features: unknown) =>
+      validateRoomsAnswer({
+        ok: true,
+        complete: true,
+        rooms: [{ ...room, features }],
+      });
+    expect(rooms({ "messages.send": false })).toBe(true);
+    expect(rooms({ "messages.read": { paging: "none", maxLimit: 10 } })).toBe(
+      true,
+    );
+    expect(rooms({ "x-example.pins": false })).toBe(true);
+    expect(rooms({ "messages.send": "no" })).toBe(false);
+    expect(rooms({ "messages.send": true })).toBe(false);
+    expect(
+      rooms({ "messages.send": { maxLength: 0, receipt: "stored" } }),
+    ).toBe(false);
+  });
+
+  test("attachments keep an id and a kind, and accept kinds this client does not know", () => {
+    const turn = {
+      id: "1",
+      roomId: "r",
+      sender: "Synthetic",
+      text: "",
+      kind: "media",
+      sentAt: "2026-09-18T00:21:30Z",
+      fromMe: false,
+    };
+    const messages = (attachments: unknown) =>
+      validateMessagesAnswer({
+        ok: true,
+        hasEarlier: false,
+        messages: [{ ...turn, attachments }],
+      });
+    const picture = {
+      id: "r:1:f",
+      kind: "image",
+      mimeType: "image/jpeg",
+      size: 1024,
+      width: 640,
+      height: 480,
+    };
+    expect(messages([picture])).toBe(true);
+    expect(messages([{ ...picture, kind: "future-kind", futureKey: 1 }])).toBe(
+      true,
+    );
+    expect(messages([])).toBe(false);
+    const { id: _id, ...anonymous } = picture;
+    expect(messages([anonymous])).toBe(false);
+    expect(messages([{ ...picture, size: -1 }])).toBe(false);
+    expect(messages([{ ...picture, width: 0 }])).toBe(false);
+  });
+
+  test("the generated version is the copied contract's", async () => {
+    const copied = await Bun.file(
+      new URL("../../contracts/tsuba.openapi.json", import.meta.url),
+    ).json();
+    expect(ADAPTER_CONTRACT_VERSION).toBe(copied.info.version);
   });
 });

@@ -79,6 +79,15 @@ an HTTPS upstream that routes on its own host name, which is why the handle sets
 `header_up Host {upstream_hostport}`. Never put an adapter on a public address
 to make it reachable; the tailnet or an SSH forward is the path.
 
+`/adapters/<id>/media` answers the bytes of a file somebody else sent, opened
+at this origin. The adapter already answers it sandboxed, but the proxy does
+not rely on that: both the development proxy (`ADAPTER_RESPONSE_HEADERS`) and
+the Caddyfile example set `Content-Security-Policy: default-src 'none';
+sandbox` and `X-Content-Type-Options: nosniff` on every adapter answer, after
+the upstream's own headers (`>` defers them). Cache-Control is a default only
+(`?`), so `/media` keeps its `private, max-age=86400` while everything else is
+`no-store`. Keep both when adding a handle for another adapter.
+
 ## The link-preview endpoint
 
 `/unfurl` is optional. It is **not** part of `openapi.json` and never reaches a

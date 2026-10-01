@@ -1,11 +1,16 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
+  type AdapterRoom,
   AdapterSseParser,
   type AdapterStreamEvent,
+  type Capabilities,
+  compatibleVersion,
   fetchCapabilities,
   fetchMessages,
   fetchRooms,
   listAdapters,
+  mediaUrl,
+  roomFeature,
   sendMessage,
   streamAdapter,
 } from "../../src/transport/adapters";
@@ -15,7 +20,7 @@ const originalFetch = globalThis.fetch;
 
 const capabilities = {
   ok: true,
-  contract: { version: "0.1.0" },
+  contract: { version: "0.2.0" },
   adapter: { name: "synthetic-adapter", version: "0.0.0" },
   provider: { id: "example", name: "Example" },
   account: { kind: "user" },
@@ -115,6 +120,99 @@ describe("an adapter's capabilities through the proxy", () => {
     await expect(
       fetchCapabilities("example", controller.signal),
     ).rejects.toBeInstanceOf(DOMException);
+  });
+});
+
+describe("the contract's caret range", () => {
+  test("the same MAJOR, and while it is 0 the same MINOR", () => {
+    for (const [theirs, own, expected] of [
+      ["0.2.0", "0.2.1", true],
+      ["0.2.9", "0.2.1", true],
+      ["0.3.0", "0.2.1", false],
+      ["0.1.0", "0.2.1", false],
+      ["1.0.0", "0.2.1", false],
+      ["1.5.3", "1.2.0", true],
+      ["2.0.0", "1.2.0", false],
+      ["0.2.1-rc.1", "0.2.1", true],
+      ["0.2", "0.2.1", false],
+      ["latest", "0.2.1", false],
+    ] as const)
+      expect(compatibleVersion(theirs, own)).toBe(expected);
+  });
+
+  test("an adapter outside the range is incompatible before its shape is judged", async () => {
+    reply(json({ ok: true, contract: { version: "9.0.0" }, reshaped: [] }));
+    expect(await fetchCapabilities("example", signal())).toEqual({
+      kind: "incompatible",
+      version: "9.0.0",
+    });
+    reply(json({ ...capabilities, contract: { version: "0.1.0" } }));
+    expect((await fetchCapabilities("example", signal())).kind).toBe(
+      "incompatible",
+    );
+  });
+
+  test("inside the range a malformed declaration is still a protocol failure", async () => {
+    const { revision: _revision, ...unrevised } = capabilities;
+    reply(json(unrevised));
+    expect((await fetchCapabilities("example", signal())).kind).toBe(
+      "protocol",
+    );
+  });
+});
+
+describe("what a room allows", () => {
+  // The generated type intersects the known ids with the extension index
+  // signature, which no object literal satisfies; a validated answer does.
+  const features = {
+    "messages.send": { maxLength: 4096, receipt: "stored" },
+  } as unknown as Capabilities["features"];
+  const room = { id: "r", title: "Synthetic", kind: "group", unread: 0 };
+
+  test("a room without features of its own has the declaration", () => {
+    expect(roomFeature(features, room, "messages.send")).toEqual(
+      features["messages.send"],
+    );
+    expect(roomFeature(features, undefined, "messages.send")).toEqual(
+      features["messages.send"],
+    );
+  });
+
+  test("false removes it there, and a value replaces it there", () => {
+    expect(
+      roomFeature(
+        features,
+        { ...room, features: { "messages.send": false } },
+        "messages.send",
+      ),
+    ).toBeUndefined();
+    expect(
+      roomFeature(
+        features,
+        {
+          ...room,
+          features: {
+            "messages.send": { maxLength: 10, receipt: "stored" },
+          } as unknown as NonNullable<AdapterRoom["features"]>,
+        },
+        "messages.send",
+      ),
+    ).toEqual({ maxLength: 10, receipt: "stored" });
+  });
+
+  test("an undeclared feature stays absent", () => {
+    expect(roomFeature(features, room, "attachments.read")).toBeUndefined();
+  });
+});
+
+describe("attachment bytes", () => {
+  test("are asked for same-origin through the proxy, the id encoded", () => {
+    expect(mediaUrl("telegram", "-100:7:AQ_d-x")).toBe(
+      "/adapters/telegram/media?id=-100%3A7%3AAQ_d-x",
+    );
+    expect(mediaUrl("telegram", "a&b=c#d")).toBe(
+      "/adapters/telegram/media?id=a%26b%3Dc%23d",
+    );
   });
 });
 

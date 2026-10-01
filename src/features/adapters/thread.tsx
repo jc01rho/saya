@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import {
+  type AdapterAttachment,
   type AdapterMessage,
   type AdapterOutcome,
   type AdapterProblem,
@@ -14,10 +15,13 @@ import {
   fetchCapabilities,
   fetchMessages,
   fetchRooms,
+  mediaUrl,
+  roomFeature,
   sendMessage,
   streamAdapter,
 } from "../../transport/adapters";
 import { cx, formatTime } from "../../ui";
+import { formatSize } from "../attachments/pages";
 import { problemSentence } from "./copy";
 import { rememberedRoom, rememberRooms } from "./rooms";
 import styles from "./Thread.module.css";
@@ -41,6 +45,17 @@ const COPY = {
   uncertain:
     "보냈는지 알 수 없습니다. 대화에 나타나는지 확인한 뒤 필요하면 다시 보내세요.",
   noSend: "이 어댑터는 메시지 보내기를 제공하지 않습니다.",
+  noSendHere: "이 방에는 이 계정으로 보낼 수 없습니다.",
+  unshown: "불러오지 못했습니다",
+  kinds: {
+    file: "파일",
+    image: "사진",
+    video: "동영상",
+    audio: "오디오",
+    voice: "음성 메시지",
+    sticker: "스티커",
+    animation: "움직이는 이미지",
+  } as Record<string, string>,
   reconnecting: "실시간 연결이 끊겨 다시 잇는 중입니다.",
 } as const;
 
@@ -78,11 +93,76 @@ function pause(ms: number, signal: AbortSignal) {
   });
 }
 
+/** Types `/media` serves inline, so an `<img>` can draw them; anything else is a download. */
+const DRAWABLE = /^image\/(?:jpeg|png|gif|webp|avif)$/;
+
+function Attachment({
+  adapterId,
+  attachment,
+}: {
+  adapterId: string;
+  attachment: AdapterAttachment;
+}) {
+  const [broken, setBroken] = useState(false);
+  const href = mediaUrl(adapterId, attachment.id);
+  const label = COPY.kinds[attachment.kind] ?? COPY.kinds.file;
+  const drawable =
+    (attachment.kind === "image" || attachment.kind === "sticker") &&
+    DRAWABLE.test(attachment.mimeType ?? "");
+  if (drawable && !broken)
+    return (
+      <a
+        className={cx(
+          styles.picture,
+          attachment.kind === "sticker" && styles.sticker,
+        )}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-ui="adapter-picture"
+      >
+        <img
+          src={href}
+          alt={attachment.name ?? label}
+          width={attachment.width}
+          height={attachment.height}
+          loading="lazy"
+          decoding="async"
+          onError={() => setBroken(true)}
+        />
+      </a>
+    );
+  const seconds = attachment.durationSeconds;
+  const meta = [
+    attachment.name ? label : null,
+    seconds === undefined
+      ? null
+      : `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`,
+    broken ? COPY.unshown : formatSize(attachment.size),
+  ].filter(Boolean);
+  return (
+    <a
+      className={styles.file}
+      href={href}
+      download={attachment.name ?? ""}
+      data-ui="adapter-file"
+    >
+      <span className={styles.fileName}>{attachment.name ?? label}</span>
+      <span className={styles.fileMeta}>{meta.join(" · ")}</span>
+    </a>
+  );
+}
+
 function Turn({
+  adapterId,
+  files,
   message,
   previous,
   now,
 }: {
+  adapterId: string;
+  /** Whether the adapter declares `attachments.read`, so `/media` answers. */
+  files: boolean;
   message: AdapterMessage;
   previous: AdapterMessage | undefined;
   now: Date;
@@ -100,6 +180,11 @@ function Turn({
     (previous.senderId ?? previous.sender) ===
       (message.senderId ?? message.sender);
   const time = formatTime(message.sentAt, now);
+  const bare =
+    files &&
+    !message.text &&
+    message.attachments?.length === 1 &&
+    message.attachments[0]?.kind === "sticker";
   return (
     <li
       className={cx(styles.turn, message.fromMe && styles.mine)}
@@ -109,8 +194,16 @@ function Turn({
         <span className={styles.sender}>{message.sender}</span>
       ) : null}
       <div className={styles.line}>
-        <div className={styles.bubble}>
-          {message.kind === "media" ? (
+        <div className={cx(styles.bubble, bare && styles.bare)}>
+          {files && message.attachments ? (
+            message.attachments.map((attachment) => (
+              <Attachment
+                key={attachment.id}
+                adapterId={adapterId}
+                attachment={attachment}
+              />
+            ))
+          ) : message.kind === "media" ? (
             <span className={styles.media}>{COPY.media}</span>
           ) : null}
           {message.text ? (
@@ -218,15 +311,19 @@ function Composer({
 export function AdapterThread({
   adapterId,
   roomId,
+  room,
   features,
 }: {
   adapterId: string;
   roomId: string;
+  /** The room as the list described it, once known; it may narrow `features`. */
+  room: AdapterRoom | undefined;
   features: Features;
 }) {
   const read = features["messages.read"];
   const live = features["messages.stream"];
-  const send = features["messages.send"];
+  const send = roomFeature(features, room, "messages.send");
+  const files = roomFeature(features, room, "attachments.read") !== undefined;
   const limit = Math.min(50, read?.maxLimit ?? 50);
   const canPage = read?.paging === "before-id";
 
@@ -398,6 +495,8 @@ export function AdapterThread({
                 {messages.map((message, index) => (
                   <Turn
                     key={message.id}
+                    adapterId={adapterId}
+                    files={files}
                     message={message}
                     previous={messages[index - 1]}
                     now={now}
@@ -426,7 +525,9 @@ export function AdapterThread({
           }}
         />
       ) : (
-        <p className={styles.reconnecting}>{COPY.noSend}</p>
+        <p className={styles.reconnecting} data-ui="adapter-no-send">
+          {features["messages.send"] ? COPY.noSendHere : COPY.noSend}
+        </p>
       )}
     </div>
   );
@@ -463,10 +564,12 @@ export function useAdapterRoom(adapterId: string, roomId: string) {
 export function AdapterRoomBody({
   adapterId,
   roomId,
+  room,
   capabilities,
 }: {
   adapterId: string;
   roomId: string;
+  room: AdapterRoom | undefined;
   capabilities: { kind: "checking" } | AdapterOutcome;
 }) {
   if (capabilities.kind === "checking")
@@ -481,6 +584,7 @@ export function AdapterRoomBody({
       key={`${adapterId}/${roomId}`}
       adapterId={adapterId}
       roomId={roomId}
+      room={room}
       features={features}
     />
   );

@@ -67,8 +67,16 @@ http://127.0.0.1:8080 {
         respond `{"adapters":[{"id":"telegram"}]}` 200
     }
 
+    # `/media` answers bytes somebody else sent, so every adapter answer is
+    # sandboxed and never sniffed whatever the adapter says (`>` defers the
+    # set until after the upstream's headers). `/media` keeps its own private
+    # cache header; everything else defaults to no-store.
     @adapter_telegram path /adapters/telegram/*
-    header @adapter_telegram Cache-Control "no-store"
+    header @adapter_telegram {
+        ?Cache-Control "no-store"
+        >Content-Security-Policy "default-src 'none'; sandbox"
+        >X-Content-Type-Options "nosniff"
+    }
     handle @adapter_telegram {
         uri strip_prefix /adapters/telegram
         reverse_proxy {env.SAYA_ADAPTER_TELEGRAM_URL} {
