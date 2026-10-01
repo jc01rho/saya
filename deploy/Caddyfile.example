@@ -79,6 +79,9 @@ http://127.0.0.1:8080 {
     }
     handle @adapter_telegram {
         uri strip_prefix /adapters/telegram
+        # If the adapter sits under a path (tailscale serve --set-path /telegram),
+        # keep only scheme://host:port in the URL and add the path back here:
+        # rewrite * /telegram{uri}
         reverse_proxy {env.SAYA_ADAPTER_TELEGRAM_URL} {
             header_up Authorization "Bearer {env.SAYA_ADAPTER_TELEGRAM_TOKEN}"
             # An HTTPS upstream (e.g. tailscale serve) routes on its own host name.

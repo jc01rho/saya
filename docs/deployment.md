@@ -79,6 +79,13 @@ an HTTPS upstream that routes on its own host name, which is why the handle sets
 `header_up Host {upstream_hostport}`. Never put an adapter on a public address
 to make it reachable; the tailnet or an SSH forward is the path.
 
+Several adapters on one machine can share one tailnet address, split by path
+(`tailscale serve --https=443 --set-path /slack http://127.0.0.1:8793`), so an
+adapter URL may carry a path, e.g. `https://oci.example.ts.net/slack`. The
+development proxy keeps that path in front of every route. Caddy's
+`reverse_proxy` takes only scheme, host and port, so keep the path out of the
+URL and add it back with `rewrite * /slack{uri}` after `uri strip_prefix`.
+
 `/adapters/<id>/media` answers the bytes of a file somebody else sent, opened
 at this origin. The adapter already answers it sandboxed, but the proxy does
 not rely on that: both the development proxy (`ADAPTER_RESPONSE_HEADERS`) and
