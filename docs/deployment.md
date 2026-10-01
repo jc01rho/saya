@@ -59,6 +59,26 @@ its environment or secret store, `proxy_buffering off` for SSE, no short
 read/idle timeout, and the same fail-closed Origin, Fetch-Metadata, and JSON
 write checks before proxying.
 
+## Messenger adapters (tsuba)
+
+Each tsuba adapter is its own upstream with its own bearer token, answering the
+adapter contract (`contracts/tsuba.openapi.json`). The proxy serves two things
+for them, and the browser learns nothing but their ids:
+
+- `GET /adapters` — the index, `{"adapters":[{"id":"telegram"}]}`. It is a
+  facility of the proxy, like `/unfurl`, not part of either contract.
+- `/adapters/<id>/*` — stripped of that prefix and forwarded to the adapter,
+  with `Authorization: Bearer <its token>` added by the proxy.
+
+Development reads `SAYA_ADAPTERS=telegram` and, per id,
+`SAYA_ADAPTER_TELEGRAM_URL` and `SAYA_ADAPTER_TELEGRAM_TOKEN` (`server/adapters.ts`;
+a listed id missing either refuses to start). In production the Caddyfile
+example carries the index and one handle per adapter; add a handle for each id
+you list. An adapter reached over Tailscale (`tailscale serve`, tailnet only) is
+an HTTPS upstream that routes on its own host name, which is why the handle sets
+`header_up Host {upstream_hostport}`. Never put an adapter on a public address
+to make it reachable; the tailnet or an SSH forward is the path.
+
 ## The link-preview endpoint
 
 `/unfurl` is optional. It is **not** part of `openapi.json` and never reaches a

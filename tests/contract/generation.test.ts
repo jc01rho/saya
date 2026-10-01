@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test";
 import type { components } from "../../src/contract/decoded";
 import { sseEventSchemas, sseValidators } from "../../src/contract/sse";
 import {
+  validateErrorEnvelope as validateAdapterError,
+  validateCapabilities,
+} from "../../src/contract/tsuba/validators.js";
+import {
   validateCursor,
   validateErrorEnvelope,
   validateMessage,
@@ -100,5 +104,67 @@ describe("generated wire boundary", () => {
     expect(Object.keys(sseValidators)).toEqual(Object.keys(events));
     expect(sseValidators.ping({ ok: true })).toBe(true);
     expect(sseValidators.ping({ ok: false })).toBe(false);
+  });
+});
+
+describe("generated adapter (tsuba) boundary", () => {
+  const declaration = {
+    ok: true,
+    contract: { version: "0.1.0" },
+    adapter: { name: "synthetic-adapter", version: "0.0.0" },
+    provider: { id: "example", name: "Example" },
+    account: { kind: "user" },
+    revision: "0123456789abcdef",
+    features: {
+      "messages.read": { paging: "before-id", maxLimit: 100 },
+      "x-example.pins": {},
+    },
+  };
+
+  test("accepts a declaration, additive keys and enum values it does not know", () => {
+    expect(validateCapabilities(declaration)).toBe(true);
+    expect(
+      validateCapabilities({
+        ...declaration,
+        futureKey: 1,
+        account: { kind: "future-kind" },
+        features: {
+          "future.feature": {},
+          "messages.send": { maxLength: 1, receipt: "future" },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  test("keeps the constraints that make a declaration mean something", () => {
+    const { revision: _revision, ...unrevised } = declaration;
+    expect(validateCapabilities(unrevised)).toBe(false);
+    expect(
+      validateCapabilities({
+        ...declaration,
+        features: { "messages.send": { maxLength: 0, receipt: "stored" } },
+      }),
+    ).toBe(false);
+    expect(
+      validateCapabilities({
+        ...declaration,
+        provider: { id: "Not An Id", name: "Example" },
+      }),
+    ).toBe(false);
+    expect(
+      validateCapabilities({
+        ...declaration,
+        features: { "x-example.pins": "yes" },
+      }),
+    ).toBe(false);
+  });
+
+  test("an error code it does not know is still an error envelope", () => {
+    expect(
+      validateAdapterError({
+        ok: false,
+        error: { code: "FUTURE_ADAPTER_ERROR", message: "Synthetic" },
+      }),
+    ).toBe(true);
   });
 });

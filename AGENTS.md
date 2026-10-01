@@ -26,7 +26,8 @@ bun test tests/contract/generation.test.ts
 
 - `contract:generate` is the only writer of `src/contract/`. It derives raw
   `schema.d.ts`, consumer `decoded.d.ts`, standalone validators and the SSE map
-  from `openapi.json`. Consumer error codes are strings; known required fields
+  from `openapi.json`, and the same (without SSE) into `src/contract/tsuba/`
+  from `contracts/tsuba.openapi.json`, each pinned by its own SHA-256. Consumer error codes are strings; known required fields
   remain mandatory and unknown object members remain accepted.
 - `contract:check` verifies the canonical SHA-256 and byte-for-byte generated
   artifact equality without changing files. `.gitattributes` preserves the
@@ -42,6 +43,9 @@ bun test tests/contract/generation.test.ts
   `/api` and forwards to `SAYA_CORE_URL` (default `http://127.0.0.1:8765`), injecting
   `SAYA_CORE_TOKEN` only in the server. Never rename these to `VITE_*`, put a token
   in client code or treat this development proxy as production deployment.
+  Messenger adapters are `SAYA_ADAPTERS=<id,...>` with `SAYA_ADAPTER_<ID>_URL`
+  and `SAYA_ADAPTER_<ID>_TOKEN` each; the proxy serves `/adapters/<id>/*` and an
+  ids-only `/adapters` index (`server/adapters.ts`).
 - All direct package versions are exact. `ajv-formats` supplies date validation;
   extra Redocly declaration dependencies are explicit so full type checking does
   not need suppression. No Ajv schema compiler is included in generated browser

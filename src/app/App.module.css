@@ -49,6 +49,13 @@
   }
 }
 
+/* The connections view has no list column: it takes the list's and the thread's. */
+@media (min-width: 768px) {
+  .wide {
+    grid-column: 2 / -1;
+  }
+}
+
 /* Middle widths: the list narrows and the rail keeps its icons. */
 @media (min-width: 768px) and (max-width: 1023.98px) {
   .shell {
@@ -210,4 +217,13 @@
 
 .notice button:hover {
   background: color-mix(in srgb, var(--field-wall) 84%, var(--ink));
+}
+
+.noticeLink {
+  justify-self: start;
+  margin-top: var(--space-24);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
 }

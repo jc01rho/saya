@@ -56,6 +56,29 @@ http://127.0.0.1:8080 {
         }
     }
 
+    # Messenger adapters (tsuba). The client reads the index, which names ids
+    # only; each adapter is its own upstream with its own token, expanded here.
+    # Add one handle per id listed in the index. Writes are still filtered by
+    # @blocked_write above.
+    @adapters_index path /adapters
+    handle @adapters_index {
+        header Cache-Control "no-store"
+        header Content-Type "application/json; charset=utf-8"
+        respond `{"adapters":[{"id":"telegram"}]}` 200
+    }
+
+    @adapter_telegram path /adapters/telegram/*
+    header @adapter_telegram Cache-Control "no-store"
+    handle @adapter_telegram {
+        uri strip_prefix /adapters/telegram
+        reverse_proxy {env.SAYA_ADAPTER_TELEGRAM_URL} {
+            header_up Authorization "Bearer {env.SAYA_ADAPTER_TELEGRAM_TOKEN}"
+            # An HTTPS upstream (e.g. tailscale serve) routes on its own host name.
+            header_up Host {upstream_hostport}
+            flush_interval -1
+        }
+    }
+
     @hashed_assets path_regexp hashed ^/assets/.+\.[a-zA-Z0-9_-]{8,}\.(?:css|js|mjs|woff2?|svg|png|jpe?g|webp|gif)$
     header @hashed_assets Cache-Control "public, max-age=31536000, immutable"
 

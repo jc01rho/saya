@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### 추가
+
+**메신저 어댑터(tsuba)에 연결합니다.** 레일의 **연결**(768px 미만은 목록 머리의 아이콘)에서 프록시가 맡은 어댑터마다 카드 하나를 그립니다. 이름은 어댑터가 `GET /capabilities` 로 밝힌 것을 쓰고, 상태(연결됨 · 인증 필요 · 거절됨 · 닿지 않음 · 응답 이상), 계정 종류, 밝힌 기능을 보여 줍니다. 메신저 이름으로 분기하지 않으므로 두 번째 메신저는 카드가 하나 더 늘 뿐입니다. 카카오톡 코어가 꺼져 있어도 열립니다. tsuba 의 계약을 `contracts/tsuba.openapi.json`(0.1.0)으로 복사해 해시를 고정하고, `contract:generate`·`contract:check` 가 두 계약을 함께 다룹니다(카카오 생성물은 바이트 단위로 그대로). 프록시는 `SAYA_ADAPTERS`·`SAYA_ADAPTER_<ID>_URL`·`SAYA_ADAPTER_<ID>_TOKEN` 으로 `/adapters/<id>/*` 를 어댑터에 넘기고 토큰을 넣으며, 브라우저에는 id 만 담은 `/adapters` 색인만 줍니다.
+
+검증: `contract:check`·`typecheck`·`lint`·`build` 통과, `bun test` 213 pass / 0 fail. 실제 VPS 의 tsuba Telegram 어댑터에 Tailscale(`tailscale serve`, tailnet 전용)로 붙은 개발 서버를 Chrome 에서 1440×900 과 390×844 로 보고 연결됨을 확인했고, 레일과 모바일 목록 머리의 진입점은 합성 브리지 위에서 확인했습니다. 실제 `kanao serve` 에는 붙이지 않았습니다.
+
 ## [0.2.0] — 2026-10-01
 
 ### 추가

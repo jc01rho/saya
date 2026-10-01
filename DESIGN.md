@@ -204,6 +204,23 @@ also not drawn yet: `/context` holds at most the newest 1000 turns and the wall
 virtualises beyond 200, so a search would have to state its reach and scroll a
 virtual list — left for a later revision rather than approximated.
 
+## r5: 연결, the messenger adapters (`feat/multi-provider`)
+
+The tsuba adapters are separate upstreams with their own contract
+(`contracts/tsuba.openapi.json`). r5 draws only what that contract has today:
+`GET /capabilities`.
+
+| Surface | r5 form |
+| --- | --- |
+| Rail | A second item under 대화: **연결**, a link icon over the 11/700 label, same 62px field; filled `--active-list` when current. Still no status dot. |
+| List head (below 768px) | A 44px link icon at the trailing end of the head row, the way to 연결 where there is no rail. Accessible name 연결. |
+| KakaoTalk notice | Every whole-screen notice ends with the link 다른 메신저 연결 보기: a core being down does not close the adapters. |
+| 연결 view (`#/adapters`) | The room header's form (title 연결, subtitle 메신저 어댑터, back chevron below 768px), then one card per adapter in the `62ch` column, spanning the list and thread columns from 768px. Reachable whatever the KakaoTalk core is doing. |
+| Adapter card | `--field-list` fill, radius 14, no rule. The provider's initial on a 36px ink squircle (no messenger artwork), name 17/800, and the state as a **word** on a pill: 확인 중 · 연결됨 · 인증 필요 · 거절됨 · 닿지 않음 · 응답 이상 (연결됨 on `--active-list`, never colour alone). Connected: the account kind as a sentence (a bot says it sees only the rooms it was added to), adapter and contract versions, then the declared features as pills in the contract's vocabulary. Nothing declared: one sentence saying so. Otherwise one sentence on what to check and 다시 확인. |
+
+The card reads the provider's name from the declaration and never branches on
+it: a second messenger is a second card, not new code.
+
 ## Embedded tokens
 
 r4 adds form tokens only: `--radius-row 14px`, `--radius-field 12px`,

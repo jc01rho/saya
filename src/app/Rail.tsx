@@ -2,12 +2,13 @@ import { useMemo, useSyncExternalStore } from "react";
 import type { ClientStores } from "../core/stores";
 import { cx, UnreadBadge } from "../ui";
 import styles from "./Rail.module.css";
-import { ROOMS_HASH } from "./routes";
+import { ADAPTERS_HASH, ROOMS_HASH } from "./routes";
 
 const RAIL_COPY = {
   nav: "메뉴",
   brand: "さや (saya)",
   chats: "대화",
+  adapters: "연결",
   unread: (count: number) =>
     `데스크톱 기준 안 읽음 ${count.toLocaleString("ko-KR")}개`,
 } as const;
@@ -51,15 +52,17 @@ function useTotalUnread(stores: ClientStores): number {
 }
 
 /**
- * The left rail of the messenger arrangement: the mark, then the one section
- * this client has. Nothing here claims a connection state — the rail draws no
+ * The left rail of the messenger arrangement: the mark, then the sections —
+ * 대화 (the KakaoTalk core) and 연결 (the messenger adapters). Nothing here claims a connection state — the rail draws no
  * status dot, because no slice reports one yet.
  */
 export function Rail({
   stores,
+  section,
   className,
 }: {
   stores: ClientStores;
+  section: "chats" | "adapters";
   className?: string | undefined;
 }) {
   const unread = useTotalUnread(stores);
@@ -77,7 +80,7 @@ export function Rail({
       <a
         className={styles.item}
         href={ROOMS_HASH}
-        aria-current="true"
+        aria-current={section === "chats" || undefined}
         data-ui="rail-chats"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -90,6 +93,18 @@ export function Rail({
             <span className="sr-only">{RAIL_COPY.unread(unread)}</span>
           </span>
         ) : null}
+      </a>
+      <a
+        className={styles.item}
+        href={ADAPTERS_HASH}
+        aria-current={section === "adapters" || undefined}
+        data-ui="rail-adapters"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6" />
+          <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6" />
+        </svg>
+        <span className={styles.label}>{RAIL_COPY.adapters}</span>
       </a>
     </nav>
   );

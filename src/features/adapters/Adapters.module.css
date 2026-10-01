@@ -1,0 +1,128 @@
+/* The connections view: its own scroll owner on the wall, one card per adapter. */
+.pane {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-12);
+  max-width: var(--measure);
+  padding: var(--space-24) 18px;
+}
+
+/* A filled field, as a room row is: no rule, hierarchy by weight. */
+.card {
+  display: grid;
+  gap: var(--space-8);
+  padding: var(--space-16) 18px;
+  border-radius: var(--radius-row);
+  background: var(--field-list);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+/* The provider's initial on the brand's ink squircle; no messenger artwork is drawn. */
+.mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--field-list);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.name {
+  overflow: hidden;
+  min-width: 0;
+  font-size: var(--text-room);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: var(--leading-title);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The state is a word on a pill; colour never carries it alone. */
+.status {
+  flex: none;
+  margin-inline-start: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill-list);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.status[data-tone="ok"] {
+  background: var(--active-list);
+}
+
+.line {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.meta {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: var(--leading-meta);
+}
+
+.subheading {
+  margin-top: var(--space-4);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: var(--leading-meta);
+}
+
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+}
+
+.features li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill-list);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.retry {
+  justify-self: start;
+  min-height: var(--touch-min);
+  padding: var(--space-8) var(--space-16);
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  cursor: pointer;
+}
+
+.retry:hover {
+  background: var(--hover-wall);
+}

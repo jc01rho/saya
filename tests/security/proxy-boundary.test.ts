@@ -23,7 +23,10 @@ async function builtContents() {
 function exampleValues(source: string) {
   return source
     .split(/\r?\n/)
-    .filter((line) => line.startsWith("SAYA_CORE_"))
+    .filter(
+      (line) =>
+        line.startsWith("SAYA_CORE_") || line.startsWith("SAYA_ADAPTER_"),
+    )
     .map((line) => line.slice(line.indexOf("=") + 1))
     .filter(Boolean);
 }
@@ -34,6 +37,7 @@ describe("same-origin proxy boundary", () => {
     const envExample = await readFile(resolve(root, ".env.example"), "utf8");
 
     expect(bundle).not.toContain("SAYA_CORE_TOKEN");
+    expect(bundle).not.toContain("SAYA_ADAPTER_");
     for (const value of exampleValues(envExample))
       expect(bundle).not.toContain(value);
   });
@@ -57,6 +61,14 @@ describe("same-origin proxy boundary", () => {
       'header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"',
     );
     expect(caddyfile).toContain("uri strip_prefix /api");
+    // Adapters: the token is expanded by the proxy, after the write filter.
+    expect(caddyfile).toContain(
+      'header_up Authorization "Bearer {env.SAYA_ADAPTER_TELEGRAM_TOKEN}"',
+    );
+    expect(caddyfile.indexOf("respond @blocked_write 403")).toBeLessThan(
+      caddyfile.indexOf("reverse_proxy {env.SAYA_ADAPTER_TELEGRAM_URL}"),
+    );
+    expect(caddyfile).toContain("uri strip_prefix /adapters/telegram");
     expect(caddyfile).toContain("flush_interval -1");
     expect(caddyfile).toContain('Cache-Control "no-store"');
     expect(caddyfile).toContain("output discard");

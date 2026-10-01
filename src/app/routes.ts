@@ -4,9 +4,13 @@ import { useMemo, useSyncExternalStore } from "react";
  * Hash routes. Room ids are opaque wire strings: they are percent-encoded into
  * the hash and decoded back, never parsed, compared numerically or shortened.
  */
-export type Route = { kind: "rooms" } | { kind: "room"; roomId: string };
+export type Route =
+  | { kind: "rooms" }
+  | { kind: "room"; roomId: string }
+  | { kind: "adapters" };
 
 export const ROOMS_HASH = "#/rooms";
+export const ADAPTERS_HASH = "#/adapters";
 
 export function roomHash(roomId: string): string {
   return `#/room/${encodeURIComponent(roomId)}`;
@@ -19,6 +23,7 @@ const ROOM = /^\/rooms?\/([^/]+)$/;
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "").replace(/\?.*$/, "");
+  if (path === "/adapters") return { kind: "adapters" };
   const match = ROOM.exec(path);
   if (!match?.[1]) return INDEX;
   try {
