@@ -62,10 +62,14 @@ function useTotalUnread(stores: ClientStores): number {
 }
 
 /** A messenger's initial in an outlined squircle; no messenger artwork is drawn. */
-function Mark({ name }: { name: string }) {
+function Mark({ name, id }: { name: string; id?: string }) {
+  const text =
+    id === "discord-user"
+      ? "Dp"
+      : ([...name][0]?.toLocaleUpperCase("ko-KR") ?? "?");
   return (
     <span className={styles.mark} aria-hidden="true">
-      {[...name][0]?.toLocaleUpperCase("ko-KR")}
+      {text}
     </span>
   );
 }
@@ -136,7 +140,7 @@ export function Rail({
           }
           data-ui="rail-adapter"
         >
-          <Mark name={tab.name} />
+          <Mark name={tab.name} id={tab.id} />
           <span className={styles.label}>{tab.name}</span>
           {tab.unread ? (
             <span className={styles.badge}>

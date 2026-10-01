@@ -261,7 +261,7 @@ export default function Inbox({
           key: `${id}:${room.id}`,
           provider: id,
           providerName,
-          mark: initial(providerName),
+          mark: id === "discord-user" ? "Dp" : initial(providerName),
           title: room.title,
           at: room.lastActivityAt ?? null,
           preview: room.lastMessage
