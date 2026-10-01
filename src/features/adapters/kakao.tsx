@@ -78,7 +78,7 @@ function label(status: KakaoStatus): string {
   }
 }
 
-function trouble(status: KakaoStatus): string | null {
+export function kakaoProblem(status: KakaoStatus): string | null {
   switch (status.kind) {
     case "refused":
       if (status.code === "UNAUTHORIZED") return COPY.unauthorized;
@@ -105,7 +105,7 @@ export function KakaoCard({
   status: KakaoStatus;
   onRetry: () => void;
 }) {
-  const problem = trouble(status);
+  const problem = kakaoProblem(status);
   return (
     <article
       className={styles.card}

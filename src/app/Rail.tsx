@@ -73,19 +73,21 @@ function Mark({ text }: { text: string }) {
 /**
  * The left rail of the messenger arrangement: the mark, then 전체 (every
  * messenger, newest first), 카카오 (the KakaoTalk core), one item per adapter
- * the proxy fronts, and 연결. Nothing here claims a connection state.
+ * connected to the proxy, and 연결. Unusable sources have no navigation item.
  */
 export function Rail({
   stores,
   mode,
   adapters,
   className,
+  kakaoVisible = true,
 }: {
   stores: ClientStores;
   /** The list on screen, or null on the connections view. */
   mode: ListMode | null;
   adapters: AdapterTab[];
   className?: string | undefined;
+  kakaoVisible?: boolean;
 }) {
   const unread = useTotalUnread(stores);
   return (
@@ -111,43 +113,48 @@ export function Rail({
         </svg>
         <span className={styles.label}>{RAIL_COPY.all}</span>
       </a>
-      <a
-        className={styles.item}
-        href={ROOMS_HASH}
-        aria-current={mode?.kind === "kakao" || undefined}
-        data-ui="rail-kakao"
-      >
-        <Mark text="K" />
-        <span className={styles.label}>{RAIL_COPY.kakao}</span>
-        {unread > 0 ? (
-          <span className={styles.badge}>
-            <UnreadBadge count={unread} />
-            <span className="sr-only">{RAIL_COPY.unread(unread)}</span>
-          </span>
-        ) : null}
-      </a>
-      {adapters.map((tab) => (
+      {kakaoVisible ? (
         <a
-          key={tab.id}
           className={styles.item}
-          href={adapterListHash(tab.id)}
-          aria-current={
-            (mode?.kind === "adapter" && mode.adapterId === tab.id) || undefined
-          }
-          data-ui="rail-adapter"
+          href={ROOMS_HASH}
+          aria-current={mode?.kind === "kakao" || undefined}
+          data-ui="rail-kakao"
         >
-          <Mark text={adapterMark(tab.id, tab.name)} />
-          <span className={styles.label}>{tab.name}</span>
-          {tab.unread ? (
+          <Mark text="K" />
+          <span className={styles.label}>{RAIL_COPY.kakao}</span>
+          {unread > 0 ? (
             <span className={styles.badge}>
-              <UnreadBadge count={tab.unread} />
-              <span className="sr-only">
-                {RAIL_COPY.adapterUnread(tab.name, tab.unread)}
-              </span>
+              <UnreadBadge count={unread} />
+              <span className="sr-only">{RAIL_COPY.unread(unread)}</span>
             </span>
           ) : null}
         </a>
-      ))}
+      ) : null}
+      {adapters
+        .filter((tab) => tab.connection.kind === "connected")
+        .map((tab) => (
+          <a
+            key={tab.id}
+            className={styles.item}
+            href={adapterListHash(tab.id)}
+            aria-current={
+              (mode?.kind === "adapter" && mode.adapterId === tab.id) ||
+              undefined
+            }
+            data-ui="rail-adapter"
+          >
+            <Mark text={adapterMark(tab.id, tab.name)} />
+            <span className={styles.label}>{tab.name}</span>
+            {tab.unread ? (
+              <span className={styles.badge}>
+                <UnreadBadge count={tab.unread} />
+                <span className="sr-only">
+                  {RAIL_COPY.adapterUnread(tab.name, tab.unread)}
+                </span>
+              </span>
+            ) : null}
+          </a>
+        ))}
       <a
         className={styles.item}
         href={ADAPTERS_HASH}

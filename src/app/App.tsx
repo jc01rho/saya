@@ -32,9 +32,9 @@ const AdapterOutlet = lazy(() => import("./AdapterOutlets"));
 const Inbox = lazy(() => import("../features/inbox"));
 
 import type { KakaoStatus } from "../features/adapters";
-
 import { useAdapterTabs } from "./adapterTabs";
 import { ListTabs } from "./ListTabs";
+import { nothingConnected } from "./nothingConnected";
 import { Rail } from "./Rail";
 import {
   ADAPTERS_HASH,
@@ -306,8 +306,10 @@ export function App({ session }: { session?: Session }) {
   const [own] = useState(() => session ?? createSession());
   const route = useRoute();
   const { phase, reload } = useCatalog(own.http, own.cache);
-  const adapters = useAdapterTabs();
-  const [last, setLast] = useState<ListMode>({ kind: "kakao" });
+  const adapterState = useAdapterTabs();
+  const adapters = adapterState.tabs;
+  const kakaoVisible = phase.kind === "loading" || phase.kind === "ready";
+  const [last, setLast] = useState<ListMode>({ kind: "all" });
   const mode = modeFor(route, last);
   const roomId = route.kind === "room" ? route.roomId : null;
 
@@ -338,6 +340,7 @@ export function App({ session }: { session?: Session }) {
           className={styles.rail}
           stores={own.stores}
           mode={null}
+          kakaoVisible={kakaoVisible}
           adapters={adapters}
         />
         <main className={cx(styles.thread, styles.wide)} data-ui="adapters">
@@ -393,8 +396,80 @@ export function App({ session }: { session?: Session }) {
     );
   }
 
+  if (mode.kind === "all" && nothingConnected(phase.kind, adapterState))
+    return (
+      <div
+        className={styles.shell}
+        data-ui="app"
+        data-route="no-messenger"
+        data-list="all"
+      >
+        <Rail
+          className={styles.rail}
+          stores={own.stores}
+          mode={mode}
+          kakaoVisible={kakaoVisible}
+          adapters={adapters}
+        />
+        <div className={cx(styles.wide, styles.disconnected)}>
+          <ListTabs
+            mode={mode}
+            adapters={adapters}
+            kakaoVisible={kakaoVisible}
+          />
+          <main className={cx(styles.notice, styles.connectionNotice)}>
+            <section aria-labelledby="no-messenger-heading">
+              <Cat height={48} />
+              <h1 id="no-messenger-heading">연결된 메신저가 없습니다</h1>
+              <p data-source="kakao">
+                {phase.kind === "over-capacity"
+                  ? "카카오톡 — 대화 목록이 표시 가능한 범위를 넘었습니다."
+                  : "카카오톡 — 코어(kanao·kamado serve)가 응답하지 않습니다."}
+              </p>
+              {adapters.map(({ id, name, connection }) => (
+                <p key={id} data-source={id}>
+                  {name} —{" "}
+                  {connection.kind === "incompatible"
+                    ? "버전이 맞지 않습니다."
+                    : connection.kind === "refused"
+                      ? connection.code === "UNAUTHORIZED"
+                        ? "인증이 필요합니다."
+                        : "연결이 거절되었습니다."
+                      : "응답하지 않습니다."}
+                </p>
+              ))}
+              {adapterState.index === "unconfigured" ? (
+                <p data-source="adapter-index">
+                  설정된 어댑터가 없습니다 (SAYA_ADAPTERS).
+                </p>
+              ) : adapterState.index === "unreachable" ? (
+                <p data-source="adapter-index">
+                  어댑터 목록 — 응답하지 않습니다.
+                </p>
+              ) : null}
+              <p>연결에서 설정을 확인하세요.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  reload();
+                  adapterState.retry();
+                }}
+              >
+                {APP_COPY.retry}
+              </button>
+            </section>
+            <a className={styles.noticeLink} href={ADAPTERS_HASH}>
+              연결
+            </a>
+          </main>
+        </div>
+      </div>
+    );
+
   const back = listHash(mode);
-  const tabs = <ListTabs mode={mode} adapters={adapters} />;
+  const tabs = (
+    <ListTabs mode={mode} adapters={adapters} kakaoVisible={kakaoVisible} />
+  );
   const thread = route.kind === "room" || route.kind === "adapter-room";
   const list =
     mode.kind === "kakao" ? (
@@ -448,6 +523,7 @@ export function App({ session }: { session?: Session }) {
         className={styles.rail}
         stores={own.stores}
         mode={mode}
+        kakaoVisible={kakaoVisible}
         adapters={adapters}
       />
       {/* The tabs sit above the list, outside its navigation, so the list stays the rooms alone. */}

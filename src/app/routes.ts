@@ -57,7 +57,7 @@ export function sameMode(a: ListMode, b: ListMode): boolean {
   );
 }
 
-const INDEX: Route = { kind: "rooms" };
+const INDEX: Route = { kind: "all" };
 // `#/room/<id>` is the route this app writes; `#/rooms/<id>` is what
 // core/ids.ts#roomHash spells, accepted so neither helper yields a dead link.
 const ROOM = /^\/rooms?\/([^/]+)$/;
@@ -68,6 +68,7 @@ export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "").replace(/\?.*$/, "");
   if (path === "/adapters") return { kind: "adapters" };
   if (path === "/all") return { kind: "all" };
+  if (path === "/rooms") return { kind: "rooms" };
   try {
     const adapterRoom = ADAPTER_ROOM.exec(path);
     if (adapterRoom?.[1] && adapterRoom[2])

@@ -20,9 +20,11 @@ const COPY = {
 export function ListTabs({
   mode,
   adapters,
+  kakaoVisible = true,
 }: {
   mode: ListMode;
   adapters: AdapterTab[];
+  kakaoVisible?: boolean;
 }) {
   const items = [
     {
@@ -31,18 +33,24 @@ export function ListTabs({
       href: ALL_HASH,
       current: mode.kind === "all",
     },
-    {
-      key: "kakao",
-      label: COPY.kakao,
-      href: ROOMS_HASH,
-      current: mode.kind === "kakao",
-    },
-    ...adapters.map((tab) => ({
-      key: `adapter:${tab.id}`,
-      label: tab.name,
-      href: adapterListHash(tab.id),
-      current: mode.kind === "adapter" && mode.adapterId === tab.id,
-    })),
+    ...(kakaoVisible
+      ? [
+          {
+            key: "kakao",
+            label: COPY.kakao,
+            href: ROOMS_HASH,
+            current: mode.kind === "kakao",
+          },
+        ]
+      : []),
+    ...adapters
+      .filter((tab) => tab.connection.kind === "connected")
+      .map((tab) => ({
+        key: `adapter:${tab.id}`,
+        label: tab.name,
+        href: adapterListHash(tab.id),
+        current: mode.kind === "adapter" && mode.adapterId === tab.id,
+      })),
   ];
   return (
     <nav className={styles.tabs} aria-label={COPY.group} data-ui="list-tabs">

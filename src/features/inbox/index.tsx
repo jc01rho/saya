@@ -33,8 +33,6 @@ const COPY = {
   searchPlaceholder: "대화방 검색",
   kakao: "카카오",
   kakaoLoading: "카카오 대화 목록을 불러오는 중입니다.",
-  kakaoUnavailable: "카카오 대화 목록을 불러오지 못했습니다.",
-  retry: "다시 확인",
   adapterLoading: (name: string) => `${name} 방 목록을 불러오는 중입니다.`,
   adapterProblem: (name: string, sentence: string) =>
     `${name} 방 목록을 불러오지 못했습니다. ${sentence}`,
@@ -208,8 +206,7 @@ function InboxRow({
 /**
  * One list over several messengers, newest activity first: KakaoTalk rooms
  * from the catalog this tab holds, and each adapter's rooms as it declares
- * them. A messenger that cannot answer says so in one line and leaves the
- * others standing.
+ * them. In 전체, disconnected sources quietly contribute no rooms.
  */
 export default function Inbox({
   stores,
@@ -226,7 +223,7 @@ export default function Inbox({
   const shown = useMemo(
     () =>
       all
-        ? adapters
+        ? adapters.filter((tab) => tab.connection.kind === "connected")
         : adapters.filter(
             (tab) => mode.kind === "adapter" && tab.id === mode.adapterId,
           ),
@@ -287,20 +284,15 @@ export default function Inbox({
   const lines: ReactNode[] = [];
   if (all && kakao.state === "loading")
     lines.push(<p key="kakao">{COPY.kakaoLoading}</p>);
-  if (all && kakao.state === "unavailable")
-    lines.push(
-      <p key="kakao">
-        {COPY.kakaoUnavailable}{" "}
-        <button type="button" onClick={kakao.onRetry}>
-          {COPY.retry}
-        </button>
-      </p>,
-    );
+  if (all)
+    for (const tab of adapters)
+      if (tab.connection.kind === "checking")
+        lines.push(<p key={tab.id}>{COPY.adapterLoading(tab.name)}</p>);
   for (const id of adapterIds) {
     const entry = adapterRooms.get(id);
     if (!entry || entry.state === "loading")
       lines.push(<p key={id}>{COPY.adapterLoading(nameOf(id))}</p>);
-    else if (entry.state === "problem")
+    else if (!all && entry.state === "problem")
       lines.push(
         <p key={id}>
           {COPY.adapterProblem(nameOf(id), problemSentence(entry.problem))}
