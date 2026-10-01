@@ -9,7 +9,6 @@
     "includes": [
       "**",
       "!!src/contract",
-      "!!openapi.json",
       "!!contracts",
       "!!bun.lock",
       "!!design",

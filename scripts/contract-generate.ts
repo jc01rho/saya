@@ -61,8 +61,8 @@ function withoutEnums(value: unknown): void {
 
 export const contracts: readonly ContractSpec[] = [
   {
-    // The KakaoTalk contract, byte-identical to the kanao and kamado copies.
-    source: "openapi.json",
+    // The KakaoTalk contract, byte-identical to kanao's and kamado's openapi.json.
+    source: "contracts/kakao.openapi.json",
     hash: "5f6ce4e9994388449c0739fbf21a5ba952964b7c060ac565cb8ebc74b5709949",
     directory: contractDirectory,
     sse: true,

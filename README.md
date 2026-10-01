@@ -74,16 +74,15 @@ bun run dev              # http://127.0.0.1:5173
 배포는 정적 `dist/` 하나이고, 같은 origin 리버스 프록시가 토큰을 쥡니다 —
 [`docs/deployment.md`](docs/deployment.md) 와 [`deploy/Caddyfile.example`](deploy/Caddyfile.example).
 
-## 계약은 `openapi.json` 하나입니다
+## 계약은 코어와 어댑터가 갖고, 여기 있는 것은 사본입니다
 
-두 코어가 **바이트 단위로 같은 파일**을 갖고 있고, 여기 있는 사본도 같은 파일입니다.
+| 사본 | 원본 | sha256 · `info.version` |
+| --- | --- | --- |
+| [`contracts/kakao.openapi.json`](contracts/kakao.openapi.json) | kanao·kamado 의 `openapi.json` (두 코어가 바이트 단위로 같음) | `5f6ce4e9…5709949` · 0.19.0 |
+| [`contracts/tsuba.openapi.json`](contracts/tsuba.openapi.json) | tsuba 의 `contract/openapi.json` | `99316a26…7e2b28` · 0.2.2 |
 
-```
-sha256  38349622ba697449ffe0078c3fd756b7c027b513e8e84a416e68f9e22108e1a7
-info.version  0.14.0
-```
-
-OpenAPI 3.1 문서 하나에 여섯 개의 라우트, 파라미터와 기본값, 요청 본문, 응답 모양, 상한,
+사본은 고치지 않고, 원본을 바이트 그대로 복사해 온 뒤 `scripts/contract-generate.ts` 의 해시를 바꿉니다.
+아래는 카카오 계약 이야기입니다. OpenAPI 3.1 문서 하나에 라우트, 파라미터와 기본값, 요청 본문, 응답 모양, 상한,
 오류 코드가 전부 적혀 있습니다. 플랫폼이 갈리는 멤버는 `x-platform` 으로 표시돼 있고, 그 밖의
 차이는 둘 중 한 빌드의 결함입니다.
 
@@ -162,7 +161,7 @@ OpenAPI 3.1 문서 하나에 여섯 개의 라우트, 파라미터와 기본값,
 ## 검증
 
 ```sh
-bun run contract:check   # openapi.json 해시 + 생성물 바이트 동일성
+bun run contract:check   # 두 계약 사본의 해시 + 생성물 바이트 동일성
 bun run typecheck        # strict, skipLibCheck 없음
 bun run lint             # biome check .
 bun test
@@ -192,7 +191,7 @@ bun run check:all        # 위 전부
 | [`CHANGELOG.md`](CHANGELOG.md) | 변경 기록 |
 | [`docs/deployment.md`](docs/deployment.md) | 정적 `dist/` 와 같은 origin 프록시, 쓰기 경계, 캐시·로그 정책 |
 | [`docs/performance.md`](docs/performance.md) | 위 측정값의 조건과 원자료 |
-| [`openapi.json`](openapi.json) | 두 코어가 공유하는 HTTP + SSE 계약 |
+| [`contracts/`](contracts) | 카카오 코어 계약과 tsuba 어댑터 계약의 사본(원본은 각 저장소) |
 | `design/` | 방향·시드·참조 등 승인 과정의 작업 기록 (역사, 계약 아님) |
 
 ## 전에 무엇이었나

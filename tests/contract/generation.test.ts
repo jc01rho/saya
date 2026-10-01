@@ -95,7 +95,7 @@ describe("generated wire boundary", () => {
 
   test("derives every SSE event mapping from the document", async () => {
     const document = await Bun.file(
-      new URL("../../openapi.json", import.meta.url),
+      new URL("../../contracts/kakao.openapi.json", import.meta.url),
     ).json();
     const events = document.paths["/stream"].get["x-sse-events"];
     const expected = Object.fromEntries(

@@ -1,4 +1,4 @@
-// Generated from openapi.json by bun run contract:generate. Do not edit.
+// Generated from contracts/kakao.openapi.json by bun run contract:generate. Do not edit.
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
 
 // node_modules/ajv-formats/dist/formats.js

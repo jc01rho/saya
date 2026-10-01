@@ -1,4 +1,4 @@
-// Generated from openapi.json by bun run contract:generate. Do not edit.
+// Generated from contracts/kakao.openapi.json by bun run contract:generate. Do not edit.
 import type { ValidateFunction } from "ajv";
 import type { components, paths } from "./decoded";
 

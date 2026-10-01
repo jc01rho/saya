@@ -45,6 +45,10 @@
 
 검증: `contract:check`·`typecheck`·`lint`·`build` 통과, `bun test` 213 pass / 0 fail. 실제 VPS 의 tsuba Telegram 어댑터에 Tailscale(`tailscale serve`, tailnet 전용)로 붙은 개발 서버를 Chrome 에서 1440×900 과 390×844 로 보고 연결됨을 확인했고, 레일과 모바일 목록 머리의 진입점은 합성 브리지 위에서 확인했습니다. 실제 `kanao serve` 에는 붙이지 않았습니다.
 
+### 변경
+
+**카카오 계약 사본을 `contracts/kakao.openapi.json` 으로 옮겼습니다.** 원본은 kanao·kamado 의 `openapi.json` 이고, tsuba 계약 사본(`contracts/tsuba.openapi.json`)과 같은 자리·같은 방식이 됐습니다. 바이트는 그대로(sha256 `5f6ce4e9…`)이고 생성물은 머리 주석의 경로만 바뀌었습니다.
+
 ## [0.2.0] — 2026-10-01
 
 ### 추가

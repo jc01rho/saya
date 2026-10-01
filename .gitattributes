@@ -1,4 +1,4 @@
-openapi.json -text
+contracts/kakao.openapi.json -text
 src/contract/* text eol=lf
 src/contract/tsuba/* text eol=lf
 contracts/tsuba.openapi.json -text

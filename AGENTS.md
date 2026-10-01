@@ -26,7 +26,7 @@ bun test tests/contract/generation.test.ts
 
 - `contract:generate` is the only writer of `src/contract/`. It derives raw
   `schema.d.ts`, consumer `decoded.d.ts`, standalone validators and the SSE map
-  from `openapi.json`, and the same into `src/contract/tsuba/` from
+  from `contracts/kakao.openapi.json`, and the same into `src/contract/tsuba/` from
   `contracts/tsuba.openapi.json`, each pinned by its own SHA-256, plus a
   `version.ts` holding the `info.version` each was generated from. Consumer
   error codes and enum values are strings; known required fields remain
@@ -119,10 +119,13 @@ line above deliberately, and only this far:
   and `nosniff` on every adapter answer (`server/adapters.ts`, the Caddyfile's
   deferred headers) whatever the adapter sends. Do not remove that.
 
-## `openapi.json` is copied, never edited
+## The contracts are copied, never edited
 
-It is byte-identical to the file in both core repositories. Updating means
-copying it across and re-checking the hash; editing it here forks the contract
+The originals live where they are answered: KakaoTalk's in `kanao` and
+`kamado` (`openapi.json`, byte-identical in both), the adapter contract in
+`tsuba` (`contract/openapi.json`). saya keeps copies under `contracts/`
+(`kakao.openapi.json`, `tsuba.openapi.json`). Updating means copying the
+original across byte for byte and re-pinning the hash; editing it here forks the contract
 while leaving every hash looking plausible. Types are generated from it rather
 than written by hand, so a contract that moves breaks the build instead of a
 user's screen.

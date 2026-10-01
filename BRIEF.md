@@ -2,17 +2,19 @@
 
 **さや (saya)**. `kanao serve` / `kamado serve` 가 여는 HTTP + SSE 표면을 쓰는
 **웹 클라이언트**입니다. 이 저장소는 서버를 만들지 않고, 코어를 import 하지도 spawn 하지도
-않습니다. 아는 것은 `openapi.json` 하나뿐입니다. 화면 계약은 `DESIGN.md`, 구현 계획은
+않습니다. 카카오톡에 대해 아는 것은 코어의 `openapi.json` 하나뿐이고, 그 사본이
+`contracts/kakao.openapi.json` 입니다. 화면 계약은 `DESIGN.md`, 구현 계획은
 `.omo/plans/client-performance-implementation.md` 에 있습니다.
 
 ## 1. 계약
 
-`openapi.json` 은 두 코어 저장소의 같은 이름 파일과 **바이트 단위로 동일**합니다.
+`contracts/kakao.openapi.json` 은 두 코어 저장소의 `openapi.json` 과 **바이트 단위로 동일**합니다.
+원본은 코어에 있고 여기 있는 것은 사본입니다(tsuba 계약의 사본 `contracts/tsuba.openapi.json` 과 같은 방식).
 직접 고치지 마세요. 갱신은 코어 저장소에서 복사해 오는 것이고, 세 파일이 갈라지면
 그것이 곧 결함입니다.
 
 ```bash
-shasum -a 256 openapi.json ../kanao-cli/openapi.json ../kamado-cli/openapi.json
+shasum -a 256 contracts/kakao.openapi.json ../kakaoread/openapi.json ../kamado-cli/openapi.json
 ```
 
 문서의 `info.version` 은 코어의 릴리즈 번호와 같지 않습니다. 맞추려 들지 말고,
