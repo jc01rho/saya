@@ -50,7 +50,7 @@
 - 색과 그림 테마(`-img`)의 그림은 아래 공식 그림에서 가져왔습니다.
   - LINE STORE 공식 스티커 「ちいかわ(ハチワレ多)」(작가 ナガノ) 미리보기 그림
     (https://store.line.me/stickershop/product/29118925/ja)
-  - 공식 굿즈샵 ちいかわマーケット 상품 그림
+  - 공식 굿즈샵 ちいかわマーケット 상품 그림 (https://chiikawamarket.jp)
   - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.1」 스티커 805188752
     (https://store.line.me/stickershop/product/32367501/ja)
 - 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
