@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -15,6 +16,14 @@ import { BoundedCache } from "../core/cache";
 import { ContextWindows } from "../core/context";
 import { Reconciler } from "../core/reconcile";
 import type { ClientStores, Immutable } from "../core/stores";
+import {
+  AgentActivity,
+  AgentToolsEntry,
+  AgentToolsState,
+  agentSourceOf,
+  createAgentTools,
+  useAgentTools,
+} from "../features/agent";
 import { AttachmentsPanel, AttachmentsToggle } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
@@ -304,6 +313,12 @@ function modeFor(route: Route, last: ListMode): ListMode | null {
  */
 export function App({ session }: { session?: Session }) {
   const [own] = useState(() => session ?? createSession());
+  const [agent] = useState(() => new AgentToolsState());
+  const tools = useMemo(
+    () => () => createAgentTools(agentSourceOf(own.stores, own.http)),
+    [own],
+  );
+  useAgentTools(agent, tools);
   const route = useRoute();
   const { phase, reload } = useCatalog(own.http, own.cache);
   const adapterState = useAdapterTabs();
@@ -478,6 +493,7 @@ export function App({ session }: { session?: Session }) {
         stores={own.stores}
         activeRoomId={roomId}
         loading={phase.kind === "loading"}
+        actions={<AgentToolsEntry state={agent} />}
       />
     ) : (
       <Suspense fallback={null}>
@@ -553,6 +569,7 @@ export function App({ session }: { session?: Session }) {
           <EmptyOutlet />
         )}
       </main>
+      <AgentActivity state={agent} />
     </div>
   );
 }

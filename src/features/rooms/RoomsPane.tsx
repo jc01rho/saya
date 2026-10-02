@@ -3,6 +3,7 @@ import {
   type FocusEvent,
   type KeyboardEvent,
   memo,
+  type ReactNode,
   type RefObject,
   useCallback,
   useEffect,
@@ -29,6 +30,8 @@ export interface RoomsPaneProps {
   /** True while the catalog request is in flight; the footer cat walks. */
   loading: boolean;
   className?: string | undefined;
+  /** A control the shell puts beside the heading, e.g. the settings entry. */
+  actions?: ReactNode | undefined;
 }
 
 const FILTERS: { value: RoomFilter; label: string; empty: string }[] = [
@@ -123,6 +126,7 @@ export function RoomsPane({
   activeRoomId,
   loading,
   className,
+  actions,
 }: RoomsPaneProps) {
   const [filter, setFilter] = useState<RoomFilter>("all");
   const [query, setQuery] = useState("");
@@ -239,6 +243,7 @@ export function RoomsPane({
               </span>
             </Brand>
             <ThemeControl />
+            {actions}
           </div>
           <div className={styles.search}>
             <svg viewBox="0 0 16 16" aria-hidden="true">

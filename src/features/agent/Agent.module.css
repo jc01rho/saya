@@ -1,0 +1,247 @@
+/* The settings entry sits with the list's heading, as a quiet icon. */
+.open {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-32);
+  height: var(--space-32);
+  margin-inline-start: auto;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.open:hover {
+  background: var(--hover-list);
+  color: var(--ink);
+}
+
+.open:focus-visible,
+.toggle:focus-visible,
+.action:focus-visible,
+.quiet:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.open svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet {
+  width: min(420px, calc(100vw - var(--space-32)));
+  max-height: min(560px, calc(100dvh - var(--space-48)));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-box);
+  background: var(--field-list);
+  color: var(--ink);
+}
+
+.sheet::backdrop {
+  background: color-mix(in srgb, var(--ink) 36%, transparent);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--space-16) var(--space-12);
+}
+
+.heading {
+  font-size: var(--text-heading);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.quiet {
+  min-height: var(--space-32);
+  margin-inline-start: auto;
+  padding: var(--space-4) var(--space-12);
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--fill-list);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.body {
+  display: grid;
+  gap: var(--space-12);
+  padding: 0 var(--space-16) var(--space-16);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-row);
+  background: var(--fill-list);
+}
+
+.rowText {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--text-title);
+  font-weight: 700;
+  line-height: var(--leading-title);
+}
+
+.hint,
+.empty,
+.time {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+/* The switch: the rail's ink, never the send door's colour. */
+.toggle {
+  flex: none;
+  width: 44px;
+  height: 26px;
+  margin-inline-start: auto;
+  border: var(--rule-width) solid var(--seam);
+  border-radius: var(--radius-badge);
+  background: var(--field-list);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color var(--dur-fade) var(--ease);
+}
+
+.toggle::after {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 3px;
+  border-radius: var(--radius-badge);
+  background: var(--ink-muted);
+  content: "";
+  transition: transform var(--dur-fade) var(--ease);
+}
+
+.toggle:checked {
+  background: var(--active-list);
+}
+
+.toggle:checked::after {
+  background: var(--ink);
+  transform: translateX(18px);
+}
+
+.toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.warning {
+  display: grid;
+  gap: var(--space-8);
+  padding: var(--space-12);
+  border-radius: var(--radius-row);
+  background: var(--hover-list);
+}
+
+.warningTitle {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.action {
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-16);
+  border: var(--rule-width) solid var(--ink);
+  border-radius: var(--radius-badge);
+  background: var(--ink);
+  color: var(--field-list);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.log {
+  display: grid;
+  gap: var(--space-4);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.call {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+  padding: 6px var(--space-8);
+  border-radius: var(--radius-tile);
+  background: var(--fill-list);
+  font-size: var(--text-meta);
+}
+
+.callName {
+  font-weight: 700;
+}
+
+.callState {
+  margin-inline-start: auto;
+  color: var(--ink-muted);
+}
+
+/* The mark while an agent reads: a small pill in the shell's corner. */
+.activity {
+  position: fixed;
+  z-index: 5;
+  top: var(--space-64);
+  right: var(--space-12);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 6px var(--space-12);
+  border: var(--rule-width) solid var(--seam);
+  border-radius: var(--radius-badge);
+  background: var(--field-input);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-badge);
+  background: var(--badge-unread);
+  animation: pulse 1.2s var(--ease) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
