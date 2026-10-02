@@ -31,6 +31,7 @@ import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
 import { NoticeBar } from "../features/notice";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
+import { ThemeControl } from "../features/theme";
 import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
 import { Cat, COPY, cx, RoomAvatar } from "../ui";
@@ -486,6 +487,13 @@ export function App({ session }: { session?: Session }) {
     <ListTabs mode={mode} adapters={adapters} kakaoVisible={kakaoVisible} />
   );
   const thread = route.kind === "room" || route.kind === "adapter-room";
+  // Settings belong to the app, not to one list: every list head carries them.
+  const headActions = (
+    <span className={styles.headActions}>
+      <ThemeControl />
+      <AgentToolsEntry state={agent} />
+    </span>
+  );
   const list =
     mode.kind === "kakao" ? (
       <RoomsPane
@@ -493,7 +501,7 @@ export function App({ session }: { session?: Session }) {
         stores={own.stores}
         activeRoomId={roomId}
         loading={phase.kind === "loading"}
-        actions={<AgentToolsEntry state={agent} />}
+        actions={headActions}
       />
     ) : (
       <Suspense fallback={null}>
@@ -524,6 +532,7 @@ export function App({ session }: { session?: Session }) {
               : (adapters.find((tab) => tab.id === mode.adapterId)?.name ??
                 mode.adapterId)
           }
+          actions={headActions}
         />
       </Suspense>
     );

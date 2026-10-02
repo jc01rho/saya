@@ -21,7 +21,16 @@
   padding: 20px 18px var(--space-12);
 }
 
+/* The heading, then the app's controls pushed to the end of the row. */
+.headTop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
 .heading {
+  min-width: 0;
   overflow: hidden;
   font-size: var(--text-heading);
   font-weight: 800;

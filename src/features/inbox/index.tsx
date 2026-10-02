@@ -63,6 +63,8 @@ export interface InboxProps {
   active: { provider: string; roomId: string } | null;
   heading: string;
   className?: string | undefined;
+  /** The app's own controls beside the heading: theme, agent tools. */
+  actions?: ReactNode | undefined;
 }
 
 type Row = {
@@ -225,6 +227,7 @@ export default function Inbox({
   active,
   heading,
   className,
+  actions,
 }: InboxProps) {
   const [query, setQuery] = useState("");
   const all = mode.kind === "all";
@@ -340,7 +343,10 @@ export default function Inbox({
       data-mode={mode.kind}
     >
       <div className={styles.head}>
-        <h1 className={styles.heading}>{heading}</h1>
+        <div className={styles.headTop}>
+          <h1 className={styles.heading}>{heading}</h1>
+          {actions}
+        </div>
         <div className={styles.search}>
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="6.75" cy="6.75" r="4.75" />

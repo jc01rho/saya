@@ -21,7 +21,6 @@ import { roomHash } from "../../app/routes";
 import type { components } from "../../contract/decoded";
 import type { ClientStores } from "../../core/stores";
 import { Cat, cx, RoomRow } from "../../ui";
-import { ThemeControl } from "../theme";
 import { ROOMS_COPY } from "./copy";
 import type { OrganizeSheetKind } from "./OrganizeSheet";
 import { organizeStore, useOrganize } from "./organize";
@@ -368,7 +367,6 @@ export function RoomsPane({
                 {ROOMS_COPY.brandLatin}
               </span>
             </Brand>
-            <ThemeControl />
             {actions}
           </div>
           <div className={styles.search}>

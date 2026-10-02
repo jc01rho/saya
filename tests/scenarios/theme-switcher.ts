@@ -90,7 +90,11 @@ export const scenario: Scenario = {
       const rooms = responseBarrier(page, "/api/rooms");
       await page.reload({ waitUntil: "load" });
       await rooms;
-      await page.locator('nav[data-ui="rooms-pane"] a').first().waitFor();
+      // The all list (inbox) or the KakaoTalk list, whichever the route draws.
+      await page
+        .locator('nav[data-ui="rooms-pane"] a, nav[data-ui="inbox"] a')
+        .first()
+        .waitFor();
     };
 
     for (const [label, width, height] of VIEWS) {
