@@ -100,7 +100,8 @@
   line-height: 1;
 }
 
+/* Artwork carries its own shape and colour; the box adds none. */
 .mark[data-icon] {
   border: 0;
-  background: #fff;
+  background: transparent;
 }

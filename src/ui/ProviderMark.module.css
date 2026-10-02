@@ -2,6 +2,6 @@
   display: block;
   width: 100%;
   height: 100%;
+  /* The whole artwork, in its own shape: never clipped by the box's corners. */
   object-fit: contain;
-  border-radius: inherit;
 }
