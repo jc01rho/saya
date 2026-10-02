@@ -1,0 +1,195 @@
+/* Discord's sidebar in this list's colours: server, folding categories, # channels, hooked threads. */
+.tree {
+  display: grid;
+  gap: var(--space-16);
+  padding-top: var(--space-4);
+}
+
+.guild {
+  display: grid;
+}
+
+.guildName {
+  padding: 6px 10px 2px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.section {
+  display: grid;
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 32px;
+  margin-top: var(--space-8);
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: start;
+  cursor: pointer;
+}
+
+.category:hover {
+  color: var(--ink);
+}
+
+.category:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.chevron {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--dur-fade) var(--ease);
+}
+
+.category[aria-expanded="false"] .chevron {
+  transform: rotate(-90deg);
+}
+
+.categoryName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.channels,
+.threads {
+  display: grid;
+  list-style: none;
+}
+
+.link {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 8px 7px 14px;
+  border-radius: 8px;
+  color: var(--ink-muted);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+@media (max-width: 767.98px) {
+  .link {
+    align-items: center;
+    min-height: var(--touch-min);
+  }
+}
+
+a.link:hover {
+  background: var(--hover-list);
+  color: var(--ink);
+}
+
+.link.active {
+  background: var(--active-list);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Unread: the name turns ink and bold, with a dot at the row's edge. */
+.link[data-unread] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.link[data-unread]::before {
+  position: absolute;
+  top: calc(50% - 3px);
+  left: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  content: "";
+}
+
+.plain {
+  color: var(--ink-muted);
+}
+
+.hash {
+  flex: none;
+  width: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.thread {
+  font-size: 14px;
+}
+
+.badge {
+  flex: none;
+  align-self: center;
+}
+
+/* Threads hang off their channel on a line that hooks into each row. */
+.threads {
+  margin-left: 22px;
+}
+
+.threadItem {
+  position: relative;
+  padding-left: 14px;
+}
+
+.threadItem::before,
+.threadItem:not(:last-child)::after {
+  position: absolute;
+  left: 0;
+  border-left: 1.5px solid color-mix(in srgb, var(--ink-muted) 45%, transparent);
+  content: "";
+}
+
+.threadItem::before {
+  top: 0;
+  width: 12px;
+  height: 17px;
+  border-bottom: 1.5px solid
+    color-mix(in srgb, var(--ink-muted) 45%, transparent);
+  border-bottom-left-radius: 8px;
+}
+
+.threadItem:not(:last-child)::after {
+  top: 0;
+  bottom: 0;
+}
+
+@media (max-width: 767.98px) {
+  .threadItem::before {
+    height: calc(var(--touch-min) / 2);
+  }
+}
