@@ -171,3 +171,23 @@
   - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.4」 스티커 838685761
     (https://store.line.me/stickershop/product/33799640/ja)
 - 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
+
+## 유산균 (`yusangyun/`)
+
+'유산균'은 팬 호칭입니다. 아니메 『ちいかわ』의 요구르트 히어로 むちゃうマン(노래 「むちゃうマンのテーマ」의 "乳酸菌 乳酸菌")으로 보고 만들었습니다.
+
+| 파일 | 이름 | 모드 | 그림 |
+| --- | --- | --- | --- |
+| [yusangyun-light.json](yusangyun/yusangyun-light.json) | 유산균 무대 🥛 | light | 없음(색만) |
+| [yusangyun-dark.json](yusangyun/yusangyun-dark.json) | 유산균 한밤 무대 🥛 | dark | 없음(색만) |
+| [yusangyun-light-img.json](yusangyun/yusangyun-light-img.json) | 유산균 무대 그림 🥛 | light | 벽지·목록 무늬·마스코트·배지·로딩 |
+| [yusangyun-dark-img.json](yusangyun/yusangyun-dark-img.json) | 유산균 한밤 무대 그림 🥛 | dark | 벽지·목록 무늬·마스코트·배지·로딩 |
+
+### 저작권과 출처
+
+- 팬 메이드·비공식·비영리 테마입니다. 원작자나 공식 측과 관계가 없습니다.
+- 「ちいかわ」 © nagano / chiikawa committee
+- むちゃうマン은 단독 LINE 스티커가 없습니다. 그래서 색과 그림 테마(`-img`)의 그림(로딩 그림 포함)은 아래 공식 방송분 프레임에서 가져왔습니다.
+  - TV 아니메 『ちいかわ』 第138話「むちゃうマン②」(공식 YouTube 1주 한정 공개분 https://www.youtube.com/watch?v=XQgWOBWmsuk, 지금은 비공개라 archive.org 미러 https://archive.org/details/chiikawa-anime-ep138 에서 받음)
+  - 색 확인: 공식 굿즈샵 ちいかわマーケット むちゃうマン 상품 그림 (https://chiikawamarket.jp)
+- 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
