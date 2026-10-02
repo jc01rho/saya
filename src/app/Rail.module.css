@@ -87,7 +87,7 @@
   right: 4px;
 }
 
-/* A messenger's initial in the same 23px box an icon takes, outlined like the icons are. */
+/* Artwork and its initial fallback occupy the same box. */
 .mark {
   display: grid;
   place-items: center;
@@ -98,4 +98,9 @@
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
+}
+
+.mark[data-icon] {
+  border: 0;
+  background: #fff;
 }

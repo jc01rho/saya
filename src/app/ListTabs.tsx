@@ -1,4 +1,5 @@
-import { cx } from "../ui";
+import { adapterMark, cx } from "../ui";
+import { KAKAO_ICON, ProviderMark } from "../ui/ProviderMark";
 import type { AdapterTab } from "./adapterTabs";
 import styles from "./ListTabs.module.css";
 import {
@@ -29,6 +30,8 @@ export function ListTabs({
   const items = [
     {
       key: "all",
+      icon: undefined,
+      mark: undefined,
       label: COPY.all,
       href: ALL_HASH,
       current: mode.kind === "all",
@@ -37,6 +40,8 @@ export function ListTabs({
       ? [
           {
             key: "kakao",
+            icon: KAKAO_ICON,
+            mark: "K",
             label: COPY.kakao,
             href: ROOMS_HASH,
             current: mode.kind === "kakao",
@@ -47,6 +52,8 @@ export function ListTabs({
       .filter((tab) => tab.connection.kind === "connected")
       .map((tab) => ({
         key: `adapter:${tab.id}`,
+        icon: tab.icon === undefined ? undefined : tab.iconSrc,
+        mark: adapterMark(tab.name),
         label: tab.name,
         href: adapterListHash(tab.id),
         current: mode.kind === "adapter" && mode.adapterId === tab.id,
@@ -61,6 +68,13 @@ export function ListTabs({
           href={item.href}
           aria-current={item.current || undefined}
         >
+          {item.mark ? (
+            <ProviderMark
+              className={styles.mark}
+              src={item.icon}
+              mark={item.mark}
+            />
+          ) : null}
           {item.label}
         </a>
       ))}

@@ -1,3 +1,4 @@
+import { KAKAO_ICON, ProviderMark } from "../../ui/ProviderMark";
 import styles from "./Adapters.module.css";
 
 /** The KakaoTalk core as the app's catalog request found it. */
@@ -113,9 +114,7 @@ export function KakaoCard({
       data-state={status.kind}
     >
       <header className={styles.cardHead}>
-        <span className={styles.mark} aria-hidden="true">
-          K
-        </span>
+        <ProviderMark className={styles.mark} src={KAKAO_ICON} mark="K" />
         <h2 className={styles.name}>{COPY.name}</h2>
         <span
           className={styles.status}

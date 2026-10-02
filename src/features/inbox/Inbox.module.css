@@ -142,7 +142,7 @@
   line-height: 0;
 }
 
-/* Which messenger a row belongs to: its initial on a small ink disc, named for screen readers. */
+/* The messenger badge keeps its white ring around artwork or an initial. */
 .provider {
   position: absolute;
   right: -3px;
@@ -158,6 +158,19 @@
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
+}
+
+.provider:has([data-icon]) {
+  background: #fff;
+  border-color: #fff;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
 }
 
 .body {

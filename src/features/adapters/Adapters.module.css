@@ -30,7 +30,7 @@
   min-width: 0;
 }
 
-/* The provider's initial on the brand's ink squircle; no messenger artwork is drawn. */
+/* Declared artwork replaces the initial without changing its box. */
 .mark {
   display: grid;
   flex: none;
@@ -43,6 +43,10 @@
   font-size: 16px;
   font-weight: 800;
   line-height: 1;
+}
+
+.mark[data-icon] {
+  background: #fff;
 }
 
 .name {

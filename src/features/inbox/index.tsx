@@ -10,6 +10,7 @@ import {
 import type { AdapterTab } from "../../app/adapterTabs";
 import { adapterRoomHash, roomHash } from "../../app/routes";
 import type { ClientStores, Immutable, RoomSnapshot } from "../../core/stores";
+import { iconUrl } from "../../transport/adapters";
 import {
   adapterMark,
   cx,
@@ -18,6 +19,7 @@ import {
   UnreadBadge,
   unreadName,
 } from "../../ui";
+import { KAKAO_ICON, ProviderMark } from "../../ui/ProviderMark";
 import { problemSentence } from "../adapters/copy";
 import {
   type AdapterRooms,
@@ -65,8 +67,9 @@ type Row = {
   key: string;
   provider: string;
   providerName: string;
-  /** The letter on the row's badge: K for KakaoTalk, as the rail draws it. */
+  /** Artwork from the connected provider declaration, with an initial fallback. */
   mark: string;
+  icon?: string | undefined;
   title: string;
   at: string | null;
   preview: string | null;
@@ -176,7 +179,11 @@ function InboxRow({
             role="img"
             aria-label={COPY.from(row.providerName)}
           >
-            {row.mark}
+            <ProviderMark
+              className={styles.mark}
+              src={row.icon}
+              mark={row.mark}
+            />
           </span>
         </span>
         <span className={styles.body}>
@@ -244,6 +251,7 @@ export default function Inbox({
       provider: "kakao",
       providerName: COPY.kakao,
       mark: "K",
+      icon: KAKAO_ICON,
       title: room.title,
       at: room.lastActivityAt,
       preview,
@@ -255,13 +263,19 @@ export default function Inbox({
     for (const id of adapterIds) {
       const entry = adapterRooms.get(id);
       if (entry?.state !== "ready") continue;
-      const providerName = adapters.find((tab) => tab.id === id)?.name ?? id;
+      const tab = adapters.find((tab) => tab.id === id);
+      const providerName = tab?.name ?? id;
+      const icon =
+        tab?.connection.kind === "connected"
+          ? iconUrl(id, tab.icon)
+          : undefined;
       for (const room of entry.rooms)
         list.push({
           key: `${id}:${room.id}`,
           provider: id,
           providerName,
-          mark: adapterMark(id, providerName),
+          mark: adapterMark(providerName),
+          icon,
           title: room.title,
           at: room.lastActivityAt ?? null,
           preview: room.lastMessage

@@ -37,6 +37,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/icon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The provider's icon, for a client to draw beside its name.
+         * @description Answered when `provider.icon` is present in `GET /capabilities`; otherwise `404 NOT_FOUND`. The icon is SVG, PNG or WebP and is drawn as an image, never as a document: the answer always carries `content-security-policy: default-src 'none'; sandbox` and `x-content-type-options: nosniff`, and an adapter refuses at start an SVG with scripts, event handlers or references outside itself. `provider.icon` changes whenever the bytes do, so a client may ask `/icon?v=<provider.icon>` and keep the answer in a private cache; the query is ignored.
+         */
+        get: operations["icon"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rooms": {
         parameters: {
             query?: never;
@@ -266,6 +286,8 @@ export interface components {
                 id: string;
                 /** @description For display. */
                 name: string;
+                /** @description Present when `GET /icon` answers the provider's icon: an opaque version of its bytes, changing whenever they do. Absent when the adapter has none; a client then draws its own mark. */
+                icon?: string;
             };
             account: {
                 /** @description `user`: the adapter acts as the person, seeing what their own client sees. `bot`: a bot account, seeing only where it was added. `official`: an official or business account. A client says which it is showing. */
@@ -676,6 +698,34 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    icon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The icon. */
+            200: {
+                headers: {
+                    /** @description `image/svg+xml`, `image/png` or `image/webp`. */
+                    "Content-Type"?: string;
+                    /** @description `default-src 'none'; sandbox`. */
+                    "Content-Security-Policy"?: string;
+                    /** @description `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     rooms: {

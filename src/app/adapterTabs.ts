@@ -20,6 +20,9 @@ export type AdapterTab = {
   id: string;
   name: string;
   unread: number | null;
+  icon?: string | undefined;
+  /** Resolved in the lazy transport chunk, so navigation need not load validators. */
+  iconSrc?: string | undefined;
   connection: AdapterConnection;
 };
 export type AdapterIndexState =
@@ -51,14 +54,17 @@ export function useAdapterTabs() {
           : current.tabs.map((tab) => ({
               ...tab,
               connection: { kind: "checking" },
+              icon: undefined,
+              iconSrc: undefined,
             })),
     }));
     void (async () => {
       // Keep transport and validators in the adapter chunk.
-      const [{ listAdapters, fetchCapabilities }, live] = await Promise.all([
-        import("../transport/adapters"),
-        import("../features/adapters/liveRooms"),
-      ]);
+      const [{ listAdapters, fetchCapabilities, iconUrl }, live] =
+        await Promise.all([
+          import("../transport/adapters"),
+          import("../features/adapters/liveRooms"),
+        ]);
       const index = await listAdapters(signal);
       if (signal.aborted) return;
       if (index.kind !== "listed") {
@@ -108,6 +114,14 @@ export function useAdapterTabs() {
                 ? {
                     ...tab,
                     connection: outcome,
+                    icon:
+                      outcome.kind === "connected"
+                        ? outcome.capabilities.provider.icon
+                        : undefined,
+                    iconSrc:
+                      outcome.kind === "connected"
+                        ? iconUrl(id, outcome.capabilities.provider.icon)
+                        : undefined,
                     name:
                       outcome.kind === "connected"
                         ? outcome.capabilities.provider.name

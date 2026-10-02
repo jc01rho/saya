@@ -4,9 +4,11 @@ import {
   type AdapterOutcome,
   type Capabilities,
   fetchCapabilities,
+  iconUrl,
   listAdapters,
 } from "../../transport/adapters";
 import { adapterMark } from "../../ui";
+import { ProviderMark } from "../../ui/ProviderMark";
 import styles from "./Adapters.module.css";
 import { problemSentence } from "./copy";
 import { KakaoCard, type KakaoStatus } from "./kakao";
@@ -150,9 +152,15 @@ function AdapterCheck({ id, onRetry }: { id: string; onRetry: () => void }) {
       data-state={state.kind}
     >
       <header className={styles.cardHead}>
-        <span className={styles.mark} aria-hidden="true">
-          {adapterMark(id, name)}
-        </span>
+        <ProviderMark
+          className={styles.mark}
+          src={
+            state.kind === "connected"
+              ? iconUrl(id, state.capabilities.provider.icon)
+              : undefined
+          }
+          mark={adapterMark(name)}
+        />
         <h2 className={styles.name}>{name}</h2>
         <span
           className={styles.status}

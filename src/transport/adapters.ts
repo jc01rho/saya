@@ -214,6 +214,16 @@ export function mediaUrl(adapterId: string, mediaId: string): string {
   );
 }
 
+/** Only a declared opaque icon version gives the client an image address. */
+export function iconUrl(
+  adapterId: string,
+  version: string | undefined,
+): string | undefined {
+  return version === undefined
+    ? undefined
+    : adapterPath(adapterId, `/icon?${new URLSearchParams({ v: version })}`);
+}
+
 export function fetchRooms(id: string, signal: AbortSignal) {
   return request<RoomsAnswer>(
     adapterPath(id, "/rooms"),

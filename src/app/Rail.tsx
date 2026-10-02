@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { ClientStores } from "../core/stores";
 import { adapterMark, cx, UnreadBadge } from "../ui";
+import { KAKAO_ICON, ProviderMark } from "../ui/ProviderMark";
 import type { AdapterTab } from "./adapterTabs";
 import styles from "./Rail.module.css";
 import {
@@ -61,15 +62,6 @@ function useTotalUnread(stores: ClientStores): number {
   return useSyncExternalStore(source.subscribe, source.compute, source.compute);
 }
 
-/** A messenger's mark in an outlined squircle; no messenger artwork is drawn. */
-function Mark({ text }: { text: string }) {
-  return (
-    <span className={styles.mark} aria-hidden="true">
-      {text}
-    </span>
-  );
-}
-
 /**
  * The left rail of the messenger arrangement: the mark, then 전체 (every
  * messenger, newest first), 카카오 (the KakaoTalk core), one item per adapter
@@ -120,7 +112,7 @@ export function Rail({
           aria-current={mode?.kind === "kakao" || undefined}
           data-ui="rail-kakao"
         >
-          <Mark text="K" />
+          <ProviderMark className={styles.mark} src={KAKAO_ICON} mark="K" />
           <span className={styles.label}>{RAIL_COPY.kakao}</span>
           {unread > 0 ? (
             <span className={styles.badge}>
@@ -143,7 +135,11 @@ export function Rail({
             }
             data-ui="rail-adapter"
           >
-            <Mark text={adapterMark(tab.id, tab.name)} />
+            <ProviderMark
+              className={styles.mark}
+              src={tab.icon === undefined ? undefined : tab.iconSrc}
+              mark={adapterMark(tab.name)}
+            />
             <span className={styles.label}>{tab.name}</span>
             {tab.unread ? (
               <span className={styles.badge}>
