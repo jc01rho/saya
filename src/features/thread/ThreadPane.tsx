@@ -19,6 +19,7 @@ import { FileDownload, type FileTransport } from "../reads/FileDownload";
 import { RevisionsDialog, type RevisionsTransport } from "../revisions";
 import { useSlice } from "../rooms";
 import { THREAD_COPY } from "./copy";
+import { runPosition } from "./grouping";
 import styles from "./ThreadPane.module.css";
 import { VirtualThreadTurns } from "./virtual";
 
@@ -80,8 +81,10 @@ const MessageRow = memo(function MessageRow({
   roomId,
   id,
   prevId,
+  nextId,
   now,
   gapBefore,
+  gapAfter,
   http,
   onRevisions,
 }: {
@@ -90,8 +93,11 @@ const MessageRow = memo(function MessageRow({
   id: string;
   /** The turn drawn above this one, which decides the day pill and the run. */
   prevId: string | null;
+  /** The turn drawn below, which decides whether this one ends its run. */
+  nextId: string | null;
   now: Date;
   gapBefore: boolean;
+  gapAfter: boolean;
   http: FileTransport | undefined;
   onRevisions: ((messageId: string) => void) | undefined;
 }) {
@@ -102,13 +108,11 @@ const MessageRow = memo(function MessageRow({
   const day = dayOf(message?.sentAt);
   // A day is announced only when the wire dated this turn and it differs from the last one.
   const newDay = day !== null && day !== dayOf(prev?.sentAt);
-  const continued =
-    !gapBefore &&
-    !newDay &&
-    message !== undefined &&
-    prev !== undefined &&
-    prev.fromMe === message.fromMe &&
-    prev.sender === message.sender;
+  const next = useSlice(stores, `message.${roomId}.${nextId ?? ""}`);
+  // A new day always brings a new minute, so only the stated gap breaks a run on its own.
+  const run = message
+    ? runPosition(prev, message, next, { before: gapBefore, after: gapAfter })
+    : { first: true, last: true };
   return (
     <>
       {gapBefore ? (
@@ -130,7 +134,8 @@ const MessageRow = memo(function MessageRow({
         <MessageBubble
           message={message as Message}
           now={now}
-          continued={continued}
+          continued={!run.first}
+          last={run.last}
           onRevisions={onRevisions ? openRevisions : undefined}
           actions={
             // Message carries no file member; `/file` answers MESSAGE_NOT_FOUND for any other kind.
@@ -251,11 +256,13 @@ export function ThreadPane({
   };
   const retry = () => windows.retry(roomId);
   const gaps = new Set(view.discontinuities);
-  const previous = useMemo(() => {
-    const map = new Map<string, string>();
+  const neighbours = useMemo(() => {
+    const map = new Map<string, { prev: string | null; next: string | null }>();
     view.order.forEach((id, index) => {
-      const before = view.order[index - 1];
-      if (before !== undefined) map.set(id, before);
+      map.set(id, {
+        prev: view.order[index - 1] ?? null,
+        next: view.order[index + 1] ?? null,
+      });
     });
     return map;
   }, [view.order]);
@@ -312,9 +319,11 @@ export function ThreadPane({
               stores={stores}
               roomId={roomId}
               id={id}
-              prevId={previous.get(id) ?? null}
+              prevId={neighbours.get(id)?.prev ?? null}
+              nextId={neighbours.get(id)?.next ?? null}
               now={now}
               gapBefore={gaps.has(id)}
+              gapAfter={gaps.has(neighbours.get(id)?.next ?? "")}
               http={http}
               onRevisions={http ? openRevisions : undefined}
             />

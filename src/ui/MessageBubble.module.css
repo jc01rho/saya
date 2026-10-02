@@ -9,8 +9,9 @@
   margin-top: 10px;
 }
 
+/* Inside a run the turns sit close; a new run opens the 10px above. */
 .continued {
-  margin-top: 0;
+  margin-top: var(--space-4);
 }
 
 .other {
@@ -81,6 +82,11 @@
     var(--radius-talk);
   background: var(--bubble-self);
   color: var(--bubble-self-ink, var(--ink));
+}
+
+/* Only a run's first bubble carries the tail; the rest are plain rounded boxes. */
+.continued .bubble {
+  border-radius: var(--radius-talk);
 }
 
 /* Speaker name and the addressed-me chips, above the bubble. */
