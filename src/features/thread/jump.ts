@@ -27,7 +27,8 @@ export function isJumpable(source: ReplySource | null | undefined): boolean {
 /**
  * The message a reply answered, among the rows on screen.
  *
- * The reply's own `messageId` decides when it is there. Without it, a row is a
+ * The reply's own `messageId` decides when it is there, and while it can still
+ * be older than the window nothing else is matched. Otherwise a row is a
  * candidate only when it is older than the reply, from the same person
  * (`senderId`, else the name), and its text agrees with the quote's opening —
  * or, for a quote with no text, its kind agrees. Of the candidates the
@@ -42,6 +43,9 @@ export function findReplyTarget(
   if (source.messageId) {
     const exact = rows.find((row) => row.id === source.messageId);
     if (exact) return exact.id;
+    // Older than every row on screen: widen toward it rather than settle for
+    // a row that merely says the same words.
+    if (mayBeOlder(source, rows)) return null;
   }
   const quoted = normalize(source.text).slice(0, PREFIX);
   if (!quoted && !source.kind) return null;

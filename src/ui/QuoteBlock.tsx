@@ -38,7 +38,12 @@ export function QuoteBlock({ source, onJump }: QuoteBlockProps) {
   const sender = source?.sender ?? null;
   if (!body && !sender) {
     return (
-      <blockquote className={styles.quote} data-ui="quote" data-empty="true">
+      <blockquote
+        className={styles.quote}
+        data-ui="quote"
+        data-empty="true"
+        {...(onJump ? jumpProps(onJump) : {})}
+      >
         <span className={styles.text}>{COPY.quoteMissing}</span>
       </blockquote>
     );

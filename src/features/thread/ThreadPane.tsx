@@ -388,11 +388,15 @@ export function ThreadPane({
     measure();
   });
 
+  // Moving on by hand ends a search still waiting for an older page, so its
+  // answer never pulls the reader away again.
   const toEnd = () => {
+    setJump(null);
     setOrigin(null);
     scroll.current?.glideToEnd();
   };
   const goBack = () => {
+    setJump(null);
     if (back) scroll.current?.reveal(back);
     setOrigin(null);
   };

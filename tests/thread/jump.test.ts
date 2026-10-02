@@ -102,13 +102,19 @@ describe("a reply finds the message it answered", () => {
     ).toBe("10");
   });
 
-  test("an id not on screen falls back to matching, and an all-null quote points nowhere", () => {
-    const quote = source({
+  test("an id older than the window is widened toward, an absent id inside it falls back to matching, and an all-null quote points nowhere", () => {
+    const older = source({
       messageId: "50",
       senderId: "1",
       text: "자료는 공유 폴더에 있습니다",
     });
-    expect(findReplyTarget(quote, "104", ROWS)).toBe("103");
+    expect(findReplyTarget(older, "104", ROWS)).toBeNull();
+    const inside = source({
+      messageId: "999",
+      senderId: "1",
+      text: "자료는 공유 폴더에 있습니다",
+    });
+    expect(findReplyTarget(inside, "104", ROWS)).toBe("103");
     expect(findReplyTarget(source({}), "104", ROWS)).toBeNull();
     expect(isJumpable(source({}))).toBe(false);
     expect(isJumpable(null)).toBe(false);
