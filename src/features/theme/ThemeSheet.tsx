@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
 import reads from "../reads/reads.module.css";
 import { imageVars } from "./apply";
 import { THEME_COPY } from "./copy";
-import { type GalleryEntry, loadGalleryTheme, THEME_GALLERY } from "./gallery";
+import { fetchGalleryTheme, type GalleryTheme, THEME_GALLERY } from "./gallery";
 import { buildThemePrompt } from "./prompt";
 import {
   type ParseResult,
@@ -70,7 +70,7 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
 
 const CHIP_SLOTS = ["wall", "bubbleSelf", "accent", "text"] as const;
 
-/** Ready-made themes: a press loads the pictured file and saves it like a pasted theme. */
+/** Ready-made themes: a press fetches the theme file and saves it like a pasted theme. */
 function ThemeGallery({
   onSave,
   onStatus,
@@ -79,10 +79,10 @@ function ThemeGallery({
   onStatus: (status: string) => void;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
-  const pick = async (entry: GalleryEntry) => {
-    setLoading(entry.id);
+  const pick = async (entry: GalleryTheme) => {
+    setLoading(entry.path);
     onStatus(THEME_COPY.galleryLoading(entry.name));
-    const theme = await loadGalleryTheme(entry);
+    const theme = await fetchGalleryTheme(entry);
     setLoading(null);
     if (theme) onSave(theme);
     else onStatus(THEME_COPY.galleryFailed(entry.name));
@@ -92,32 +92,36 @@ function ThemeGallery({
       <h3 className={styles.subhead}>{THEME_COPY.gallery}</h3>
       <p className={reads.muted}>{THEME_COPY.galleryHelp}</p>
       <ul className={styles.cards}>
-        {THEME_GALLERY.map((entry) => (
-          <li key={entry.id}>
-            <button
-              type="button"
-              className={styles.card}
-              aria-label={THEME_COPY.galleryApply(entry.name)}
-              aria-busy={loading === entry.id}
-              disabled={loading !== null}
-              onClick={() => void pick(entry)}
-              data-ui="theme-gallery-card"
-              data-id={entry.id}
-            >
-              <span className={styles.chips} aria-hidden="true">
-                {CHIP_SLOTS.map((slot, index) => (
-                  <span
-                    key={slot}
-                    className={styles.chip}
-                    style={{ background: entry.chips[index] }}
-                  />
-                ))}
-              </span>
-              <span className={styles.cardName}>{entry.name}</span>
-              <span className={styles.cardFan}>{THEME_COPY.galleryFan}</span>
-            </button>
-          </li>
-        ))}
+        {THEME_GALLERY.flatMap((character) =>
+          character.themes.map((entry) => (
+            <li key={entry.path}>
+              <button
+                type="button"
+                className={styles.card}
+                aria-label={THEME_COPY.galleryApply(entry.name)}
+                aria-busy={loading === entry.path}
+                disabled={loading !== null}
+                onClick={() => void pick(entry)}
+                data-ui="theme-gallery-card"
+                data-id={`${character.id}-${entry.mode}`}
+              >
+                <span className={styles.chips} aria-hidden="true">
+                  {CHIP_SLOTS.map((slot, index) => (
+                    <span
+                      key={slot}
+                      className={styles.chip}
+                      style={{ background: entry.colors[index] }}
+                    />
+                  ))}
+                </span>
+                <span className={styles.cardName}>{entry.name}</span>
+                <span className={styles.cardFan}>
+                  {THEME_COPY.galleryMode[entry.mode]} · {THEME_COPY.galleryFan}
+                </span>
+              </button>
+            </li>
+          )),
+        )}
       </ul>
     </section>
   );

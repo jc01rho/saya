@@ -5,15 +5,22 @@
 ## 앱에서 고르기
 
 테마 버튼(반원 아이콘) → **테마 모음**에서 카드를 누르면, 그림이 들어간 테마(`-img`)를 저장하고 바로 적용합니다.
-같은 카드를 다시 누르면 같은 이름의 테마를 덮어씁니다. 그림 파일은 카드를 누를 때만 따로 받습니다.
+같은 카드를 다시 누르면 같은 이름의 테마를 덮어씁니다. 직접 만든 테마와 같은 칸에 저장되므로 20개 한도도 같습니다.
+카드 목록(`gallery.json`)만 앱에 들어가고, 테마 파일은 빌드 때 `dist/themes/`로 복사돼 카드를 누를 때만 받습니다.
 
-### 모음에 테마 더하기
+### 모음에 테마 더하기: 목록 1줄 + JSON 4개
 
-1. `docs/themes/<캐릭터>/`에 JSON을 넣습니다(색 전용 `<이름>.json`, 그림판 `<이름>-img.json`).
-2. `src/features/theme/gallery.ts`의 `THEME_GALLERY`에 항목을 하나 더합니다(`id`, 테마 `name`, 칩 색 `wall`·`bubbleSelf`·`accent`·`text`, `load`).
+1. `docs/themes/<id>/`에 JSON 4개를 넣습니다: `<id>-light.json`, `<id>-dark.json`(색 전용), `<id>-light-img.json`, `<id>-dark-img.json`(그림판).
+2. [`gallery.json`](gallery.json)에 캐릭터 한 줄을 더합니다. 카드는 그림판 두 개입니다.
+
+   ```json
+   { "id": "<id>", "name": "<캐릭터>", "themes": [{ "mode": "light", "name": "<light-img의 name>", "colors": ["<wall>", "<bubbleSelf>", "<accent>", "<text>"], "path": "<id>/<id>-light-img.json" }, { "mode": "dark", ... }] }
+   ```
+
+   `name`·`mode`·`colors`는 그 JSON의 값을 그대로 옮깁니다(`colors`는 `tokens`의 `wall`·`bubbleSelf`·`accent`·`text` 순서).
 3. 이 README의 표와 출처를 채웁니다.
 
-`tests/theme/gallery.test.ts`가 모든 JSON의 검증·대비 경고 0과, 카드의 이름·칩 색이 불러온 테마와 같은지 확인합니다.
+`bun test tests/theme/gallery.test.ts`가 모든 JSON의 검증·대비 경고 0과, 목록 줄의 이름·모드·색·경로가 실제 JSON과 같은지 확인합니다. 틀리면 어느 줄인지 알려 줍니다.
 
 ## 붙여넣는 법
 

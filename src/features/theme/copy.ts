@@ -26,6 +26,7 @@ export const THEME_COPY = {
   gallery: "테마 모음",
   galleryHelp: "누르면 그림까지 들어간 테마를 저장하고 바로 적용합니다.",
   galleryFan: "팬 메이드·비공식",
+  galleryMode: { light: "밝은 모드", dark: "어두운 모드" },
   galleryApply: (name: string) => `${name} 테마 저장하고 적용`,
   galleryLoading: (name: string) => `"${name}" 테마를 불러오는 중입니다.`,
   galleryFailed: (name: string) =>

@@ -27,6 +27,12 @@
       "preset": "recommended"
     }
   },
+  "overrides": [
+    {
+      "includes": ["docs/themes/gallery.json"],
+      "formatter": { "enabled": false }
+    }
+  ],
   "assist": {
     "actions": {
       "source": {
