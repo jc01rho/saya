@@ -360,8 +360,19 @@ export default function Inbox({
       <div className={styles.head}>
         <div className={styles.headTop}>
           <h1 className={styles.heading}>{heading}</h1>
-          {/* A custom theme's badge (src/features/theme/places.css); empty and unsized otherwise. */}
-          <span data-ui="theme-badge" aria-hidden="true" />
+          <button
+            type="button"
+            data-ui="theme-badge"
+            aria-label="캐릭터 춤추기"
+            title="캐릭터 춤추기"
+            onClick={(event) => {
+              if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
+                event.currentTarget.dataset.dancing = "";
+            }}
+            onAnimationEnd={(event) => {
+              delete event.currentTarget.dataset.dancing;
+            }}
+          />
           {actions}
         </div>
         <div className={styles.search}>

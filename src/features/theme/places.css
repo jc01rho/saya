@@ -4,8 +4,8 @@
  * loading line. ThemeControl loads this only when
  * the stored theme carries one, so the entry stylesheet keeps its budget. The
  * root flags and variables come from applyTheme() in apply.ts and from
- * public/theme-boot.js. Every picture is decoration: none takes a pointer or
- * covers text the contrast check did not measure.
+ * public/theme-boot.js. The header badge is a dance button; other pictures
+ * remain decoration and never cover text.
  */
 
 /* The list's pattern lies under the rows, which give up their own fill for it. */
@@ -23,12 +23,42 @@ html[data-theme-list] [data-ui="room-row"] {
   background-color: transparent;
 }
 
-/* A small sticker beside the list heading, in the head's flow so it never covers a control. */
+/* The picture keeps its old size; the button gives it a full touch target. */
 html[data-theme-badge] [data-ui="theme-badge"] {
+  display: inline-grid;
   flex: none;
+  place-items: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: transparent;
+  cursor: pointer;
+}
+
+html[data-theme-badge] [data-ui="theme-badge"]:hover {
+  background: var(--hover-list);
+}
+
+html[data-theme-badge] [data-ui="theme-badge"]::before {
+  content: "";
   width: 28px;
   height: 28px;
   background: var(--theme-badge) center / contain no-repeat;
+  transform-origin: 50% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-badge] [data-ui="theme-badge"][data-dancing]::before {
+    animation: theme-loader-dance 0.8s ease-in-out 3;
+  }
+
+  html[data-theme-badge][data-theme-loader="none"]
+    [data-ui="theme-badge"][data-dancing]::before {
+    background-image: var(--theme-loader);
+    animation: theme-badge-play 2.4s linear;
+  }
 }
 
 /* The mascot rests below the last row, past the end of the virtual list, at the pane's foot when the list is short. */
@@ -48,9 +78,8 @@ html[data-theme-mascot] [data-ui="inbox-end"] {
 }
 
 /*
- * The loader sits beside a loading line, about as tall as the line itself: its
- * negative block margins keep the line box as it was, so nothing shifts when
- * loading starts or ends. It is shown for `dance` always (the sway stops under
+ * The loader gets its own line, five times its former size, with space for the
+ * sway inside the container and viewport. It is shown for `dance` always (the sway stops under
  * reduced motion) and for `none` only when motion is welcome, because a picture
  * that moves by itself cannot be stopped from CSS; the default indicator then
  * returns. In the list's footer it takes the walking cat's place, and in the
@@ -58,17 +87,15 @@ html[data-theme-mascot] [data-ui="inbox-end"] {
  */
 html[data-theme-loader] [data-ui="theme-loader"] {
   display: none;
-  width: 2em;
-  height: 2em;
-  margin-block: -0.5em;
-  margin-inline-end: 0.375em;
-  vertical-align: middle;
+  width: min(10em, 70vw, 35dvh, 80%);
+  aspect-ratio: 1;
+  margin: 1em auto;
   background: var(--theme-loader) center / contain no-repeat;
   transform-origin: 50% 100%;
 }
 
 html[data-theme-loader="dance"] [data-ui="theme-loader"] {
-  display: inline-block;
+  display: block;
 }
 
 html[data-theme-loader="dance"]
@@ -81,7 +108,7 @@ html[data-theme-loader="dance"]
 
 @media (prefers-reduced-motion: no-preference) {
   html[data-theme-loader="none"] [data-ui="theme-loader"] {
-    display: inline-block;
+    display: block;
   }
 
   html[data-theme-loader="none"]
@@ -100,11 +127,23 @@ html[data-theme-loader="dance"]
 /* In the list's footer it stands where the walking cat would. */
 html[data-theme-loader]
   [data-ui="rooms-pane"]
+  [data-ui="cat"]:has(+ [data-ui="theme-loader"]) {
+  flex: none;
+}
+
+html[data-theme-loader]
+  [data-ui="rooms-pane"]
+  div:has(> [data-ui="theme-loader"]) {
+  height: auto;
+  min-height: var(--space-48);
+}
+
+html[data-theme-loader]
+  [data-ui="rooms-pane"]
   [data-ui="cat"]
   + [data-ui="theme-loader"] {
-  width: 36px;
-  height: 36px;
-  margin: 0;
+  width: min(180px, 70vw, 35dvh, 80%);
+  margin: 1em auto;
 }
 
 /* While the list itself loads it dances beside that line, so the footer stays empty. */
@@ -129,5 +168,16 @@ html[data-theme-loader]
 
   75% {
     transform: translate(12%, -18%) rotate(10deg);
+  }
+}
+
+/* A finite CSS clock also ends a self-animated picture without a JS timer. */
+@keyframes theme-badge-play {
+  from {
+    opacity: 0.99;
+  }
+
+  to {
+    opacity: 1;
   }
 }

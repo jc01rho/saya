@@ -441,6 +441,20 @@ no rail, and the rest of this table holds.
 
 ## Motion and reduced motion
 
+### Theme character feedback (2026-10-03)
+
+- A theme loader reserves its own line: 10em square (five times the former
+  2em), capped at 70vw, 35dvh and the available container width. The list
+  footer uses 180px instead of 36px, with the same containment. No negative
+  margins; text stays below the character.
+- The existing 28px header badge becomes a labelled button in both lists.
+  Its hit area is 44px, with the existing hover fill and focus ring.
+- Activation plays one 2.4s dance, then restores the badge. A theme with
+  a self-animated loader reuses that asset; other themes sway, hop and tilt
+  the badge using transforms. Repeat presses during the dance do not queue.
+- Reduced motion keeps the static badge, never swaps to an animated asset
+  and suppresses the positional dance. Built-in themes hide the button.
+
 | Trigger | Property | Duration / easing | Reduced-motion |
 | --- | --- | --- | --- |
 | User links a pending item to an observed row; crossing the ledge | transform + opacity on one overlay clone | 300ms `--ease` | no movement: the pending item disappears and the observed row is announced |

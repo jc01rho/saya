@@ -264,7 +264,14 @@ export const scenario: Scenario = {
           return {
             list: drawn(scroller),
             row: row ? getComputedStyle(row).backgroundColor : null,
-            badge: drawn('[data-ui="theme-badge"]') ? badge?.width : null,
+            badge:
+              at('[data-ui="theme-badge"]')?.getAttribute("aria-label") &&
+              getComputedStyle(
+                at('[data-ui="theme-badge"]') as Element,
+                "::before",
+              ).backgroundImage.includes("data:image/png")
+                ? badge?.width
+                : null,
             overlap:
               badge && open
                 ? badge.right > open.left &&
@@ -281,7 +288,7 @@ export const scenario: Scenario = {
     const placesOk = (found: Awaited<ReturnType<typeof places>>) =>
       found.list &&
       found.row === "rgba(0, 0, 0, 0)" &&
-      found.badge === 28 &&
+      (found.badge ?? 0) >= 44 &&
       found.overlap === false &&
       (found.filler ?? 0) >= 136;
     const wallImage = () =>

@@ -67,7 +67,10 @@ test("all list has no failure status or retry button for unavailable sources", (
       heading="Synthetic"
     />,
   );
-  expect(html).not.toContain("<button");
+  // The optional character is a header action, not a source retry.
+  expect(
+    html.replace(/<button\b[^>]*data-ui="theme-badge"[^>]*><\/button>/g, ""),
+  ).not.toContain("<button");
   expect(html).not.toContain("불러오지 못");
   for (let i = 0; i < connections.length - 1; i++)
     expect(html).not.toContain(`Synthetic ${i}`);

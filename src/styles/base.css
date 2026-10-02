@@ -53,6 +53,11 @@ textarea {
   color: inherit;
 }
 
+/* The optional theme stylesheet reveals the character only with badge art. */
+[data-ui="theme-badge"] {
+  display: none;
+}
+
 a {
   color: inherit;
 }
