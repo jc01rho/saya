@@ -148,6 +148,66 @@ describe("pictures", () => {
     });
   });
 
+  test("a list pattern and a badge parse under the same rules", () => {
+    const result = parseTheme(
+      withImages({ list: { src: DOT, fit: "tile" }, badge: { src: DOT } }),
+    );
+    expect(result.ok && result.theme.images).toEqual({
+      list: { src: DOT, fit: "tile", opacity: 0.15 },
+      badge: { src: DOT },
+    });
+    const bad = parseTheme(
+      withImages({
+        list: { src: "https://example.test/a.png", opacity: 0.5 },
+        badge: { src: "data:image/svg+xml;base64,PHN2Zz4=" },
+      }),
+    );
+    expect(bad.ok ? [] : bad.issues).toEqual([
+      { kind: "image", slot: "list", problem: "src" },
+      { kind: "image", slot: "list", problem: "opacity" },
+      { kind: "image", slot: "badge", problem: "src" },
+    ]);
+  });
+
+  test("one theme's pictures together stay within the total bound", () => {
+    const prefix = "data:image/png;base64,";
+    const sized = (chars: number) =>
+      `${prefix}${"A".repeat(chars - prefix.length)}`;
+    const four = (chars: number) =>
+      withImages({
+        wall: { src: sized(chars) },
+        list: { src: sized(chars) },
+        mascot: { src: sized(chars) },
+        badge: { src: sized(chars) },
+      });
+    expect(parseTheme(four(50_000)).ok).toBe(true);
+    const over = parseTheme(four(50_001));
+    expect(over.ok ? [] : over.issues).toEqual([
+      { kind: "image", slot: "images", problem: "size" },
+    ]);
+  });
+
+  test("text on the list is measured over the list pattern's worst pixel", () => {
+    const opacity = 0.4;
+    const result = parseTheme(withImages({ list: { src: DOT, opacity } }));
+    if (!result.ok) throw new Error("parse failed");
+    const muted = result.warnings.find(
+      (w) => w.text === "textMuted" && w.background === "list",
+    );
+    const list = resolveTokens(result.theme).list;
+    const ink = resolveTokens(result.theme).textMuted;
+    expect(muted?.image).toBe(true);
+    expect(muted?.ratio).toBeCloseTo(
+      Math.min(
+        contrastRatio(ink, mix(list, "#000000", 1 - opacity)),
+        contrastRatio(ink, mix(list, "#ffffff", 1 - opacity)),
+      ),
+      5,
+    );
+    // A list pattern leaves the wall's pairs as they were.
+    expect(result.warnings.every((w) => w.background === "list")).toBe(true);
+  });
+
   test("only inline rasters within the size bound are accepted", () => {
     const refused = (src: string) => {
       const result = parseTheme(withImages({ mascot: { src } }));

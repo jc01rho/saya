@@ -367,6 +367,8 @@ export function RoomsPane({
                 {ROOMS_COPY.brandLatin}
               </span>
             </Brand>
+            {/* A custom theme's badge (src/features/theme/places.css); empty and unsized otherwise. */}
+            <span data-ui="theme-badge" aria-hidden="true" />
             {actions}
           </div>
           <div className={styles.search}>
@@ -485,7 +487,8 @@ export function RoomsPane({
                 />
               ))}
         </ul>
-        <div className={styles.filler} />
+        {/* Outside the virtual list, so a theme's mascot can sit below the last row. */}
+        <div className={styles.filler} data-ui="room-filler" />
       </div>
       {sheet ? (
         <Suspense fallback={null}>

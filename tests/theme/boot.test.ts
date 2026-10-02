@@ -45,9 +45,14 @@ const pictured = {
   name: "그림",
   images: {
     wall: { src: DOT, fit: "tile" as const, opacity: 0.2 },
+    list: { src: DOT, fit: "cover" as const, opacity: 0.1 },
     mascot: { src: DOT },
+    badge: { src: DOT },
   },
 };
+/** A valid picture of `chars` characters, under the per-picture bound. */
+const sized = (chars: number) =>
+  `data:image/png;base64,${"A".repeat(chars - "data:image/png;base64,".length)}`;
 
 function saveAndChoose(
   s: ReturnType<typeof memoryStorage>,
@@ -135,8 +140,15 @@ describe("cached pictures", () => {
     for (const root of [runBoot(storage, false), runMounted(storage)]) {
       expect(root.props.get("--theme-wall-image")).toBe(`url("${DOT}")`);
       expect(root.props.get("--theme-wall-repeat")).toBe("repeat");
+      expect(root.props.get("--theme-list-image")).toBe(`url("${DOT}")`);
+      expect(root.props.get("--theme-list-wash")).toBe(
+        "color-mix(in srgb, var(--field-list) 90%, transparent)",
+      );
       expect(root.props.get("--theme-mascot")).toBe(`url("${DOT}")`);
+      expect(root.props.get("--theme-badge")).toBe(`url("${DOT}")`);
       expect(root.dataset.themeMascot).toBe("");
+      expect(root.dataset.themeList).toBe("");
+      expect(root.dataset.themeBadge).toBe("");
     }
   });
 
@@ -151,6 +163,20 @@ describe("cached pictures", () => {
       { wall: { src: DOT, fit: "cover", opacity: 1 } },
     ],
     ["a fit that is not known", { wall: { src: DOT, fit: "x", opacity: 0.1 } }],
+    [
+      "a list pattern past the opacity bound",
+      { list: { src: DOT, fit: "tile", opacity: 0.5 } },
+    ],
+    ["a badge that is an address", { badge: { src: "https://example.test" } }],
+    [
+      "pictures past the theme's total",
+      {
+        wall: { src: sized(60_000), fit: "tile", opacity: 0.1 },
+        list: { src: sized(60_000), fit: "tile", opacity: 0.1 },
+        mascot: { src: sized(60_000) },
+        badge: { src: sized(60_000) },
+      },
+    ],
   ];
   for (const [label, images] of tampered)
     test(`${label} is dropped whole, and the colours still draw`, () => {
@@ -168,5 +194,7 @@ describe("cached pictures", () => {
         [...booted.props.keys()].some((name) => name.startsWith("--theme-")),
       ).toBe(false);
       expect(booted.dataset.themeMascot).toBeUndefined();
+      expect(booted.dataset.themeList).toBeUndefined();
+      expect(booted.dataset.themeBadge).toBeUndefined();
     });
 });

@@ -345,6 +345,8 @@ export default function Inbox({
       <div className={styles.head}>
         <div className={styles.headTop}>
           <h1 className={styles.heading}>{heading}</h1>
+          {/* A custom theme's badge (src/features/theme/places.css); empty and unsized otherwise. */}
+          <span data-ui="theme-badge" aria-hidden="true" />
           {actions}
         </div>
         <div className={styles.search}>
@@ -361,7 +363,7 @@ export default function Inbox({
           />
         </div>
       </div>
-      <div className={styles.scroller}>
+      <div className={styles.scroller} data-ui="inbox-scroller">
         {lines.length ? <div className={styles.lines}>{lines}</div> : null}
         {tree && mode.kind === "adapter" && tree.guilds.length ? (
           <DiscordTree
@@ -392,6 +394,8 @@ export default function Inbox({
             {words ? COPY.emptySearch : COPY.empty}
           </p>
         )}
+        {/* Where a theme's mascot rests below the last row; empty otherwise. */}
+        <div data-ui="inbox-end" aria-hidden="true" />
       </div>
     </nav>
   );

@@ -219,9 +219,70 @@ export const scenario: Scenario = {
       name: "점무늬",
       images: {
         wall: { src: dots, fit: "tile", opacity: 0.3 },
+        list: { src: dots, fit: "tile", opacity: 0.1 },
         mascot: { src: dots },
+        badge: { src: dots },
       },
     };
+    // The list's pattern, the badge and the mascot below the last row, once places.css has
+    // loaded, in whichever list is drawn: the merged inbox or the KakaoTalk list.
+    const SCROLLER = '[data-ui="inbox-scroller"], [data-ui="room-scroller"]';
+    const END = '[data-ui="inbox-end"], [data-ui="room-filler"]';
+    const ROW = '[data-ui="inbox-row"], [data-ui="room-row"]';
+    const places = async () => {
+      await page
+        .waitForFunction(
+          (selector) => {
+            const scroller = document.querySelector(selector);
+            return Boolean(
+              scroller &&
+                getComputedStyle(scroller).backgroundImage.includes(
+                  "data:image/png",
+                ),
+            );
+          },
+          SCROLLER,
+          { timeout: 5_000 },
+        )
+        .catch(() => undefined);
+      return page.evaluate(
+        ([scroller, end, line]) => {
+          const at = (selector: string) => document.querySelector(selector);
+          const drawn = (selector: string) => {
+            const element = at(selector);
+            return element
+              ? getComputedStyle(element).backgroundImage.includes(
+                  "data:image/png",
+                )
+              : false;
+          };
+          const badge = at('[data-ui="theme-badge"]')?.getBoundingClientRect();
+          const open = at('[data-ui="theme-open"]')?.getBoundingClientRect();
+          const filler = at(end)?.getBoundingClientRect();
+          const row = at(line);
+          return {
+            list: drawn(scroller),
+            row: row ? getComputedStyle(row).backgroundColor : null,
+            badge: drawn('[data-ui="theme-badge"]') ? badge?.width : null,
+            overlap:
+              badge && open
+                ? badge.right > open.left &&
+                  open.right > badge.left &&
+                  badge.bottom > open.top &&
+                  open.bottom > badge.top
+                : null,
+            filler: drawn(end) ? filler?.height : null,
+          };
+        },
+        [SCROLLER, END, ROW] as const,
+      );
+    };
+    const placesOk = (found: Awaited<ReturnType<typeof places>>) =>
+      found.list &&
+      found.row === "rgba(0, 0, 0, 0)" &&
+      found.badge === 28 &&
+      found.overlap === false &&
+      (found.filler ?? 0) >= 136;
     const wallImage = () =>
       page.evaluate(
         () =>
@@ -255,6 +316,8 @@ export const scenario: Scenario = {
       drawn.includes("data:image/png"),
       `pictured wall after reload: ${drawn.slice(0, 80)}`,
     );
+    const wide = await places();
+    expect(placesOk(wide), `places beside the room: ${JSON.stringify(wide)}`);
     await screenshot("theme-desktop-pictured-room");
     await loadRooms("#/rooms");
     const shown = await mascotShown();
@@ -277,6 +340,12 @@ export const scenario: Scenario = {
     );
     await screenshot("theme-mobile-pictured-room");
     await loadRooms("#/rooms");
+    const phone = await places();
+    expect(
+      placesOk(phone),
+      `places on the phone list: ${JSON.stringify(phone)}`,
+    );
+    await screenshot("theme-mobile-pictured-list");
     await openSheet();
     await page.getByRole("button", { name: "점무늬 테마 삭제" }).click();
     await closeSheet();
@@ -285,9 +354,11 @@ export const scenario: Scenario = {
         "--theme-wall-image",
       ),
       mascot: "themeMascot" in document.documentElement.dataset,
+      list: "themeList" in document.documentElement.dataset,
+      badge: "themeBadge" in document.documentElement.dataset,
     }));
     expect(
-      cleared.wall === "" && !cleared.mascot,
+      cleared.wall === "" && !cleared.mascot && !cleared.list && !cleared.badge,
       `pictures after deleting the theme: ${JSON.stringify(cleared).slice(0, 80)}`,
     );
     log("pictured theme drawn on the wall and the empty outlet, then deleted");

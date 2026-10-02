@@ -138,7 +138,9 @@ describe("applying a theme to the document root", () => {
       ...night,
       images: {
         wall: { src: DOT, fit: "cover", opacity: 0.1 },
+        list: { src: DOT, fit: "tile", opacity: 0.1 },
         mascot: { src: DOT },
+        badge: { src: DOT },
       },
     };
     const storage = memoryStorage();
@@ -150,9 +152,15 @@ describe("applying a theme to the document root", () => {
       "color-mix(in srgb, var(--field-wall) 90%, transparent)",
     );
     expect(root.dataset.themeMascot).toBe("");
+    expect(root.dataset.themeList).toBe("");
+    expect(root.dataset.themeBadge).toBe("");
     applyTheme(root, saveChoice(storage, customChoice(night), [night]), false);
     expect(root.props.has("--theme-wall-image")).toBe(false);
+    expect(root.props.has("--theme-list-image")).toBe(false);
+    expect(root.props.has("--theme-badge")).toBe(false);
     expect(root.dataset.themeMascot).toBeUndefined();
+    expect(root.dataset.themeList).toBeUndefined();
+    expect(root.dataset.themeBadge).toBeUndefined();
     applyTheme(root, { choice: "light" }, false);
     expect(root.props.size).toBe(0);
   });

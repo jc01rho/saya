@@ -31,23 +31,28 @@
     typeof src === "string" &&
     src.length <= 100000 &&
     /^data:image\/(?:png|webp|jpeg|gif);base64,[a-z0-9+/]+={0,2}$/i.test(src);
+  const layerOk = (layer) =>
+    layer === undefined ||
+    Boolean(
+      layer &&
+        srcOk(layer.src) &&
+        (layer.fit === "cover" || layer.fit === "tile") &&
+        typeof layer.opacity === "number" &&
+        layer.opacity >= 0 &&
+        layer.opacity <= 0.4,
+    );
+  const stickerOk = (sticker) =>
+    sticker === undefined || Boolean(sticker && srcOk(sticker.src));
   const pictures = (images) => {
     if (!images || typeof images !== "object") return null;
-    const { wall, mascot } = images;
-    if (
-      wall !== undefined &&
-      !(
-        wall &&
-        srcOk(wall.src) &&
-        (wall.fit === "cover" || wall.fit === "tile") &&
-        typeof wall.opacity === "number" &&
-        wall.opacity >= 0 &&
-        wall.opacity <= 0.4
-      )
-    )
+    const { wall, list, mascot, badge } = images;
+    if (![wall, list].every(layerOk) || ![mascot, badge].every(stickerOk))
       return null;
-    if (mascot !== undefined && !(mascot && srcOk(mascot.src))) return null;
-    return wall || mascot ? { wall, mascot } : null;
+    const chars = [wall, list, mascot, badge].reduce(
+      (sum, picture) => sum + (picture ? picture.src.length : 0),
+      0,
+    );
+    return chars > 0 && chars <= 200000 ? { wall, list, mascot, badge } : null;
   };
   if (choice === "light" || choice === "dark" || choice === "kakao") {
     root.dataset.theme = choice;
@@ -64,26 +69,32 @@
     for (const [name, value] of Object.entries(stored.vars))
       root.style.setProperty(name, value);
     const images = pictures(stored.images);
-    if (images?.wall) {
-      const { src, fit, opacity } = images.wall;
-      root.style.setProperty("--theme-wall-image", `url("${src}")`);
+    for (const slot of ["wall", "list"]) {
+      const layer = images?.[slot];
+      if (!layer) continue;
+      const { src, fit, opacity } = layer;
+      root.style.setProperty(`--theme-${slot}-image`, `url("${src}")`);
       root.style.setProperty(
-        "--theme-wall-size",
+        `--theme-${slot}-size`,
         fit === "tile" ? "240px" : "cover",
       );
       root.style.setProperty(
-        "--theme-wall-repeat",
+        `--theme-${slot}-repeat`,
         fit === "tile" ? "repeat" : "no-repeat",
       );
       root.style.setProperty(
-        "--theme-wall-wash",
-        `color-mix(in srgb, var(--field-wall) ${Math.round((1 - opacity) * 100)}%, transparent)`,
+        `--theme-${slot}-wash`,
+        `color-mix(in srgb, var(--field-${slot}) ${Math.round((1 - opacity) * 100)}%, transparent)`,
       );
     }
-    if (images?.mascot) {
-      root.style.setProperty("--theme-mascot", `url("${images.mascot.src}")`);
-      root.dataset.themeMascot = "";
+    for (const slot of ["mascot", "badge"]) {
+      const sticker = images?.[slot];
+      if (sticker)
+        root.style.setProperty(`--theme-${slot}`, `url("${sticker.src}")`);
     }
+    if (images?.list) root.dataset.themeList = "";
+    if (images?.mascot) root.dataset.themeMascot = "";
+    if (images?.badge) root.dataset.themeBadge = "";
     root.dataset.theme = "custom";
   } else {
     root.dataset.theme = system();

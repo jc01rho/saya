@@ -6,7 +6,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { applyTheme, readStoredTheme, type StoredTheme } from "./apply";
+import {
+  applyTheme,
+  hasPlaces,
+  readStoredTheme,
+  type StoredTheme,
+} from "./apply";
 import styles from "./ThemeControl.module.css";
 
 // The sheet, the saved themes, the schema and the prompt load on first open;
@@ -42,6 +47,8 @@ export function ThemeControl() {
     const draw = () =>
       applyTheme(document.documentElement, stored, media.matches);
     draw();
+    // The list's pattern, badge and mascot are styled apart from the entry stylesheet.
+    if (hasPlaces(stored.images)) void import("./places");
     if (stored.choice !== "system") return;
     media.addEventListener("change", draw);
     return () => media.removeEventListener("change", draw);

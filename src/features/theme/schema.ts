@@ -1,6 +1,9 @@
 import {
+  IMAGE_LAYERS,
   IMAGE_MAX_CHARS,
   IMAGE_SRC,
+  IMAGE_STICKERS,
+  IMAGES_MAX_CHARS,
   type ThemeImages,
   WALL_OPACITY_MAX,
 } from "./apply";
@@ -274,13 +277,17 @@ function wallpaperContrast(text: string, wall: string, opacity: number) {
 
 export function contrastWarnings(theme: ThemeDefinition): ContrastWarning[] {
   const tokens = resolveTokens(theme);
-  const wallpaper = theme.images?.wall;
   return CONTRAST_PAIRS.flatMap(({ text, background }) => {
-    if (wallpaper && background === "wall") {
+    // The wall and the list may each lie over a picture of their own.
+    const layer =
+      background === "wall" || background === "list"
+        ? theme.images?.[background]
+        : undefined;
+    if (layer) {
       const ratio = wallpaperContrast(
         tokens[text],
-        tokens.wall,
-        wallpaper.opacity,
+        tokens[background],
+        layer.opacity,
       );
       return ratio < AA_RATIO
         ? [{ text, background, ratio, image: true as const }]
@@ -298,7 +305,7 @@ export type ThemeIssue =
   | { kind: "colour"; token: TokenKey; value: string }
   | {
       kind: "image";
-      slot: "images" | "wall" | "mascot";
+      slot: "images" | "wall" | "list" | "mascot" | "badge";
       problem: "shape" | "src" | "size" | "fit" | "opacity";
     };
 
@@ -343,46 +350,56 @@ function parseImages(raw: unknown): {
     };
   const issues: ImageIssue[] = [];
   const images: ThemeImages = {};
+  const known: readonly string[] = [...IMAGE_LAYERS, ...IMAGE_STICKERS];
   const ignored = Object.keys(raw)
-    .filter((key) => key !== "wall" && key !== "mascot")
+    .filter((key) => !known.includes(key))
     .map((key) => `images.${key}`);
-  if (raw.wall !== undefined && raw.wall !== null) {
-    const wall = raw.wall;
-    if (!isRecord(wall))
-      issues.push({ kind: "image", slot: "wall", problem: "shape" });
-    else {
-      const src = srcProblem(wall.src);
-      if (src) issues.push({ kind: "image", slot: "wall", problem: src });
-      const fit = wall.fit ?? "cover";
-      if (fit !== "cover" && fit !== "tile")
-        issues.push({ kind: "image", slot: "wall", problem: "fit" });
-      const opacity = wall.opacity ?? WALL_OPACITY_DEFAULT;
-      if (
-        typeof opacity !== "number" ||
-        !(opacity >= 0 && opacity <= WALL_OPACITY_MAX)
-      )
-        issues.push({ kind: "image", slot: "wall", problem: "opacity" });
-      if (issues.length === 0)
-        images.wall = {
-          src: wall.src as string,
-          fit: fit as "cover" | "tile",
-          opacity: opacity as number,
-        };
+  let chars = 0;
+  for (const slot of IMAGE_LAYERS) {
+    const layer = raw[slot];
+    if (layer === undefined || layer === null) continue;
+    if (!isRecord(layer)) {
+      issues.push({ kind: "image", slot, problem: "shape" });
+      continue;
+    }
+    const before = issues.length;
+    const src = srcProblem(layer.src);
+    if (src) issues.push({ kind: "image", slot, problem: src });
+    const fit = layer.fit ?? "cover";
+    if (fit !== "cover" && fit !== "tile")
+      issues.push({ kind: "image", slot, problem: "fit" });
+    const opacity = layer.opacity ?? WALL_OPACITY_DEFAULT;
+    if (
+      typeof opacity !== "number" ||
+      !(opacity >= 0 && opacity <= WALL_OPACITY_MAX)
+    )
+      issues.push({ kind: "image", slot, problem: "opacity" });
+    if (issues.length === before) {
+      images[slot] = {
+        src: layer.src as string,
+        fit: fit as "cover" | "tile",
+        opacity: opacity as number,
+      };
+      chars += (layer.src as string).length;
     }
   }
-  if (raw.mascot !== undefined && raw.mascot !== null) {
-    const mascot = raw.mascot;
-    if (!isRecord(mascot))
-      issues.push({ kind: "image", slot: "mascot", problem: "shape" });
+  for (const slot of IMAGE_STICKERS) {
+    const sticker = raw[slot];
+    if (sticker === undefined || sticker === null) continue;
+    if (!isRecord(sticker)) {
+      issues.push({ kind: "image", slot, problem: "shape" });
+      continue;
+    }
+    const src = srcProblem(sticker.src);
+    if (src) issues.push({ kind: "image", slot, problem: src });
     else {
-      const src = srcProblem(mascot.src);
-      if (src) issues.push({ kind: "image", slot: "mascot", problem: src });
-      else images.mascot = { src: mascot.src as string };
+      images[slot] = { src: sticker.src as string };
+      chars += (sticker.src as string).length;
     }
   }
-  return images.wall || images.mascot
-    ? { issues, images, ignored }
-    : { issues, ignored };
+  if (chars > IMAGES_MAX_CHARS)
+    issues.push({ kind: "image", slot: "images", problem: "size" });
+  return chars > 0 ? { issues, images, ignored } : { issues, ignored };
 }
 
 /** Checks a pasted theme. Every problem is reported at once, not the first only. */

@@ -12,11 +12,36 @@ export type ThemeChoice = "system" | BuiltinThemeId | `custom:${string}`;
 
 export type WallFit = "cover" | "tile";
 
-/** Pictures a custom theme may carry: a wallpaper under the conversation and a mascot. */
-export interface ThemeImages {
-  wall?: { src: string; fit: WallFit; opacity: number };
-  mascot?: { src: string };
+/** A picture laid under a field's colour, which washes over it at `1 - opacity`. */
+export interface ImageLayer {
+  src: string;
+  fit: WallFit;
+  opacity: number;
 }
+
+/**
+ * Pictures a custom theme may carry: a wallpaper under the conversation, a
+ * pattern under the room list, a mascot (the empty outlet and the list's end)
+ * and a small badge beside the list heading.
+ */
+export interface ThemeImages {
+  wall?: ImageLayer;
+  list?: ImageLayer;
+  mascot?: { src: string };
+  badge?: { src: string };
+}
+
+/** Pictures laid under a field, each named after the token of the field it sits under. */
+export const IMAGE_LAYERS = ["wall", "list"] as const;
+/** Pictures drawn whole, at a fixed size. */
+export const IMAGE_STICKERS = ["mascot", "badge"] as const;
+const LAYER_FIELD = { wall: "--field-wall", list: "--field-list" } as const;
+/** The root flags the places stylesheet draws a picture under. */
+const IMAGE_FLAGS = {
+  list: "themeList",
+  mascot: "themeMascot",
+  badge: "themeBadge",
+} as const;
 
 /**
  * A picture is an inline base64 raster and nothing else: it loads no address,
@@ -25,8 +50,10 @@ export interface ThemeImages {
  */
 export const IMAGE_SRC =
   /^data:image\/(?:png|webp|jpeg|gif);base64,[a-z0-9+/]+={0,2}$/i;
-/** Characters per picture (about 73 KB of image), so twenty themes fit in localStorage. */
+/** Characters per picture (about 73 KB of image). */
 export const IMAGE_MAX_CHARS = 100_000;
+/** Characters across one theme's pictures, so twenty themes still fit in localStorage. */
+export const IMAGES_MAX_CHARS = 200_000;
 /** The most a wallpaper may show through the wall colour laid over it. */
 export const WALL_OPACITY_MAX = 0.4;
 
@@ -83,26 +110,31 @@ function isVars(value: unknown): value is Record<string, string> {
 /** Stored pictures that pass every rule `parseTheme` applies; anything else is dropped whole. */
 function readImages(value: unknown): ThemeImages | undefined {
   if (typeof value !== "object" || value === null) return undefined;
-  const { wall, mascot } = value as Record<string, unknown>;
+  const raw = value as Record<string, unknown>;
   const images: ThemeImages = {};
-  if (wall !== undefined) {
-    const w = wall as Record<string, unknown> | null;
+  let chars = 0;
+  for (const slot of IMAGE_LAYERS) {
+    if (raw[slot] === undefined) continue;
+    const layer = raw[slot] as Record<string, unknown> | null;
     if (
-      !w ||
-      !isImageSrc(w.src) ||
-      (w.fit !== "cover" && w.fit !== "tile") ||
-      typeof w.opacity !== "number" ||
-      !(w.opacity >= 0 && w.opacity <= WALL_OPACITY_MAX)
+      !layer ||
+      !isImageSrc(layer.src) ||
+      (layer.fit !== "cover" && layer.fit !== "tile") ||
+      typeof layer.opacity !== "number" ||
+      !(layer.opacity >= 0 && layer.opacity <= WALL_OPACITY_MAX)
     )
       return undefined;
-    images.wall = { src: w.src, fit: w.fit, opacity: w.opacity };
+    images[slot] = { src: layer.src, fit: layer.fit, opacity: layer.opacity };
+    chars += layer.src.length;
   }
-  if (mascot !== undefined) {
-    const m = mascot as Record<string, unknown> | null;
-    if (!m || !isImageSrc(m.src)) return undefined;
-    images.mascot = { src: m.src };
+  for (const slot of IMAGE_STICKERS) {
+    if (raw[slot] === undefined) continue;
+    const sticker = raw[slot] as Record<string, unknown> | null;
+    if (!sticker || !isImageSrc(sticker.src)) return undefined;
+    images[slot] = { src: sticker.src };
+    chars += sticker.src.length;
   }
-  return images.wall || images.mascot ? images : undefined;
+  return chars > 0 && chars <= IMAGES_MAX_CHARS ? images : undefined;
 }
 
 /**
@@ -112,16 +144,26 @@ function readImages(value: unknown): ThemeImages | undefined {
  */
 export function imageVars(images: ThemeImages | undefined) {
   const vars: Record<string, string> = {};
-  if (images?.wall) {
-    const { src, fit, opacity } = images.wall;
-    vars["--theme-wall-image"] = `url("${src}")`;
-    vars["--theme-wall-size"] = fit === "tile" ? "240px" : "cover";
-    vars["--theme-wall-repeat"] = fit === "tile" ? "repeat" : "no-repeat";
-    vars["--theme-wall-wash"] =
-      `color-mix(in srgb, var(--field-wall) ${Math.round((1 - opacity) * 100)}%, transparent)`;
+  for (const slot of IMAGE_LAYERS) {
+    const layer = images?.[slot];
+    if (!layer) continue;
+    const { src, fit, opacity } = layer;
+    vars[`--theme-${slot}-image`] = `url("${src}")`;
+    vars[`--theme-${slot}-size`] = fit === "tile" ? "240px" : "cover";
+    vars[`--theme-${slot}-repeat`] = fit === "tile" ? "repeat" : "no-repeat";
+    vars[`--theme-${slot}-wash`] =
+      `color-mix(in srgb, var(${LAYER_FIELD[slot]}) ${Math.round((1 - opacity) * 100)}%, transparent)`;
   }
-  if (images?.mascot) vars["--theme-mascot"] = `url("${images.mascot.src}")`;
+  for (const slot of IMAGE_STICKERS) {
+    const sticker = images?.[slot];
+    if (sticker) vars[`--theme-${slot}`] = `url("${sticker.src}")`;
+  }
   return vars;
+}
+
+/** True when a theme draws a picture outside the conversation, so the places stylesheet is needed. */
+export function hasPlaces(images: ThemeImages | undefined) {
+  return Boolean(images?.list || images?.mascot || images?.badge);
 }
 
 /** The stored selection, or "system" when nothing usable is stored. Storage may throw. */
@@ -178,7 +220,7 @@ export function applyTheme(
   const theme = resolvedTheme(stored, prefersDark);
   for (const name of applied.get(root) ?? []) root.style.removeProperty(name);
   applied.delete(root);
-  delete root.dataset.themeMascot;
+  for (const flag of Object.values(IMAGE_FLAGS)) delete root.dataset[flag];
   if (theme === "custom" && stored.vars) {
     const names = ["color-scheme"];
     root.style.setProperty(
@@ -195,7 +237,8 @@ export function applyTheme(
       root.style.setProperty(name, value);
       names.push(name);
     }
-    if (pictures?.mascot) root.dataset.themeMascot = "";
+    for (const [slot, flag] of Object.entries(IMAGE_FLAGS))
+      if (pictures?.[slot as keyof typeof IMAGE_FLAGS]) root.dataset[flag] = "";
     applied.set(root, names);
   }
   root.dataset.theme = theme;
