@@ -127,3 +127,138 @@
   font-size: var(--text-meta);
   line-height: var(--leading-meta);
 }
+
+/*
+ * The dock: controls that float over the wall's lower trailing corner, just
+ * above the composer and in the send door's column. It is the wall's last
+ * child, stuck to the bottom of the viewport, and takes no height of its own,
+ * so the scrolled space is the same with or without it.
+ */
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  height: 0;
+  margin-top: calc(-1 * var(--space-8));
+  pointer-events: none;
+}
+
+.stack {
+  position: absolute;
+  right: 0;
+  bottom: var(--space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-8);
+  max-width: min(100%, 320px);
+}
+
+.pill,
+.round {
+  border: var(--rule-width) solid var(--seam);
+  background: var(--field-input);
+  color: var(--ink);
+  pointer-events: auto;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-12);
+  border-radius: var(--radius-badge);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+}
+
+button.pill {
+  cursor: pointer;
+}
+
+.pill svg,
+.round svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pill svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pillAction {
+  padding: 2px var(--space-8);
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: var(--fill-wall);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.round {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-badge);
+  cursor: pointer;
+  transition:
+    opacity var(--dur-fade) var(--ease),
+    transform var(--dur-fade) var(--ease);
+}
+
+.round svg {
+  width: 20px;
+  height: 20px;
+}
+
+.round[data-visible="false"] {
+  opacity: 0;
+  transform: translateY(var(--space-8));
+  pointer-events: none;
+}
+
+.pill:hover,
+.round:hover,
+.pillAction:hover {
+  background: var(--hover-list);
+}
+
+.pill:focus-visible,
+.round:focus-visible,
+.pillAction:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-badge);
+  background: var(--badge-unread);
+  color: var(--badge-unread-ink);
+  font-size: var(--text-badge);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .round {
+    transition: none;
+  }
+}

@@ -7,6 +7,7 @@ export const COPY = {
   unreadable: "읽을 수 없음 (키 없음)",
   unknownTime: "시간 미상",
   quoteMissing: "인용 정보 없음",
+  quoteJump: "원본 메시지로 이동",
   mentionUnknown: "이름 미상",
   mentionAll: "전체",
   emptyBody: "본문 없음",

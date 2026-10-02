@@ -2,7 +2,9 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -11,6 +13,7 @@ import {
   type ContextFailure,
   type ContextWindows,
   describeWindow,
+  WINDOW_CEILING,
 } from "../../core/context";
 import type { ClientStores } from "../../core/stores";
 import { Cat, COPY, CoverageLine, cx, MessageBubble } from "../../ui";
@@ -20,6 +23,15 @@ import { RevisionsDialog, type RevisionsTransport } from "../revisions";
 import { useSlice } from "../rooms";
 import { THREAD_COPY } from "./copy";
 import { runPosition } from "./grouping";
+import {
+  countNewer,
+  findReplyTarget,
+  isFarFromEnd,
+  isJumpable,
+  mayBeOlder,
+  nextJumpStep,
+} from "./jump";
+import type { ReadingAnchor, ThreadScroll } from "./scroll";
 import styles from "./ThreadPane.module.css";
 import { VirtualThreadTurns } from "./virtual";
 
@@ -87,6 +99,8 @@ const MessageRow = memo(function MessageRow({
   gapAfter,
   http,
   onRevisions,
+  onJump,
+  highlighted,
 }: {
   stores: ClientStores;
   roomId: string;
@@ -100,8 +114,12 @@ const MessageRow = memo(function MessageRow({
   gapAfter: boolean;
   http: FileTransport | undefined;
   onRevisions: ((messageId: string) => void) | undefined;
+  onJump: (replyId: string) => void;
+  highlighted: boolean;
 }) {
   const message = useSlice(stores, `message.${roomId}.${id}`);
+  const jump = useCallback(() => onJump(id), [onJump, id]);
+  const jumpable = isJumpable(message?.replyTo);
   // An id that is never a message key reads as absent, so the first turn has no previous.
   const prev = useSlice(stores, `message.${roomId}.${prevId ?? ""}`);
   const openRevisions = useCallback(() => onRevisions?.(id), [onRevisions, id]);
@@ -137,6 +155,8 @@ const MessageRow = memo(function MessageRow({
           continued={!run.first}
           last={run.last}
           onRevisions={onRevisions ? openRevisions : undefined}
+          onQuote={jumpable ? jump : undefined}
+          highlighted={highlighted}
           actions={
             // Message carries no file member; `/file` answers MESSAGE_NOT_FOUND for any other kind.
             http && message.kind === "file" ? (
@@ -246,6 +266,137 @@ export function ThreadPane({
   const closeRevisions = useCallback(() => setRevisions(null), []);
   const revisionsOf = revisions?.roomId === roomId ? revisions.messageId : null;
 
+  const wall = useRef<HTMLElement>(null);
+  const scroll = useRef<ThreadScroll | null>(null);
+  // Every piece of navigation state is held with its room, like revisions.
+  const [jump, setJump] = useState<{ roomId: string; replyId: string } | null>(
+    null,
+  );
+  const [highlight, setHighlight] = useState<{
+    roomId: string;
+    id: string;
+    at: number;
+  } | null>(null);
+  const [origin, setOrigin] = useState<{
+    roomId: string;
+    anchor: ReadingAnchor;
+  } | null>(null);
+  const [toast, setToast] = useState<{ roomId: string; at: number } | null>(
+    null,
+  );
+  const [away, setAway] = useState<{
+    roomId: string;
+    seen: string | null;
+  } | null>(null);
+  const searching = jump?.roomId === roomId ? jump.replyId : null;
+  const highlighted = highlight?.roomId === roomId ? highlight.id : null;
+  const back = origin?.roomId === roomId ? origin.anchor : null;
+  const missing = toast?.roomId === roomId;
+  const far = away?.roomId === roomId;
+  const fresh = far ? countNewer(view.order, away.seen) : 0;
+
+  const startJump = useCallback(
+    (replyId: string) => {
+      const anchor = scroll.current?.anchor;
+      setOrigin(anchor ? { roomId, anchor: { ...anchor } } : null);
+      setToast(null);
+      setJump({ roomId, replyId });
+    },
+    [roomId],
+  );
+  const cancelJump = useCallback(() => setJump(null), []);
+
+  // The search for a reply's original: look in the rows on screen, widen the
+  // newest window while the original can still be older, and stop at the
+  // ceiling. Each settled answer re-runs this once.
+  useEffect(() => {
+    if (searching === null) return;
+    const thread = stores.getSnapshot(`thread.${roomId}`);
+    const reply = thread.messages[searching];
+    const source = reply?.replyTo;
+    const rows = view.order.flatMap((id) => thread.messages[id] ?? []);
+    const found = source ? findReplyTarget(source, searching, rows) : null;
+    const step = nextJumpStep({
+      found,
+      edge: view.edge,
+      loading: view.loading !== null,
+      failed: view.failure !== null || !source,
+      older: source ? mayBeOlder(source, rows) : false,
+    });
+    if (step.kind === "reveal") {
+      const owner = scroll.current;
+      owner?.reveal({ id: step.id, offset: owner.revealOffset() });
+      setHighlight({ roomId, id: step.id, at: Date.now() });
+      setJump(null);
+    } else if (step.kind === "widen") windows.widen(roomId);
+    else if (step.kind === "missing") {
+      setOrigin(null);
+      setToast({ roomId, at: Date.now() });
+      setJump(null);
+    }
+  }, [
+    searching,
+    stores,
+    roomId,
+    windows,
+    view.edge,
+    view.loading,
+    view.failure,
+    view.order,
+  ]);
+
+  // The mark and the sentence are moments, not states: each clears itself.
+  useEffect(() => {
+    if (!highlight) return;
+    const timer = setTimeout(() => setHighlight(null), 1500);
+    return () => clearTimeout(timer);
+  }, [highlight]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  // Whether the reader is a screen or more above the end, and which row was
+  // newest when they left it: rows after that one are the new-message count.
+  const order = useRef(view.order);
+  order.current = view.order;
+  const measure = useCallback(() => {
+    const element = wall.current;
+    if (!element) return;
+    const isFar = isFarFromEnd(element);
+    setAway((current) => {
+      const here = current?.roomId === roomId;
+      if (!isFar) return null;
+      if (here) return current;
+      return { roomId, seen: order.current.at(-1) ?? null };
+    });
+  }, [roomId]);
+  useEffect(() => {
+    const element = wall.current;
+    if (!element) return;
+    element.addEventListener("scroll", measure, { passive: true });
+    const resize = new ResizeObserver(measure);
+    resize.observe(element);
+    return () => {
+      element.removeEventListener("scroll", measure);
+      resize.disconnect();
+    };
+  }, [measure]);
+  // A row arriving or a window widening changes the distance without a scroll.
+  useLayoutEffect(() => {
+    measure();
+  });
+
+  const toEnd = () => {
+    setOrigin(null);
+    scroll.current?.glideToEnd();
+  };
+  const goBack = () => {
+    if (back) scroll.current?.reveal(back);
+    setOrigin(null);
+  };
+
   useEffect(() => {
     windows.open(roomId);
     return () => windows.close(roomId);
@@ -269,6 +420,7 @@ export function ThreadPane({
 
   return (
     <section
+      ref={wall}
       className={cx(styles.wall, className)}
       role="log"
       aria-live="polite"
@@ -313,6 +465,7 @@ export function ThreadPane({
         <VirtualThreadTurns
           key={roomId}
           order={view.order}
+          scrollRef={scroll}
           renderRow={(id) => (
             <MessageRow
               key={id}
@@ -326,6 +479,8 @@ export function ThreadPane({
               gapAfter={gaps.has(neighbours.get(id)?.next ?? "")}
               http={http}
               onRevisions={http ? openRevisions : undefined}
+              onJump={startJump}
+              highlighted={highlighted === id}
             />
           )}
         />
@@ -343,6 +498,66 @@ export function ThreadPane({
         <div className={styles.empty} data-ui="thread-empty">
           <Cat height={48} />
           <p>{THREAD_COPY.empty}</p>
+        </div>
+      ) : null}
+      {view.order.length > 0 ? (
+        <div className={styles.dock} data-ui="thread-dock">
+          <div className={styles.stack}>
+            {searching !== null ? (
+              <p className={styles.pill} role="status" data-ui="jump-progress">
+                <span>
+                  {THREAD_COPY.jumpSearching(view.shown, WINDOW_CEILING)}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pillAction}
+                  data-ui="jump-cancel"
+                  onClick={cancelJump}
+                >
+                  {THREAD_COPY.jumpCancel}
+                </button>
+              </p>
+            ) : null}
+            {missing ? (
+              <p className={styles.pill} role="status" data-ui="jump-missing">
+                {THREAD_COPY.jumpMissing}
+              </p>
+            ) : null}
+            {back ? (
+              <button
+                type="button"
+                className={styles.pill}
+                data-ui="jump-back"
+                onClick={goBack}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 14l-4-4 4-4M5 10h9a5 5 0 010 10h-2" />
+                </svg>
+                {THREAD_COPY.jumpBack}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={styles.round}
+              data-ui="to-end"
+              data-visible={far}
+              aria-label={
+                fresh > 0 ? THREAD_COPY.toEndFresh(fresh) : THREAD_COPY.toEnd
+              }
+              tabIndex={far ? undefined : -1}
+              aria-hidden={far ? undefined : true}
+              onClick={toEnd}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14M6 13l6 6 6-6" />
+              </svg>
+              {fresh > 0 ? (
+                <span className={styles.badge} aria-hidden="true">
+                  {fresh > 99 ? "99+" : fresh}
+                </span>
+              ) : null}
+            </button>
+          </div>
         </div>
       ) : null}
     </section>
