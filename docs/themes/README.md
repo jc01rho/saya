@@ -33,3 +33,24 @@
   - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.1」 스티커 805188761
     (https://store.line.me/stickershop/product/32367501/ja)
 - 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
+
+## 하치와레 (`hachiware/`)
+
+| 파일 | 이름 | 모드 | 그림 |
+| --- | --- | --- | --- |
+| [hachiware-light.json](hachiware/hachiware-light.json) | 하치와레 하늘 🐱 | light | 없음(색만) |
+| [hachiware-dark.json](hachiware/hachiware-dark.json) | 하치와레 밤하늘 🐱 | dark | 없음(색만) |
+| [hachiware-light-img.json](hachiware/hachiware-light-img.json) | 하치와레 하늘 그림 🐱 | light | 벽지·목록 무늬·마스코트·배지·로딩 |
+| [hachiware-dark-img.json](hachiware/hachiware-dark-img.json) | 하치와레 밤하늘 그림 🐱 | dark | 벽지·목록 무늬·마스코트·배지·로딩 |
+
+### 저작권과 출처
+
+- 팬 메이드·비공식·비영리 테마입니다. 원작자나 공식 측과 관계가 없습니다.
+- 「ちいかわ」 © nagano / chiikawa committee
+- 색과 그림 테마(`-img`)의 그림은 아래 공식 그림에서 가져왔습니다.
+  - LINE STORE 공식 스티커 「ちいかわ(ハチワレ多)」(작가 ナガノ) 미리보기 그림
+    (https://store.line.me/stickershop/product/29118925/ja)
+  - 공식 굿즈샵 ちいかわマーケット 상품 그림
+  - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.1」 스티커 805188752
+    (https://store.line.me/stickershop/product/32367501/ja)
+- 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
