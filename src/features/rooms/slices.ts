@@ -106,6 +106,40 @@ function createVisibleRoomIds(
   return { subscribe, getSnapshot };
 }
 
+/**
+ * Unread messages waiting in hidden rooms. Hiding a room tidies the list; it
+ * does not mute it, so the hidden chip carries this count wherever it is drawn.
+ */
+export function hiddenUnreadOf(
+  stores: ClientStores,
+  hidden: readonly string[],
+): number {
+  return hidden.reduce(
+    (sum, id) =>
+      sum + Math.max(0, stores.getSnapshot(`room.${id}`)?.room.unread ?? 0),
+    0,
+  );
+}
+
+export function useHiddenUnread(
+  stores: ClientStores,
+  hidden: readonly string[],
+): number {
+  const source = useMemo(() => {
+    const read = () => hiddenUnreadOf(stores, hidden);
+    const subscribe = (listener: () => void) => {
+      const unsubscribes = hidden.map((id) =>
+        stores.subscribe(`room.${id}`, listener),
+      );
+      return () => {
+        for (const unsubscribe of unsubscribes) unsubscribe();
+      };
+    };
+    return { read, subscribe };
+  }, [stores, hidden]);
+  return useSyncExternalStore(source.subscribe, source.read, source.read);
+}
+
 export function useVisibleRoomIds(
   stores: ClientStores,
   filter: RoomFilter,

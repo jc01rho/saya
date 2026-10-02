@@ -186,6 +186,7 @@
 
 .folders .chip {
   flex: none;
+  gap: 6px;
   max-width: 12em;
   border: 0;
   font-family: inherit;

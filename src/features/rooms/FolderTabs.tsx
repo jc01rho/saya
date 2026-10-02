@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { UnreadBadge } from "../../ui/UnreadBadge";
 import type { Organize } from "./organize";
 import styles from "./RoomsPane.module.css";
 
@@ -7,12 +8,16 @@ const COPY = {
   all: "전체",
   edit: "폴더 편집",
   hidden: (count: number) => `숨긴 방 ${count}`,
+  hiddenUnread: (count: number) =>
+    `, 안 읽은 메시지 ${count.toLocaleString("ko-KR")}개`,
 } as const;
 
 export interface FolderTabsProps {
   organize: Organize;
   folder: string | null;
   hiddenCount: number;
+  /** Unread messages in the hidden rooms: hiding never silences a room. */
+  hiddenUnread: number;
   showHidden: boolean;
   onFolder: (id: string | null) => void;
   onHidden: () => void;
@@ -28,6 +33,7 @@ export default function FolderTabs({
   organize,
   folder,
   hiddenCount,
+  hiddenUnread,
   showHidden,
   onFolder,
   onHidden,
@@ -57,7 +63,13 @@ export default function FolderTabs({
           data-ui="hidden-rooms"
           onClick={onHidden}
         >
-          {COPY.hidden(hiddenCount)}
+          <span>{COPY.hidden(hiddenCount)}</span>
+          {hiddenUnread > 0 ? (
+            <>
+              <UnreadBadge count={hiddenUnread} />
+              <span className="sr-only">{COPY.hiddenUnread(hiddenUnread)}</span>
+            </>
+          ) : null}
         </button>
       ) : null}
       <button

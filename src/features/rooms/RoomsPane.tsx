@@ -26,7 +26,12 @@ import { ROOMS_COPY } from "./copy";
 import type { OrganizeSheetKind } from "./OrganizeSheet";
 import { organizeStore, useOrganize } from "./organize";
 import styles from "./RoomsPane.module.css";
-import { type RoomFilter, useSlice, useVisibleRoomIds } from "./slices";
+import {
+  type RoomFilter,
+  useHiddenUnread,
+  useSlice,
+  useVisibleRoomIds,
+} from "./slices";
 
 // The menus load on first use, so the list itself stays as small as it was.
 const OrganizeSheet = lazy(() => import("./OrganizeSheet"));
@@ -175,6 +180,7 @@ export function RoomsPane({
     const hidden = new Set(organize.hidden);
     return hidden.size ? order.filter((id) => hidden.has(id)).length : 0;
   }, [order, organize.hidden]);
+  const hiddenUnread = useHiddenUnread(stores, organize.hidden);
   const showHidden = hiddenView && hiddenCount > 0;
   const pinned = useMemo(() => new Set(organize.pinned), [organize.pinned]);
   const ids = useVisibleRoomIds(
@@ -402,6 +408,7 @@ export function RoomsPane({
               organize={organize}
               folder={folder}
               hiddenCount={hiddenCount}
+              hiddenUnread={hiddenUnread}
               showHidden={showHidden}
               onFolder={(id) => {
                 setFolder(id);

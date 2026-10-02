@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import type { components } from "../../src/contract/decoded";
+import { ClientStores } from "../../src/core/stores";
 import {
   arrangeRoomIds,
   createOrganizeStore,
@@ -16,6 +18,7 @@ import {
   toggleHidden,
   togglePinned,
 } from "../../src/features/rooms/organizeEdits";
+import { hiddenUnreadOf } from "../../src/features/rooms/slices";
 
 // Catalog order, most recent first, as /rooms delivers it.
 const ORDER = ["101", "102", "103", "104", "105", "106"];
@@ -208,5 +211,29 @@ describe("storage", () => {
     }
     expect(store.get().pinned).toEqual(["101"]);
     expect(warnings.length).toBe(1);
+  });
+});
+
+describe("hiding tidies the list, it never mutes a room", () => {
+  const room = (id: string, unread: number): components["schemas"]["Room"] => ({
+    id,
+    title: "가상 방",
+    kind: "group",
+    type: "MultiChat",
+    memberCount: 3,
+    unread,
+    lastMessageId: null,
+    lastActivityAt: "2037-04-07T09:00:00.000Z",
+    readable: true,
+  });
+
+  test("the hidden chip counts what waits in hidden rooms, and only there", () => {
+    const stores = new ClientStores();
+    stores.setCatalog([room("101", 2), room("102", 5), room("103", 1)]);
+    expect(hiddenUnreadOf(stores, ["101", "103"])).toBe(3);
+    // A hidden id the catalog no longer has counts nothing.
+    expect(hiddenUnreadOf(stores, ["999"])).toBe(0);
+    stores.setCatalog([room("101", 4), room("102", 5), room("103", 1)]);
+    expect(hiddenUnreadOf(stores, ["101", "103"])).toBe(5);
   });
 });
