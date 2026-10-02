@@ -27,6 +27,8 @@ import {
   subscribeAdapterRooms,
   watchAdapterRooms,
 } from "../adapters/liveRooms";
+import { DiscordTree } from "./DiscordTree";
+import { discordPlace, discordTree } from "./discordPlaces";
 import styles from "./Inbox.module.css";
 
 const COPY = {
@@ -244,6 +246,21 @@ export default function Inbox({
   const adapterRooms = useAdapterRooms(adapterIds);
   const nameOf = (id: string) =>
     adapters.find((tab) => tab.id === id)?.name ?? id;
+  const words = query.trim().toLocaleLowerCase("ko-KR");
+  // One adapter whose rooms say where its own sidebar draws them is drawn as that sidebar.
+  const treeEntry =
+    mode.kind === "adapter" ? adapterRooms.get(mode.adapterId) : undefined;
+  const tree = useMemo(() => {
+    if (treeEntry?.state !== "ready") return null;
+    if (!treeEntry.rooms.some((room) => discordPlace(room))) return null;
+    return discordTree(
+      words
+        ? treeEntry.rooms.filter((room) =>
+            room.title.toLocaleLowerCase("ko-KR").includes(words),
+          )
+        : treeEntry.rooms,
+    );
+  }, [treeEntry, words]);
 
   const rows = useMemo(() => {
     const list: Row[] = kakaoRooms.map(({ room, preview }) => ({
@@ -269,7 +286,8 @@ export default function Inbox({
         tab?.connection.kind === "connected"
           ? iconUrl(id, tab.icon)
           : undefined;
-      for (const room of entry.rooms)
+      for (const room of entry.rooms) {
+        if (tree && discordPlace(room)) continue;
         list.push({
           key: `${id}:${room.id}`,
           provider: id,
@@ -286,11 +304,11 @@ export default function Inbox({
           unreadLabel: COPY.adapterUnread(room.unread),
           href: adapterRoomHash(id, room.id),
         });
+      }
     }
     return sortRows(list);
-  }, [kakaoRooms, adapterIds, adapterRooms, adapters]);
+  }, [kakaoRooms, adapterIds, adapterRooms, adapters, tree]);
 
-  const words = query.trim().toLocaleLowerCase("ko-KR");
   const visible = words
     ? rows.filter((row) => row.title.toLocaleLowerCase("ko-KR").includes(words))
     : rows;
@@ -339,6 +357,15 @@ export default function Inbox({
       </div>
       <div className={styles.scroller}>
         {lines.length ? <div className={styles.lines}>{lines}</div> : null}
+        {tree && mode.kind === "adapter" && tree.guilds.length ? (
+          <DiscordTree
+            adapterId={mode.adapterId}
+            guilds={tree.guilds}
+            activeId={
+              active?.provider === mode.adapterId ? active.roomId : null
+            }
+          />
+        ) : null}
         {visible.length ? (
           <ul className={styles.list}>
             {visible.map((row) => (
@@ -354,7 +381,7 @@ export default function Inbox({
               />
             ))}
           </ul>
-        ) : lines.length ? null : (
+        ) : lines.length || tree?.guilds.length ? null : (
           <p className={styles.empty}>
             {words ? COPY.emptySearch : COPY.empty}
           </p>
