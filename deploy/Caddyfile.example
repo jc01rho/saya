@@ -12,16 +12,21 @@ http://127.0.0.1:8080 {
     root * dist
     encode zstd gzip
 
-    # The default covers index.html and SPA fallbacks. Hashed assets and /api
-    # override it below.
-    header Cache-Control "no-cache"
+  # `route` keeps the directives below in the order written. Without it Caddy
+  # sorts them: try_files would rewrite /api and /adapters to /index.html before
+  # any handle runs, and `respond @blocked_write` would run after the handles,
+  # letting a cross-site write through.
+  route {
+    # A default only (`?`): an upstream answer such as /media keeps its own.
+    # Hashed assets and /api override it below.
+    header ?Cache-Control "no-cache"
     # img-src allows https: because a photo on a message is an address on the
     # client's own CDN, which the contract says the browser may use directly.
     # Scripts and styles stay 'self'; nothing else is widened.
     header Content-Security-Policy "default-src 'self'; img-src 'self' https: data:; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'; style-src 'self'"
 
     @api path /api/*
-    header @api Cache-Control "no-store"
+    header @api >Cache-Control "no-store"
 
     # The link-preview endpoint. It is NOT the cores' contract, which is why it
     # lives outside /api, holds no token and never reaches a core. Run it with
@@ -93,6 +98,10 @@ http://127.0.0.1:8080 {
     @hashed_assets path_regexp hashed ^/assets/.+\.[a-zA-Z0-9_-]{8,}\.(?:css|js|mjs|woff2?|svg|png|jpe?g|webp|gif)$
     header @hashed_assets Cache-Control "public, max-age=31536000, immutable"
 
-    try_files {path} /index.html
-    file_server
+    # Everything else is the static client, with the SPA fallback.
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+  }
 }

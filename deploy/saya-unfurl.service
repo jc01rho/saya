@@ -1,0 +1,23 @@
+# The optional link-preview service (server/serve.ts), loopback only, as a
+# service. The proxy's /unfurl handle must point at the same port.
+[Unit]
+Description=saya link-preview service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/saya
+Environment=SAYA_UNFURL_PORT=8797 SAYA_UNFURL_HOST=127.0.0.1
+ExecStart=/home/ubuntu/.bun/bin/bun server/serve.ts
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

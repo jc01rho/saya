@@ -1,0 +1,25 @@
+# The same-origin proxy (Caddy) in front of dist/, as a service. Adjust the
+# user, paths and env file; the env file holds the core and adapter tokens and
+# must be readable by this user only (chmod 600). See docs/deployment.md.
+[Unit]
+Description=saya same-origin proxy (Caddy)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/saya
+ExecStart=/home/ubuntu/.local/bin/caddy run --config /home/ubuntu/saya-deploy/Caddyfile --adapter caddyfile --envfile /home/ubuntu/saya-deploy/saya.env
+Environment=XDG_CONFIG_HOME=/var/lib/saya-proxy XDG_DATA_HOME=/var/lib/saya-proxy
+StateDirectory=saya-proxy
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

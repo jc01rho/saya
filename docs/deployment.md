@@ -95,6 +95,36 @@ the upstream's own headers (`>` defers them). Cache-Control is a default only
 (`?`), so `/media` keeps its `private, max-age=86400` while everything else is
 `no-store`. Keep both when adding a handle for another adapter.
 
+## Running it as a service on a tailnet
+
+One way that keeps every listener on loopback: the proxy and the unfurl service
+run under systemd on a server, and Tailscale is both the TLS terminator and the
+user boundary (only the owner's tailnet devices reach it).
+
+1. On the machine running the KakaoTalk core, expose it to the tailnet only:
+   `tailscale serve --bg --https=8765 http://127.0.0.1:8765`. The core keeps its
+   loopback binding and still demands its bearer token.
+2. On the server: clone this repository, `bun install --frozen-lockfile`,
+   `bun run build`. Copy `deploy/Caddyfile.example` outside the repository and
+   set: a loopback listener (`http://:8796` with `bind 127.0.0.1` accepts the
+   host name tailscale forwards), `root` to the built `dist`, the Origin matcher
+   to the tailnet origin (`https://<server>.<tailnet>.ts.net`), the core upstream
+   to `https://<pc>.<tailnet>.ts.net:8765` written literally (a runtime
+   placeholder cannot carry the `https` scheme), the /unfurl port, and one
+   handle per adapter. Adapters on the same server are reached on loopback.
+3. Write the tokens to an env file readable only by the service user
+   (`chmod 600`): `SAYA_CORE_TOKEN` and one `SAYA_ADAPTER_<ID>_TOKEN` per
+   adapter. Never print them.
+4. Install `deploy/saya-proxy.service` and `deploy/saya-unfurl.service` (adjust
+   user and paths), then `systemctl enable --now saya-proxy saya-unfurl`.
+5. `tailscale serve --bg --https=443 --set-path / http://127.0.0.1:8796`. Paths
+   other services already hold on that address keep working.
+
+Check, from a tailnet device: `/` is the client, `/adapters` is JSON, `/api/health`
+answers, and a `POST` without this site's `Origin` is `403`. To update, pull
+and `bun run build`; the proxy serves the new `dist/` without a restart. While
+the core's machine is off, KakaoTalk is simply absent from the lists.
+
 ## The link-preview endpoint
 
 `/unfurl` is optional. It is **not** part of `openapi.json` and never reaches a

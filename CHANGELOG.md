@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### 수정
+
+**`deploy/Caddyfile.example` 이 쓰기 차단을 지나쳤습니다.** Caddy 는 지시어를 자기 순서로 정렬해서, `try_files` 가 `/api`·`/adapters` 를 `index.html` 로 바꾸고 `respond @blocked_write 403` 은 `handle` 뒤에 돌았습니다. 예시를 그대로 쓰면 다른 사이트의 쓰기가 코어·어댑터에 닿을 수 있었습니다. 전체를 `route { }` 로 감싸 적힌 순서를 지키고, 정적 파일은 마지막 `handle` 로 옮겼습니다. 캐시 헤더 기본값은 응답에 없을 때만 붙여(`?`) `/media` 의 `private, max-age=86400` 와 겹치지 않습니다. 검증: 실제 서버의 Caddy 2.11.6 에서 `/api`·`/adapters` 가 JSON, Origin 없는 POST 는 403, Origin 이 맞는 POST 는 어댑터까지 닿음.
+
+### 추가
+
+**tailnet 의 서버에서 서비스로 돌리는 방법.** `deploy/saya-proxy.service`·`deploy/saya-unfurl.service` 와 `docs/deployment.md` 의 절차: 코어는 자기 기계에서 `tailscale serve` 로 tailnet 에만 열고, 서버의 프록시·미리보기는 loopback 에 둔 채 systemd 로 돌며, `tailscale serve` 가 TLS 와 접근 경계를 맡습니다.
+
 ## [0.3.2] — 2026-10-02
 
 ### 변경
