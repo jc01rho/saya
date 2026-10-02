@@ -172,6 +172,42 @@
   user-select: none;
 }
 
+/* The user's own folders: one row that scrolls sideways instead of growing the head. */
+.folders {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 18px var(--space-12);
+  overflow-x: auto;
+  border: 0;
+  scrollbar-width: none;
+}
+
+.folders .chip {
+  flex: none;
+  max-width: 12em;
+  border: 0;
+  font-family: inherit;
+}
+
+.folders .chip > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chip[aria-pressed="true"],
+.chip[aria-pressed="true"]:hover {
+  background: var(--ink);
+  color: var(--field-list);
+}
+
+.chip:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-offset));
+}
+
 /* Hover changes background tone only, never layout. No fade: a half-way ink pill is illegible. */
 .chip:hover {
   background: var(--hover-list);

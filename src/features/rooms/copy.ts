@@ -21,4 +21,9 @@ export const ROOMS_COPY = {
   emptyGroup: "표시할 그룹 대화가 없습니다",
   /** Only titles already loaded are searched; there is no search route. */
   emptySearch: "불러온 대화방 이름 중에 맞는 것이 없습니다",
+  hiddenNote: "숨긴 방입니다. 방 메뉴에서 숨김을 풀 수 있습니다",
+  emptyFolder: "이 폴더에 표시할 방이 없습니다",
+  emptyHidden: "조건에 맞는 숨긴 방이 없습니다",
+  /** The row's own title names which menu this is. */
+  roomMenu: (title: string) => `${title} 메뉴`,
 } as const;

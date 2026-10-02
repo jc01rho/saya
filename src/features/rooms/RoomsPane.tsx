@@ -2,13 +2,18 @@ import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import {
   type FocusEvent,
   type KeyboardEvent,
+  lazy,
+  type MouseEvent,
   memo,
+  type PointerEvent,
   type ReactNode,
   type RefObject,
+  Suspense,
   useCallback,
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -18,8 +23,15 @@ import type { ClientStores } from "../../core/stores";
 import { Cat, cx, RoomRow } from "../../ui";
 import { ThemeControl } from "../theme";
 import { ROOMS_COPY } from "./copy";
+import type { OrganizeSheetKind } from "./OrganizeSheet";
+import { organizeStore, useOrganize } from "./organize";
 import styles from "./RoomsPane.module.css";
 import { type RoomFilter, useSlice, useVisibleRoomIds } from "./slices";
+
+// The menus load on first use, so the list itself stays as small as it was.
+const OrganizeSheet = lazy(() => import("./OrganizeSheet"));
+const FolderTabs = lazy(() => import("./FolderTabs"));
+const LONG_PRESS_MS = 500;
 
 type Room = components["schemas"]["Room"];
 
@@ -70,6 +82,8 @@ const RoomItem = memo(function RoomItem({
   start,
   list,
   measureElement,
+  pinned,
+  onMenu,
 }: {
   stores: ClientStores;
   id: string;
@@ -79,6 +93,8 @@ const RoomItem = memo(function RoomItem({
   start?: number;
   list: RefObject<HTMLUListElement | null>;
   measureElement: (element: HTMLElement | null) => void;
+  pinned: boolean;
+  onMenu: (id: string, at: { x: number; y: number } | null) => void;
 }) {
   const snapshot = useSlice(stores, `room.${id}`);
   const href = roomHash(id);
@@ -111,6 +127,21 @@ const RoomItem = memo(function RoomItem({
       active={active}
       preview={snapshot.preview}
       now={now}
+      pinned={pinned}
+      actions={
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-label={ROOMS_COPY.roomMenu(snapshot.room.title)}
+          data-ui="room-menu-button"
+          onClick={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            onMenu(id, { x: rect.left, y: rect.bottom });
+          }}
+        >
+          ⋯
+        </button>
+      }
     />
   );
 });
@@ -131,10 +162,42 @@ export function RoomsPane({
   const [filter, setFilter] = useState<RoomFilter>("all");
   const [query, setQuery] = useState("");
   const [focusedRoomId, setFocusedRoomId] = useState<string | null>(null);
-  const ids = useVisibleRoomIds(stores, filter, query);
+  const organize = useOrganize();
+  const [chosenFolder, setFolder] = useState<string | null>(null);
+  const [hiddenView, setHiddenView] = useState(false);
+  const [sheet, setSheet] = useState<OrganizeSheetKind | null>(null);
+  // A deleted folder falls back to every room rather than an empty tab.
+  const folder = organize.folders.some((entry) => entry.id === chosenFolder)
+    ? chosenFolder
+    : null;
+  const order = useSlice(stores, "rooms.order");
+  const hiddenCount = useMemo(() => {
+    const hidden = new Set(organize.hidden);
+    return hidden.size ? order.filter((id) => hidden.has(id)).length : 0;
+  }, [order, organize.hidden]);
+  const showHidden = hiddenView && hiddenCount > 0;
+  const pinned = useMemo(() => new Set(organize.pinned), [organize.pinned]);
+  const ids = useVisibleRoomIds(
+    stores,
+    filter,
+    query,
+    organize,
+    folder,
+    showHidden,
+  );
   const connection = useSlice(stores, "connection");
   const now = useToday();
   const group = useId();
+  // A touch that starts a scroll is cancelled by the browser, which ends the press.
+  const press = useRef<{
+    timer: ReturnType<typeof setTimeout>;
+    fired: boolean;
+  } | null>(null);
+  const openMenu = useCallback(
+    (id: string, at: { x: number; y: number } | null) =>
+      setSheet({ kind: "room", roomId: id, at }),
+    [],
+  );
   const list = useRef<HTMLUListElement>(null);
   const [focusRequest, setFocusRequest] = useState<string | null>(null);
   const activeIndex = activeRoomId === null ? -1 : ids.indexOf(activeRoomId);
@@ -169,6 +232,61 @@ export function RoomsPane({
   // One h1 per view: the brand is the heading on the index, the thread's title takes over in a room.
   const Brand = activeRoomId === null ? "h1" : "p";
   const empty = !loading && ids.length === 0;
+  const showFolders = organize.folders.length > 0 || hiddenCount > 0;
+
+  const roomIdAt = useCallback(
+    (target: EventTarget) => {
+      if (!(target instanceof Element)) return undefined;
+      const href = target
+        .closest('[data-ui="room-row"]')
+        ?.querySelector("a")
+        ?.getAttribute("href");
+      return href ? ids.find((id) => roomHash(id) === href) : undefined;
+    },
+    [ids],
+  );
+  const cancelPress = useCallback(() => {
+    if (press.current) clearTimeout(press.current.timer);
+  }, []);
+  const onPointerDown = useCallback(
+    (event: PointerEvent<HTMLUListElement>) => {
+      cancelPress();
+      press.current = null;
+      if (event.pointerType !== "touch") return;
+      const id = roomIdAt(event.target);
+      if (!id) return;
+      const at = { x: event.clientX, y: event.clientY };
+      const state = {
+        fired: false,
+        timer: setTimeout(() => {
+          state.fired = true;
+          openMenu(id, at);
+        }, LONG_PRESS_MS),
+      };
+      press.current = state;
+    },
+    [cancelPress, openMenu, roomIdAt],
+  );
+  // The click that ends a long press must not also open the room.
+  const onClickCapture = useCallback((event: MouseEvent<HTMLUListElement>) => {
+    if (!press.current?.fired) return;
+    press.current = null;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+  const onContextMenu = useCallback(
+    (event: MouseEvent<HTMLUListElement>) => {
+      const id = roomIdAt(event.target);
+      if (!id) return;
+      event.preventDefault();
+      if (press.current?.fired) return;
+      // The keyboard's menu key reports no pointer position; anchor to the row then.
+      const keyboard = event.clientX === 0 && event.clientY === 0;
+      openMenu(id, keyboard ? null : { x: event.clientX, y: event.clientY });
+    },
+    [openMenu, roomIdAt],
+  );
+  useEffect(() => cancelPress, [cancelPress]);
 
   const focusRoom = useCallback((id: string) => {
     setFocusedRoomId(id);
@@ -226,6 +344,8 @@ export function RoomsPane({
       aria-busy={loading || undefined}
       data-ui="rooms-pane"
       data-filter={filter}
+      data-folder={folder ?? undefined}
+      data-hidden-view={showHidden || undefined}
     >
       <div className={styles.head}>
         <div className={styles.headInner}>
@@ -276,14 +396,37 @@ export function RoomsPane({
             </label>
           ))}
         </fieldset>
+        {showFolders ? (
+          <Suspense fallback={null}>
+            <FolderTabs
+              organize={organize}
+              folder={folder}
+              hiddenCount={hiddenCount}
+              showHidden={showHidden}
+              onFolder={(id) => {
+                setFolder(id);
+                setHiddenView(false);
+              }}
+              onHidden={() => setHiddenView(!showHidden)}
+              onEdit={() => setSheet({ kind: "folders" })}
+            />
+          </Suspense>
+        ) : null}
       </div>
       <div className={styles.scroller} data-ui="room-scroller">
         {loading ? <p className={styles.status}>{ROOMS_COPY.loading}</p> : null}
+        {showHidden ? (
+          <p className={styles.status}>{ROOMS_COPY.hiddenNote}</p>
+        ) : null}
         {empty ? (
           <p className={styles.status}>
             {query.trim()
               ? ROOMS_COPY.emptySearch
-              : FILTERS.find((option) => option.value === filter)?.empty}
+              : showHidden
+                ? ROOMS_COPY.emptyHidden
+                : folder !== null
+                  ? ROOMS_COPY.emptyFolder
+                  : FILTERS.find((option) => option.value === filter)?.empty}
           </p>
         ) : null}
         <ul
@@ -294,6 +437,11 @@ export function RoomsPane({
           aria-keyshortcuts="ArrowUp ArrowDown Home End"
           onFocusCapture={onRowFocus}
           onKeyDown={onRowKeyDown}
+          onContextMenu={onContextMenu}
+          onPointerDown={onPointerDown}
+          onPointerUp={cancelPress}
+          onPointerCancel={cancelPress}
+          onClickCapture={onClickCapture}
           style={
             virtual ? { height: `${virtualizer.getTotalSize()}px` } : undefined
           }
@@ -313,6 +461,8 @@ export function RoomsPane({
                     start={item.start}
                     list={list}
                     measureElement={virtualizer.measureElement}
+                    pinned={pinned.has(id)}
+                    onMenu={openMenu}
                   />
                 );
               })
@@ -325,11 +475,24 @@ export function RoomsPane({
                   now={now}
                   list={list}
                   measureElement={virtualizer.measureElement}
+                  pinned={pinned.has(id)}
+                  onMenu={openMenu}
                 />
               ))}
         </ul>
         <div className={styles.filler} />
       </div>
+      {sheet ? (
+        <Suspense fallback={null}>
+          <OrganizeSheet
+            sheet={sheet}
+            stores={stores}
+            organize={organize}
+            update={organizeStore().update}
+            onClose={() => setSheet(null)}
+          />
+        </Suspense>
+      ) : null}
       {connecting ? (
         <div className={styles.foot}>
           <div className={styles.footInner}>

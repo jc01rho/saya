@@ -1,7 +1,7 @@
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import type { components } from "../contract/decoded";
 import { RoomAvatar } from "./Avatar";
-import { unreadName } from "./copy";
+import { COPY, unreadName } from "./copy";
 import { cx } from "./cx";
 import { formatTime } from "./format";
 import styles from "./RoomRow.module.css";
@@ -19,6 +19,10 @@ export interface RoomRowProps {
   /** Injected so rows render deterministically; the list decides how often it ticks. */
   now: Date;
   onSelect?: ((event: MouseEvent<HTMLAnchorElement>) => void) | undefined;
+  /** The user pinned this room to the top of their list. */
+  pinned?: boolean;
+  /** Controls beside the link, never inside it: a link may not contain a button. */
+  actions?: ReactNode;
 }
 
 /**
@@ -34,6 +38,8 @@ export function RoomRow({
   preview = null,
   now,
   onSelect,
+  pinned = false,
+  actions,
 }: RoomRowProps) {
   const time = formatTime(room.lastActivityAt, now);
   // `readable: false` no longer means the room cannot be read: the core opens
@@ -57,6 +63,14 @@ export function RoomRow({
         <div className={styles.body}>
           <div className={styles.header}>
             <span className={styles.title}>{room.title}</span>
+            {pinned ? (
+              <span className={styles.pin}>
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M4 1h4l-.5 3.5L10 7H2l2.5-2.5zM6 7v4" />
+                </svg>
+                <span className="sr-only">{COPY.pinned}</span>
+              </span>
+            ) : null}
             {time.dateTime ? (
               <time className={styles.time} dateTime={time.dateTime}>
                 {time.label}
@@ -80,6 +94,7 @@ export function RoomRow({
           </div>
         </div>
       </a>
+      {actions}
     </li>
   );
 }
