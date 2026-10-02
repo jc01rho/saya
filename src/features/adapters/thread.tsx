@@ -644,7 +644,10 @@ export function AdapterThread({
         }}
       >
         {phase.kind === "loading" ? (
-          <p className={styles.status}>{COPY.loading}</p>
+          <p className={styles.status}>
+            <span data-ui="theme-loader" aria-hidden="true" />
+            {COPY.loading}
+          </p>
         ) : phase.kind !== "ready" ? (
           <p className={styles.status}>{problemSentence(phase)}</p>
         ) : (
@@ -656,7 +659,14 @@ export function AdapterThread({
                 onClick={() => void loadEarlier()}
                 disabled={earlier === "busy"}
               >
-                {earlier === "busy" ? COPY.loadingEarlier : COPY.earlier}
+                {earlier === "busy" ? (
+                  <>
+                    <span data-ui="theme-loader" aria-hidden="true" />
+                    {COPY.loadingEarlier}
+                  </>
+                ) : (
+                  COPY.earlier
+                )}
               </button>
             ) : null}
             {earlier !== "idle" && earlier !== "busy" ? (

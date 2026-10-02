@@ -318,15 +318,30 @@ export default function Inbox({
   const now = new Date();
   const lines: ReactNode[] = [];
   if (all && kakao.state === "loading")
-    lines.push(<p key="kakao">{COPY.kakaoLoading}</p>);
+    lines.push(
+      <p key="kakao">
+        <span data-ui="theme-loader" aria-hidden="true" />
+        {COPY.kakaoLoading}
+      </p>,
+    );
   if (all)
     for (const tab of adapters)
       if (tab.connection.kind === "checking")
-        lines.push(<p key={tab.id}>{COPY.adapterLoading(tab.name)}</p>);
+        lines.push(
+          <p key={tab.id}>
+            <span data-ui="theme-loader" aria-hidden="true" />
+            {COPY.adapterLoading(tab.name)}
+          </p>,
+        );
   for (const id of adapterIds) {
     const entry = adapterRooms.get(id);
     if (!entry || entry.state === "loading")
-      lines.push(<p key={id}>{COPY.adapterLoading(nameOf(id))}</p>);
+      lines.push(
+        <p key={id}>
+          <span data-ui="theme-loader" aria-hidden="true" />
+          {COPY.adapterLoading(nameOf(id))}
+        </p>,
+      );
     else if (!all && entry.state === "problem")
       lines.push(
         <p key={id}>

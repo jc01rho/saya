@@ -226,7 +226,8 @@ export function AgentActivity({ state }: { state: AgentToolsState }) {
       data-ui="agent-activity"
       data-tool={name}
     >
-      <span className={styles.dot} aria-hidden="true" />
+      <span className={styles.dot} data-ui="agent-dot" aria-hidden="true" />
+      <span data-ui="theme-loader" aria-hidden="true" />
       {AGENT_COPY.reading(AGENT_COPY.what[name] ?? AGENT_COPY.unknownTool)}
     </p>
   );

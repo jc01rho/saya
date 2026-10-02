@@ -19,16 +19,21 @@ export interface ImageLayer {
   opacity: number;
 }
 
+/** How a loading picture moves: `dance` sways it from CSS, `none` leaves it as drawn (an animated WebP or GIF plays by itself). */
+export type LoaderMotion = "dance" | "none";
+export const LOADER_MOTIONS: readonly LoaderMotion[] = ["dance", "none"];
+
 /**
  * Pictures a custom theme may carry: a wallpaper under the conversation, a
- * pattern under the room list, a mascot (the empty outlet and the list's end)
- * and a small badge beside the list heading.
+ * pattern under the room list, a mascot (the empty outlet and the list's end),
+ * a small badge beside the list heading and a loader beside every loading line.
  */
 export interface ThemeImages {
   wall?: ImageLayer;
   list?: ImageLayer;
   mascot?: { src: string };
   badge?: { src: string };
+  loader?: { src: string; motion: LoaderMotion };
 }
 
 /** Pictures laid under a field, each named after the token of the field it sits under. */
@@ -134,6 +139,17 @@ function readImages(value: unknown): ThemeImages | undefined {
     images[slot] = { src: sticker.src };
     chars += sticker.src.length;
   }
+  if (raw.loader !== undefined) {
+    const loader = raw.loader as Record<string, unknown> | null;
+    if (
+      !loader ||
+      !isImageSrc(loader.src) ||
+      !LOADER_MOTIONS.includes(loader.motion as LoaderMotion)
+    )
+      return undefined;
+    images.loader = { src: loader.src, motion: loader.motion as LoaderMotion };
+    chars += loader.src.length;
+  }
   return chars > 0 && chars <= IMAGES_MAX_CHARS ? images : undefined;
 }
 
@@ -158,12 +174,15 @@ export function imageVars(images: ThemeImages | undefined) {
     const sticker = images?.[slot];
     if (sticker) vars[`--theme-${slot}`] = `url("${sticker.src}")`;
   }
+  if (images?.loader) vars["--theme-loader"] = `url("${images.loader.src}")`;
   return vars;
 }
 
-/** True when a theme draws a picture outside the conversation, so the places stylesheet is needed. */
+/** True when a theme draws a picture the places stylesheet places: in the lists, or beside a loading line. */
 export function hasPlaces(images: ThemeImages | undefined) {
-  return Boolean(images?.list || images?.mascot || images?.badge);
+  return Boolean(
+    images?.list || images?.mascot || images?.badge || images?.loader,
+  );
 }
 
 /** The stored selection, or "system" when nothing usable is stored. Storage may throw. */
@@ -221,6 +240,7 @@ export function applyTheme(
   for (const name of applied.get(root) ?? []) root.style.removeProperty(name);
   applied.delete(root);
   for (const flag of Object.values(IMAGE_FLAGS)) delete root.dataset[flag];
+  delete root.dataset.themeLoader;
   if (theme === "custom" && stored.vars) {
     const names = ["color-scheme"];
     root.style.setProperty(
@@ -239,6 +259,8 @@ export function applyTheme(
     }
     for (const [slot, flag] of Object.entries(IMAGE_FLAGS))
       if (pictures?.[slot as keyof typeof IMAGE_FLAGS]) root.dataset[flag] = "";
+    // The flag carries the motion, so the places stylesheet knows whether to sway it.
+    if (pictures?.loader) root.dataset.themeLoader = pictures.loader.motion;
     applied.set(root, names);
   }
   root.dataset.theme = theme;

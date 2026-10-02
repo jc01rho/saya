@@ -48,6 +48,7 @@ const pictured = {
     list: { src: DOT, fit: "cover" as const, opacity: 0.1 },
     mascot: { src: DOT },
     badge: { src: DOT },
+    loader: { src: DOT, motion: "dance" as const },
   },
 };
 /** A valid picture of `chars` characters, under the per-picture bound. */
@@ -149,6 +150,8 @@ describe("cached pictures", () => {
       expect(root.dataset.themeMascot).toBe("");
       expect(root.dataset.themeList).toBe("");
       expect(root.dataset.themeBadge).toBe("");
+      expect(root.props.get("--theme-loader")).toBe(`url("${DOT}")`);
+      expect(root.dataset.themeLoader).toBe("dance");
     }
   });
 
@@ -168,6 +171,19 @@ describe("cached pictures", () => {
       { list: { src: DOT, fit: "tile", opacity: 0.5 } },
     ],
     ["a badge that is an address", { badge: { src: "https://example.test" } }],
+    [
+      "a loader with an unknown motion",
+      { loader: { src: DOT, motion: "spin" } },
+    ],
+    ["a loader with no motion", { loader: { src: DOT } }],
+    [
+      "a loader past the theme's total",
+      {
+        wall: { src: sized(100_000), fit: "tile", opacity: 0.1 },
+        loader: { src: sized(100_001 - 1), motion: "dance" },
+        mascot: { src: sized(1_000) },
+      },
+    ],
     [
       "pictures past the theme's total",
       {
@@ -196,5 +212,6 @@ describe("cached pictures", () => {
       expect(booted.dataset.themeMascot).toBeUndefined();
       expect(booted.dataset.themeList).toBeUndefined();
       expect(booted.dataset.themeBadge).toBeUndefined();
+      expect(booted.dataset.themeLoader).toBeUndefined();
     });
 });

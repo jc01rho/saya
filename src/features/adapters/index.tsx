@@ -167,6 +167,9 @@ function AdapterCheck({ id, onRetry }: { id: string; onRetry: () => void }) {
           data-tone={state.kind === "connected" ? "ok" : state.kind}
           role="status"
         >
+          {state.kind === "checking" ? (
+            <span data-ui="theme-loader" aria-hidden="true" />
+          ) : null}
           {statusLabel(state)}
         </span>
       </header>
@@ -223,6 +226,7 @@ export function AdaptersPane({
         <KakaoCard status={kakao} onRetry={onKakaoRetry} />
         {index === null ? (
           <p className={styles.line} aria-live="polite">
+            <span data-ui="theme-loader" aria-hidden="true" />
             {COPY.checkingIndex}
           </p>
         ) : index.kind === "unconfigured" ? (

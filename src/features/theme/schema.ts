@@ -4,6 +4,8 @@ import {
   IMAGE_SRC,
   IMAGE_STICKERS,
   IMAGES_MAX_CHARS,
+  LOADER_MOTIONS,
+  type LoaderMotion,
   type ThemeImages,
   WALL_OPACITY_MAX,
 } from "./apply";
@@ -305,8 +307,8 @@ export type ThemeIssue =
   | { kind: "colour"; token: TokenKey; value: string }
   | {
       kind: "image";
-      slot: "images" | "wall" | "list" | "mascot" | "badge";
-      problem: "shape" | "src" | "size" | "fit" | "opacity";
+      slot: "images" | "wall" | "list" | "mascot" | "badge" | "loader";
+      problem: "shape" | "src" | "size" | "fit" | "opacity" | "motion";
     };
 
 export type ParseResult =
@@ -350,7 +352,11 @@ function parseImages(raw: unknown): {
     };
   const issues: ImageIssue[] = [];
   const images: ThemeImages = {};
-  const known: readonly string[] = [...IMAGE_LAYERS, ...IMAGE_STICKERS];
+  const known: readonly string[] = [
+    ...IMAGE_LAYERS,
+    ...IMAGE_STICKERS,
+    "loader",
+  ];
   const ignored = Object.keys(raw)
     .filter((key) => !known.includes(key))
     .map((key) => `images.${key}`);
@@ -395,6 +401,26 @@ function parseImages(raw: unknown): {
     else {
       images[slot] = { src: sticker.src as string };
       chars += (sticker.src as string).length;
+    }
+  }
+  const loader = raw.loader;
+  if (loader !== undefined && loader !== null) {
+    if (!isRecord(loader))
+      issues.push({ kind: "image", slot: "loader", problem: "shape" });
+    else {
+      const before = issues.length;
+      const src = srcProblem(loader.src);
+      if (src) issues.push({ kind: "image", slot: "loader", problem: src });
+      const motion = loader.motion ?? "dance";
+      if (!LOADER_MOTIONS.includes(motion as LoaderMotion))
+        issues.push({ kind: "image", slot: "loader", problem: "motion" });
+      if (issues.length === before) {
+        images.loader = {
+          src: loader.src as string,
+          motion: motion as LoaderMotion,
+        };
+        chars += (loader.src as string).length;
+      }
     }
   }
   if (chars > IMAGES_MAX_CHARS)

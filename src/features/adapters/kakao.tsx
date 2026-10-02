@@ -121,6 +121,9 @@ export function KakaoCard({
           data-tone={status.kind === "connected" ? "ok" : status.kind}
           role="status"
         >
+          {status.kind === "checking" ? (
+            <span data-ui="theme-loader" aria-hidden="true" />
+          ) : null}
           {label(status)}
         </span>
       </header>

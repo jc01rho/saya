@@ -370,6 +370,7 @@ export default function AttachmentsSheet({
         </fieldset>
         {pages.loading === "first" ? (
           <p className={reads.status} role="status">
+            <span data-ui="theme-loader" aria-hidden="true" />
             {ATTACHMENTS_COPY.loading}
           </p>
         ) : null}
@@ -444,9 +445,14 @@ export default function AttachmentsSheet({
             aria-disabled={pages.loading === "more" || undefined}
             onClick={pages.loading === "more" ? undefined : more}
           >
-            {pages.loading === "more"
-              ? ATTACHMENTS_COPY.moreLoading
-              : ATTACHMENTS_COPY.more}
+            {pages.loading === "more" ? (
+              <>
+                <span data-ui="theme-loader" aria-hidden="true" />
+                {ATTACHMENTS_COPY.moreLoading}
+              </>
+            ) : (
+              ATTACHMENTS_COPY.more
+            )}
           </button>
         ) : null}
       </div>

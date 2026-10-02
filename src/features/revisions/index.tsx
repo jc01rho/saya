@@ -99,7 +99,10 @@ export function RevisionsDialog({
         aria-busy={state.phase === "loading" || undefined}
       >
         {state.phase === "loading" ? (
-          <p className={reads.status}>{REVISIONS_COPY.loading}</p>
+          <p className={reads.status}>
+            <span data-ui="theme-loader" aria-hidden="true" />
+            {REVISIONS_COPY.loading}
+          </p>
         ) : null}
         {failure ? (
           <div

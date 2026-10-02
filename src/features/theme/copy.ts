@@ -81,6 +81,7 @@ export const THEME_COPY = {
           size: `${where}.src가 너무 큽니다. 그림 하나는 ${IMAGE_MAX_CHARS.toLocaleString("ko-KR")}자(약 73KB) 이하여야 합니다.`,
           fit: `${where}.fit은 "cover" 또는 "tile"이어야 합니다.`,
           opacity: `${where}.opacity는 0~${WALL_OPACITY_MAX} 사이 숫자여야 합니다.`,
+          motion: `${where}.motion은 "dance" 또는 "none"이어야 합니다.`,
         }[issue.problem];
       }
     }

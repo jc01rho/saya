@@ -222,6 +222,7 @@ export const scenario: Scenario = {
         list: { src: dots, fit: "tile", opacity: 0.1 },
         mascot: { src: dots },
         badge: { src: dots },
+        loader: { src: dots },
       },
     };
     // The list's pattern, the badge and the mascot below the last row, once places.css has
@@ -326,6 +327,64 @@ export const scenario: Scenario = {
       `mascot on the empty outlet: ${JSON.stringify(shown)}`,
     );
     await screenshot("theme-desktop-pictured-empty");
+    // The loader beside a loading line: the rooms answer is held, so the list stays loading.
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route("**/api/rooms**", async (route) => {
+      await held;
+      // A reload in between abandons the held request; only a live one goes on.
+      await route.continue().catch((error: Error) => {
+        if (!/already handled/.test(error.message)) throw error;
+      });
+    });
+    const loading = async () => {
+      await page.reload({ waitUntil: "load" });
+      await page.locator('[data-ui="theme-loader"]').first().waitFor();
+      return page.evaluate(() => {
+        const loader = document.querySelector<HTMLElement>(
+          '[data-ui="theme-loader"]',
+        );
+        const style = loader ? getComputedStyle(loader) : null;
+        const walking = document.querySelector(
+          '[data-ui="rooms-pane"] [data-ui="cat"][data-motion="walk"]',
+        );
+        return {
+          shown: style?.display ?? null,
+          picture: style?.backgroundImage.includes("data:image/png") ?? false,
+          height: loader?.getBoundingClientRect().height ?? 0,
+          animation: style?.animationName ?? null,
+          busy: document.querySelector('[aria-busy="true"]') !== null,
+          hidden: loader?.getAttribute("aria-hidden"),
+          cat: walking ? getComputedStyle(walking).display : null,
+        };
+      });
+    };
+    const dancing = await loading();
+    expect(
+      dancing.shown !== "none" &&
+        dancing.picture &&
+        dancing.height > 0 &&
+        dancing.animation === "theme-loader-dance" &&
+        dancing.busy &&
+        dancing.hidden === "true" &&
+        dancing.cat !== "inline-block",
+      `loader beside the loading list: ${JSON.stringify(dancing)}`,
+    );
+    await screenshot("theme-desktop-pictured-loading");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const still = await loading();
+    expect(
+      still.shown !== "none" && still.animation === "none",
+      `loader under reduced motion: ${JSON.stringify(still)}`,
+    );
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    release();
+    await page.unroute("**/api/rooms**");
+    log(
+      "loader dances beside the loading list and stands still under reduced motion",
+    );
     // Narrow, the room replaces the list, so the wall is what to wait for.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${url}/#/room/${encodeURIComponent(room.id)}`, {
@@ -356,9 +415,14 @@ export const scenario: Scenario = {
       mascot: "themeMascot" in document.documentElement.dataset,
       list: "themeList" in document.documentElement.dataset,
       badge: "themeBadge" in document.documentElement.dataset,
+      loader: "themeLoader" in document.documentElement.dataset,
     }));
     expect(
-      cleared.wall === "" && !cleared.mascot && !cleared.list && !cleared.badge,
+      cleared.wall === "" &&
+        !cleared.mascot &&
+        !cleared.list &&
+        !cleared.badge &&
+        !cleared.loader,
       `pictures after deleting the theme: ${JSON.stringify(cleared).slice(0, 80)}`,
     );
     log("pictured theme drawn on the wall and the empty outlet, then deleted");

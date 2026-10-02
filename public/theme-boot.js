@@ -43,16 +43,29 @@
     );
   const stickerOk = (sticker) =>
     sticker === undefined || Boolean(sticker && srcOk(sticker.src));
+  const loaderOk = (loader) =>
+    loader === undefined ||
+    Boolean(
+      loader &&
+        srcOk(loader.src) &&
+        (loader.motion === "dance" || loader.motion === "none"),
+    );
   const pictures = (images) => {
     if (!images || typeof images !== "object") return null;
-    const { wall, list, mascot, badge } = images;
-    if (![wall, list].every(layerOk) || ![mascot, badge].every(stickerOk))
+    const { wall, list, mascot, badge, loader } = images;
+    if (
+      ![wall, list].every(layerOk) ||
+      ![mascot, badge].every(stickerOk) ||
+      !loaderOk(loader)
+    )
       return null;
-    const chars = [wall, list, mascot, badge].reduce(
+    const chars = [wall, list, mascot, badge, loader].reduce(
       (sum, picture) => sum + (picture ? picture.src.length : 0),
       0,
     );
-    return chars > 0 && chars <= 200000 ? { wall, list, mascot, badge } : null;
+    return chars > 0 && chars <= 200000
+      ? { wall, list, mascot, badge, loader }
+      : null;
   };
   if (choice === "light" || choice === "dark" || choice === "kakao") {
     root.dataset.theme = choice;
@@ -95,6 +108,10 @@
     if (images?.list) root.dataset.themeList = "";
     if (images?.mascot) root.dataset.themeMascot = "";
     if (images?.badge) root.dataset.themeBadge = "";
+    if (images?.loader) {
+      root.style.setProperty("--theme-loader", `url("${images.loader.src}")`);
+      root.dataset.themeLoader = images.loader.motion;
+    }
     root.dataset.theme = "custom";
   } else {
     root.dataset.theme = system();

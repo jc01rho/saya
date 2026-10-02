@@ -112,7 +112,10 @@ export function ConnectionScreen({
 
   return (
     <section aria-live="polite">
-      <p>연결 상태를 확인하는 중입니다.</p>
+      <p>
+        <span data-ui="theme-loader" aria-hidden="true" />
+        연결 상태를 확인하는 중입니다.
+      </p>
     </section>
   );
 }

@@ -169,6 +169,49 @@ describe("pictures", () => {
     ]);
   });
 
+  test("a loader parses with its motion defaulted to dance; a bad one is reported", () => {
+    const result = parseTheme(withImages({ loader: { src: DOT } }));
+    expect(result.ok && result.theme.images).toEqual({
+      loader: { src: DOT, motion: "dance" },
+    });
+    const still = parseTheme(
+      withImages({ loader: { src: DOT, motion: "none" } }),
+    );
+    expect(still.ok && still.theme.images?.loader?.motion).toBe("none");
+    const bad = parseTheme(
+      withImages({
+        loader: { src: "https://example.test/a.gif", motion: "spin" },
+      }),
+    );
+    expect(bad.ok ? [] : bad.issues).toEqual([
+      { kind: "image", slot: "loader", problem: "src" },
+      { kind: "image", slot: "loader", problem: "motion" },
+    ]);
+    expect(parseTheme(withImages({ loader: "dance" })).ok).toBe(false);
+  });
+
+  test("a loader counts toward the theme's total", () => {
+    const prefix = "data:image/png;base64,";
+    const sized = (chars: number) =>
+      `${prefix}${"A".repeat(chars - prefix.length)}`;
+    const two = (chars: number) =>
+      withImages({
+        wall: { src: sized(100_000) },
+        loader: { src: sized(chars) },
+      });
+    expect(parseTheme(two(100_000)).ok).toBe(true);
+    const over = parseTheme(
+      withImages({
+        wall: { src: sized(100_000) },
+        mascot: { src: sized(50_000) },
+        loader: { src: sized(50_001) },
+      }),
+    );
+    expect(over.ok ? [] : over.issues).toEqual([
+      { kind: "image", slot: "images", problem: "size" },
+    ]);
+  });
+
   test("one theme's pictures together stay within the total bound", () => {
     const prefix = "data:image/png;base64,";
     const sized = (chars: number) =>
