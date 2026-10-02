@@ -190,6 +190,11 @@ no credentials or app data are sent.
 - **Another catalog:** build with `VITE_THEME_GALLERY_URL=<url of gallery.json>`
   and put that origin in `connect-src` instead. It is a public address, not a
   secret; never put a token in a `VITE_*` variable.
+- **Seasonal entries:** a character in `gallery.json` may set `from` and/or
+  `until` to a real `yyyy-MM-dd` date. Both dates are inclusive on the Korean
+  calendar (UTC+09:00), regardless of the device's time zone. Missing bounds
+  are open; outside-period entries, malformed dates and reversed ranges are
+  hidden. This only hides catalog cards, not a theme already saved or applied.
 - **No gallery:** leave the origin out of `connect-src`. Nothing else changes;
   pasted and built-in themes keep working.
 

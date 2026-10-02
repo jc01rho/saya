@@ -58,10 +58,23 @@ function readTheme(value: unknown, catalog: URL): GalleryTheme | null {
   return { mode, name, colors, url: url.href };
 }
 
-/** The catalog's cards; entries that are not well formed are left out. Null when nothing usable arrives. */
+/** Missing means unbounded; anything but a real yyyy-MM-dd calendar date is invalid. */
+function readDate(value: unknown): string | undefined | null {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
+/** Valid cards outside their inclusive KST period are hidden; an empty seasonal catalog is not a fetch failure. */
 export async function fetchGallery(
   catalogUrl: string = GALLERY_URL,
   fetcher: Fetcher = (url) => fetch(url),
+  now: Date = new Date(),
 ): Promise<GalleryCharacter[] | null> {
   try {
     const catalog = new URL(catalogUrl, globalThis.location?.href);
@@ -69,15 +82,27 @@ export async function fetchGallery(
     if (!response.ok) return null;
     const list: unknown = await response.json();
     if (!Array.isArray(list)) return null;
+    // UTC+09:00 has no daylight saving: never use the device's calendar date.
+    const today = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    let hasCards = false;
     const characters = list.flatMap((value): GalleryCharacter[] => {
       if (!isRecord(value)) return [];
       const { id, name, themes } = value;
       if (typeof id !== "string" || typeof name !== "string") return [];
       if (!Array.isArray(themes)) return [];
       const cards = themes.flatMap((theme) => readTheme(theme, catalog) ?? []);
-      return cards.length > 0 ? [{ id, name, themes: cards }] : [];
+      if (cards.length === 0) return [];
+      hasCards = true;
+      const from = readDate(value.from);
+      const until = readDate(value.until);
+      if (from === null || until === null) return [];
+      if (from && until && from > until) return [];
+      if ((from && today < from) || (until && today > until)) return [];
+      return [{ id, name, themes: cards }];
     });
-    return characters.length > 0 ? characters : null;
+    return hasCards ? characters : null;
   } catch {
     return null;
   }

@@ -235,3 +235,117 @@ test("offline, a missing file, a file that is not a theme, or one parseTheme rej
     await fetchGalleryTheme(entry, answer(JSON.stringify(rejected))),
   ).toBeNull();
 });
+
+const seasonal = (period: Record<string, unknown> = {}) => ({
+  id: "seasonal",
+  name: "기간 시험",
+  themes: [card()],
+  ...period,
+});
+
+for (const zone of ["UTC", "America/Los_Angeles"]) {
+  for (const [instant, visible] of [
+    ["2026-10-30T14:59:59.999Z", false],
+    ["2026-10-30T15:00:00.000Z", true],
+    ["2026-10-31T14:59:59.999Z", true],
+    ["2026-10-31T15:00:00.000Z", false],
+  ] as const) {
+    test(`a single-day season is ${visible ? "visible" : "hidden"} at ${instant} in ${zone}`, async () => {
+      const previous = process.env.TZ;
+      process.env.TZ = zone;
+      try {
+        const list = await fetchGallery(
+          CATALOG,
+          serve(
+            catalogFiles([
+              seasonal({ from: "2026-10-31", until: "2026-10-31" }),
+            ]),
+          ),
+          new Date(instant),
+        );
+        expect(list?.map((character) => character.id)).toEqual(
+          visible ? ["seasonal"] : [],
+        );
+      } finally {
+        if (previous === undefined) delete process.env.TZ;
+        else process.env.TZ = previous;
+      }
+    });
+  }
+}
+
+test("missing bounds stay open and characters without dates always remain visible", async () => {
+  const list = await fetchGallery(
+    CATALOG,
+    serve(
+      catalogFiles([
+        seasonal({ id: "always" }),
+        seasonal({ id: "started", from: "2026-10-01" }),
+        seasonal({ id: "future", from: "2026-10-03" }),
+        seasonal({ id: "ending", until: "2026-10-02" }),
+        seasonal({ id: "ended", until: "2026-10-01" }),
+      ]),
+    ),
+    new Date("2026-10-01T15:00:00.000Z"),
+  );
+  expect(list?.map((character) => character.id)).toEqual([
+    "always",
+    "started",
+    "ending",
+  ]);
+});
+
+for (const invalid of [
+  "",
+  "2026-1-01",
+  "2026-10-2",
+  "2026/10/02",
+  "2026-10-02T00:00:00+09:00",
+  " 2026-10-02",
+  "2026-02-29",
+  "2026-04-31",
+  "2026-13-01",
+  "2026-00-01",
+  "2026-10-00",
+  "2026-10-32",
+  null,
+  20261002,
+] as const) {
+  test(`malformed bounds ${JSON.stringify(invalid)} hide the character rather than widening its period`, async () => {
+    const list = await fetchGallery(
+      CATALOG,
+      serve(
+        catalogFiles([
+          seasonal({ id: "bad-from", from: invalid }),
+          seasonal({ id: "bad-until", until: invalid }),
+          seasonal({ id: "always" }),
+        ]),
+      ),
+      new Date("2026-10-02T03:00:00.000Z"),
+    );
+    expect(list?.map((character) => character.id)).toEqual(["always"]);
+  });
+}
+
+test("a reversed period is hidden and a real leap-day period remains visible", async () => {
+  const list = await fetchGallery(
+    CATALOG,
+    serve(
+      catalogFiles([
+        seasonal({ id: "reversed", from: "2024-03-01", until: "2024-02-29" }),
+        seasonal({ id: "leap", from: "2024-02-29", until: "2024-02-29" }),
+      ]),
+    ),
+    new Date("2024-02-28T15:00:00.000Z"),
+  );
+  expect(list?.map((character) => character.id)).toEqual(["leap"]);
+});
+
+test("an entirely hidden seasonal list is empty, not a connection failure", async () => {
+  const list = await fetchGallery(
+    CATALOG,
+    serve(catalogFiles([seasonal({ from: "2026-10-31" })])),
+    new Date("2026-10-02T03:00:00.000Z"),
+  );
+  expect(list).toEqual([]);
+});

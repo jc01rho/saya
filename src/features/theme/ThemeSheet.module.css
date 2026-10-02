@@ -135,6 +135,18 @@
   font-size: 11px;
 }
 
+.cardApplied {
+  justify-self: start;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-field);
+  background: var(--ink);
+  color: var(--field-wall);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+}
+
 .maker,
 .candidate {
   display: grid;
