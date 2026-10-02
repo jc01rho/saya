@@ -168,8 +168,8 @@
   - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.1 미리보기 그림 (https://store.line.me/stickershop/product/32367501/ja)
   - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.4 미리보기 그림 (https://store.line.me/stickershop/product/33799640/ja)
   - 공식 굿즈샵 ちいかわマーケット 상품 그림 (https://chiikawamarket.jp)
-  - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.4」 스티커 838685761
-    (https://store.line.me/stickershop/product/33799640/ja)
+  - 로딩 그림('유산균 춤'): TV 아니메 『ちいかわ』 第175話「ちいかわの夢④」에서 갑옷 씨들이 「むちゃうマンのテーマ」에 맞춰 춤추는 장면의 프레임
+    (공식 X 공지 https://x.com/anime_chiikawa/status/1802536653807817114 , 공식 YouTube 1주 한정 공개분 https://www.youtube.com/watch?v=BuA-LzmXnqk 는 지금 비공개라 archive.org 미러 https://archive.org/details/chiikawa-anime-ep175 에서 받음)
 - 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
 
 ## 유산균 (`yusangyun/`)
