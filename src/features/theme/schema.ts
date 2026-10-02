@@ -1,4 +1,16 @@
-import { contrastRatio, isHexColor, mix, normalizeHex } from "./color";
+import {
+  IMAGE_MAX_CHARS,
+  IMAGE_SRC,
+  type ThemeImages,
+  WALL_OPACITY_MAX,
+} from "./apply";
+import {
+  contrastRatio,
+  isHexColor,
+  luminance,
+  mix,
+  normalizeHex,
+} from "./color";
 
 /**
  * A theme is a name, a light/dark mode and a set of colour tokens. The four
@@ -148,7 +160,11 @@ export interface ThemeDefinition {
   name: string;
   mode: ThemeMode;
   tokens: ThemeTokens;
+  images?: ThemeImages;
 }
+
+/** A wallpaper shows through at this opacity when a theme does not say. */
+export const WALL_OPACITY_DEFAULT = 0.15;
 
 /** A text/background pair that must reach WCAG AA (4.5:1) to stay readable. */
 export const CONTRAST_PAIRS: readonly {
@@ -236,11 +252,40 @@ export interface ContrastWarning {
   text: TokenKey;
   background: TokenKey;
   ratio: number;
+  /** Measured over the wallpaper's worst pixel, not the wall colour alone. */
+  image?: true;
+}
+
+/**
+ * The lowest contrast `text` can have on the wall once a wallpaper shows
+ * through at `opacity`: any pixel lands between the wall mixed with black and
+ * the wall mixed with white, so those two ends bound it, and a text colour
+ * that falls between them can meet a pixel of its own luminance.
+ */
+function wallpaperContrast(text: string, wall: string, opacity: number) {
+  const ends = ["#000000", "#ffffff"].map((pixel) =>
+    mix(wall, pixel, 1 - opacity),
+  ) as [string, string];
+  const [dark, light] = ends.map(luminance) as [number, number];
+  const ink = luminance(text);
+  if (ink > dark && ink < light) return 1;
+  return Math.min(...ends.map((end) => contrastRatio(text, end)));
 }
 
 export function contrastWarnings(theme: ThemeDefinition): ContrastWarning[] {
   const tokens = resolveTokens(theme);
+  const wallpaper = theme.images?.wall;
   return CONTRAST_PAIRS.flatMap(({ text, background }) => {
+    if (wallpaper && background === "wall") {
+      const ratio = wallpaperContrast(
+        tokens[text],
+        tokens.wall,
+        wallpaper.opacity,
+      );
+      return ratio < AA_RATIO
+        ? [{ text, background, ratio, image: true as const }]
+        : [];
+    }
     const ratio = contrastRatio(tokens[text], tokens[background]);
     return ratio < AA_RATIO ? [{ text, background, ratio }] : [];
   });
@@ -250,14 +295,19 @@ export type ThemeIssue =
   | { kind: "json"; detail: string }
   | { kind: "shape"; field: "root" | "name" | "mode" | "tokens" }
   | { kind: "missing"; token: TokenKey }
-  | { kind: "colour"; token: TokenKey; value: string };
+  | { kind: "colour"; token: TokenKey; value: string }
+  | {
+      kind: "image";
+      slot: "images" | "wall" | "mascot";
+      problem: "shape" | "src" | "size" | "fit" | "opacity";
+    };
 
 export type ParseResult =
   | {
       ok: true;
       theme: ThemeDefinition;
       warnings: ContrastWarning[];
-      /** Token names the schema does not know; they are dropped, not applied. */
+      /** Token and picture names the schema does not know; they are dropped, not applied. */
       ignored: string[];
     }
   | { ok: false; issues: ThemeIssue[] };
@@ -270,6 +320,69 @@ function unfence(input: string): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+type ImageIssue = Extract<ThemeIssue, { kind: "image" }>;
+
+function srcProblem(src: unknown): ImageIssue["problem"] | null {
+  if (typeof src !== "string" || !IMAGE_SRC.test(src)) return "src";
+  return src.length > IMAGE_MAX_CHARS ? "size" : null;
+}
+
+/** The optional `images` object: every problem, the pictures it holds, and keys it does not know. */
+function parseImages(raw: unknown): {
+  issues: ImageIssue[];
+  images?: ThemeImages;
+  ignored: string[];
+} {
+  if (raw === undefined || raw === null) return { issues: [], ignored: [] };
+  if (!isRecord(raw))
+    return {
+      issues: [{ kind: "image", slot: "images", problem: "shape" }],
+      ignored: [],
+    };
+  const issues: ImageIssue[] = [];
+  const images: ThemeImages = {};
+  const ignored = Object.keys(raw)
+    .filter((key) => key !== "wall" && key !== "mascot")
+    .map((key) => `images.${key}`);
+  if (raw.wall !== undefined && raw.wall !== null) {
+    const wall = raw.wall;
+    if (!isRecord(wall))
+      issues.push({ kind: "image", slot: "wall", problem: "shape" });
+    else {
+      const src = srcProblem(wall.src);
+      if (src) issues.push({ kind: "image", slot: "wall", problem: src });
+      const fit = wall.fit ?? "cover";
+      if (fit !== "cover" && fit !== "tile")
+        issues.push({ kind: "image", slot: "wall", problem: "fit" });
+      const opacity = wall.opacity ?? WALL_OPACITY_DEFAULT;
+      if (
+        typeof opacity !== "number" ||
+        !(opacity >= 0 && opacity <= WALL_OPACITY_MAX)
+      )
+        issues.push({ kind: "image", slot: "wall", problem: "opacity" });
+      if (issues.length === 0)
+        images.wall = {
+          src: wall.src as string,
+          fit: fit as "cover" | "tile",
+          opacity: opacity as number,
+        };
+    }
+  }
+  if (raw.mascot !== undefined && raw.mascot !== null) {
+    const mascot = raw.mascot;
+    if (!isRecord(mascot))
+      issues.push({ kind: "image", slot: "mascot", problem: "shape" });
+    else {
+      const src = srcProblem(mascot.src);
+      if (src) issues.push({ kind: "image", slot: "mascot", problem: src });
+      else images.mascot = { src: mascot.src as string };
+    }
+  }
+  return images.wall || images.mascot
+    ? { issues, images, ignored }
+    : { issues, ignored };
 }
 
 /** Checks a pasted theme. Every problem is reported at once, not the first only. */
@@ -313,18 +426,22 @@ export function parseTheme(input: string | unknown): ParseResult {
       issues.push({ kind: "colour", token: spec.key, value: String(colour) });
     } else tokens[spec.key] = normalizeHex(colour);
   }
+  const pictures = parseImages(value.images);
+  issues.push(...pictures.issues);
   if (issues.length > 0) return { ok: false, issues };
   const theme: ThemeDefinition = {
     name,
     mode: mode as ThemeMode,
     tokens,
   };
+  if (pictures.images) theme.images = pictures.images;
   return {
     ok: true,
     theme,
     warnings: contrastWarnings(theme),
-    ignored: Object.keys(raw).filter(
-      (key) => !SPEC_BY_KEY.has(key as TokenKey),
-    ),
+    ignored: [
+      ...Object.keys(raw).filter((key) => !SPEC_BY_KEY.has(key as TokenKey)),
+      ...pictures.ignored,
+    ],
   };
 }

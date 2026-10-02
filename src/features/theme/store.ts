@@ -87,9 +87,14 @@ export function storedFor(
 ): StoredTheme {
   if (!choice.startsWith(CUSTOM_PREFIX)) return { choice };
   const custom = findCustom(customs, choice);
-  return custom
-    ? { choice, mode: custom.mode, vars: themeVars(custom) }
-    : { choice: "system" };
+  if (!custom) return { choice: "system" };
+  const stored: StoredTheme = {
+    choice,
+    mode: custom.mode,
+    vars: themeVars(custom),
+  };
+  if (custom.images) stored.images = custom.images;
+  return stored;
 }
 
 export function saveChoice(

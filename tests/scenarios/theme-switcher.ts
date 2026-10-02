@@ -196,6 +196,102 @@ export const scenario: Scenario = {
     await closeSheet();
     log("custom theme saved, restored and deleted");
 
+    // A theme with pictures: a made-up dot pattern drawn here, never a real picture.
+    const dots = await page.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 96;
+      const g = canvas.getContext("2d");
+      if (!g) throw new Error("No 2d context");
+      g.fillStyle = "#7fe0c9";
+      for (const [x, y] of [
+        [24, 24],
+        [72, 72],
+      ]) {
+        g.beginPath();
+        g.arc(x ?? 0, y ?? 0, 18, 0, Math.PI * 2);
+        g.fill();
+      }
+      return canvas.toDataURL("image/png");
+    });
+    const fenced = /```json\n([\s\S]*)\n```/.exec(PASTED)?.[1] ?? "{}";
+    const pictured = {
+      ...JSON.parse(fenced),
+      name: "점무늬",
+      images: {
+        wall: { src: dots, fit: "tile", opacity: 0.3 },
+        mascot: { src: dots },
+      },
+    };
+    const wallImage = () =>
+      page.evaluate(
+        () =>
+          getComputedStyle(
+            document.querySelector('[data-ui="thread-wall"]') as Element,
+          ).backgroundImage,
+      );
+    const mascotShown = () =>
+      page.evaluate(() => {
+        const mascot = document.querySelector('[data-ui="theme-mascot"]');
+        const cat = mascot?.parentElement?.querySelector('[data-ui="cat"]');
+        return {
+          mascot: mascot ? getComputedStyle(mascot).display : null,
+          cat: cat ? getComputedStyle(cat).display : null,
+        };
+      });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await loadRooms(`#/room/${encodeURIComponent(room.id)}`);
+    await openSheet();
+    await paste.fill(JSON.stringify(pictured));
+    await page.locator('[data-ui="theme-check"]').click();
+    await page.locator('[data-ui="theme-preview-mascot"]').waitFor();
+    await page.locator('[data-ui="theme-preview"]').scrollIntoViewIfNeeded();
+    await screenshot("theme-desktop-pictured-preview");
+    await page.locator('[data-ui="theme-save"]').click();
+    await closeSheet();
+    await loadRooms(`#/room/${encodeURIComponent(room.id)}`);
+    await page.locator('[data-ui="thread-wall"]').waitFor();
+    const drawn = await wallImage();
+    expect(
+      drawn.includes("data:image/png"),
+      `pictured wall after reload: ${drawn.slice(0, 80)}`,
+    );
+    await screenshot("theme-desktop-pictured-room");
+    await loadRooms("#/rooms");
+    const shown = await mascotShown();
+    expect(
+      shown.mascot === "block" && shown.cat === "none",
+      `mascot on the empty outlet: ${JSON.stringify(shown)}`,
+    );
+    await screenshot("theme-desktop-pictured-empty");
+    // Narrow, the room replaces the list, so the wall is what to wait for.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${url}/#/room/${encodeURIComponent(room.id)}`, {
+      waitUntil: "load",
+    });
+    await page.reload({ waitUntil: "load" });
+    await page.locator('[data-ui="thread-wall"]').waitFor();
+    const narrow = await overflow(page);
+    expect(
+      !narrow.page && narrow.clipped === 0,
+      `pictured overflow ${JSON.stringify(narrow)}`,
+    );
+    await screenshot("theme-mobile-pictured-room");
+    await loadRooms("#/rooms");
+    await openSheet();
+    await page.getByRole("button", { name: "점무늬 테마 삭제" }).click();
+    await closeSheet();
+    const cleared = await page.evaluate(() => ({
+      wall: document.documentElement.style.getPropertyValue(
+        "--theme-wall-image",
+      ),
+      mascot: "themeMascot" in document.documentElement.dataset,
+    }));
+    expect(
+      cleared.wall === "" && !cleared.mascot,
+      `pictures after deleting the theme: ${JSON.stringify(cleared).slice(0, 80)}`,
+    );
+    log("pictured theme drawn on the wall and the empty outlet, then deleted");
+
     if (failures.length > 0) throw new Error(failures.join("\n"));
   },
 };

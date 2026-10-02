@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
 import reads from "../reads/reads.module.css";
+import { imageVars } from "./apply";
 import { THEME_COPY } from "./copy";
 import { buildThemePrompt } from "./prompt";
 import {
@@ -26,7 +27,9 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
   return (
     <figure
       className={styles.preview}
-      style={themeVars(theme) as CSSProperties}
+      style={
+        { ...themeVars(theme), ...imageVars(theme.images) } as CSSProperties
+      }
       data-ui="theme-preview"
       data-mode={theme.mode}
     >
@@ -34,6 +37,12 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
       <div className={styles.previewHead} aria-hidden="true">
         <strong>{THEME_COPY.previewRoom}</strong>
         <span>{THEME_COPY.previewMembers}</span>
+        {theme.images?.mascot ? (
+          <span
+            className={styles.previewMascot}
+            data-ui="theme-preview-mascot"
+          />
+        ) : null}
       </div>
       <div className={styles.previewWall} aria-hidden="true">
         <p className={styles.previewLine}>
@@ -158,6 +167,9 @@ function ThemeMaker({
           {result.warnings.length > 0 ? (
             <div className={styles.issues} data-ui="theme-warnings">
               <p className={styles.issueTitle}>{THEME_COPY.warnings}</p>
+              {result.warnings.some((warning) => warning.image) ? (
+                <p>{THEME_COPY.imageWarnings}</p>
+              ) : null}
               <ul>
                 {result.warnings.map((warning) => (
                   <li key={`${warning.text}/${warning.background}`}>

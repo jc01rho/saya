@@ -7,6 +7,7 @@ import {
   resolveTokens,
   themeVars,
 } from "../../src/features/theme/schema";
+import { DOT } from "./fakes";
 
 const valid = () => structuredClone(KAKAO);
 
@@ -126,5 +127,81 @@ describe("parseTheme", () => {
     );
     expect(wall?.ratio).toBeCloseTo(contrastRatio("#9aa7b3", "#b2c7d9"), 5);
     expect(contrastWarnings(result.theme)).toEqual(result.warnings);
+  });
+});
+
+describe("pictures", () => {
+  const withImages = (images: unknown) => ({ ...valid(), images });
+
+  test("a colour-only theme carries no pictures", () => {
+    const result = parseTheme(valid());
+    expect(result.ok && result.theme.images).toBeUndefined();
+  });
+
+  test("a wallpaper and a mascot parse, with fit and opacity defaulted", () => {
+    const result = parseTheme(
+      withImages({ wall: { src: DOT }, mascot: { src: DOT } }),
+    );
+    expect(result.ok && result.theme.images).toEqual({
+      wall: { src: DOT, fit: "cover", opacity: 0.15 },
+      mascot: { src: DOT },
+    });
+  });
+
+  test("only inline rasters within the size bound are accepted", () => {
+    const refused = (src: string) => {
+      const result = parseTheme(withImages({ mascot: { src } }));
+      return result.ok ? null : result.issues;
+    };
+    expect(refused("https://example.test/a.png")).toEqual([
+      { kind: "image", slot: "mascot", problem: "src" },
+    ]);
+    expect(refused("data:image/svg+xml;base64,PHN2Zz4=")).not.toBeNull();
+    expect(
+      refused(`${DOT}"); background: url(https://example.test/x`),
+    ).not.toBeNull();
+    expect(refused(`data:image/png;base64,${"A".repeat(100_000)}`)).toEqual([
+      { kind: "image", slot: "mascot", problem: "size" },
+    ]);
+  });
+
+  test("every bad picture field is reported together; unknown ones are ignored", () => {
+    const result = parseTheme(
+      withImages({
+        wall: { src: DOT, fit: "stretch", opacity: 0.9 },
+        mascot: 3,
+      }),
+    );
+    expect(result.ok ? [] : result.issues).toEqual([
+      { kind: "image", slot: "wall", problem: "fit" },
+      { kind: "image", slot: "wall", problem: "opacity" },
+      { kind: "image", slot: "mascot", problem: "shape" },
+    ]);
+    const extra = parseTheme(withImages({ mascot: { src: DOT }, header: {} }));
+    expect(extra.ok && extra.ignored).toEqual(["images.header"]);
+  });
+
+  test("text on the wall is measured over the wallpaper's worst pixel", () => {
+    // Passes on the bare wall; with the picture showing through it may not.
+    const plain = parseTheme(valid());
+    expect(plain.ok && plain.warnings).toEqual([]);
+    const opacity = 0.4;
+    const result = parseTheme(withImages({ wall: { src: DOT, opacity } }));
+    if (!result.ok) throw new Error("parse failed");
+    const muted = result.warnings.find(
+      (w) => w.text === "textMuted" && w.background === "wall",
+    );
+    const wall = KAKAO.tokens.wall as string;
+    const ink = KAKAO.tokens.textMuted as string;
+    expect(muted?.image).toBe(true);
+    expect(muted?.ratio).toBeCloseTo(
+      Math.min(
+        contrastRatio(ink, mix(wall, "#000000", 1 - opacity)),
+        contrastRatio(ink, mix(wall, "#ffffff", 1 - opacity)),
+      ),
+      5,
+    );
+    // Pairs off the wall are unchanged by a wallpaper.
+    expect(result.warnings.every((w) => w.background === "wall")).toBe(true);
   });
 });

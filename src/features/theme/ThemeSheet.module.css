@@ -160,7 +160,15 @@
   font-size: var(--text-title);
 }
 
-.previewHead span,
+.previewMascot {
+  width: 32px;
+  height: 32px;
+  margin-inline-start: auto;
+  align-self: center;
+  background: var(--theme-mascot, none) center / contain no-repeat;
+}
+
+.previewHead span:not(.previewMascot),
 .previewMeta {
   color: var(--ink-muted);
   font-size: 11px;
@@ -170,7 +178,15 @@
   display: grid;
   gap: var(--space-8);
   padding: var(--space-12) var(--space-16);
-  background: var(--field-wall);
+  /* A custom theme's wallpaper under its wall colour (src/features/theme/apply.ts imageVars). */
+  background:
+    linear-gradient(
+      var(--theme-wall-wash, transparent),
+      var(--theme-wall-wash, transparent)
+    ),
+    var(--theme-wall-image, none) center / var(--theme-wall-size, cover)
+    var(--theme-wall-repeat, no-repeat),
+    var(--field-wall);
 }
 
 .previewLine {

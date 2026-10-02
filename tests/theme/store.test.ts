@@ -12,7 +12,7 @@ import {
   saveChoice,
   saveCustomTheme,
 } from "../../src/features/theme/store";
-import { fakeRoot, memoryStorage } from "./fakes";
+import { DOT, fakeRoot, memoryStorage } from "./fakes";
 
 const night: ThemeDefinition = {
   ...structuredClone(KAKAO),
@@ -129,6 +129,30 @@ describe("applying a theme to the document root", () => {
     expect(root.dataset.theme).toBe("custom");
     expect(root.props.get("--field-wall")).toBe(night.tokens.wall as string);
     expect(root.props.get("color-scheme")).toBe("dark");
+    applyTheme(root, { choice: "light" }, false);
+    expect(root.props.size).toBe(0);
+  });
+
+  test("a theme's pictures are cached with it and cleared on switching away", () => {
+    const pictured: ThemeDefinition = {
+      ...night,
+      images: {
+        wall: { src: DOT, fit: "cover", opacity: 0.1 },
+        mascot: { src: DOT },
+      },
+    };
+    const storage = memoryStorage();
+    const stored = saveChoice(storage, customChoice(pictured), [pictured]);
+    expect(stored.images).toEqual(pictured.images);
+    const root = fakeRoot();
+    applyTheme(root, stored, false);
+    expect(root.props.get("--theme-wall-wash")).toBe(
+      "color-mix(in srgb, var(--field-wall) 90%, transparent)",
+    );
+    expect(root.dataset.themeMascot).toBe("");
+    applyTheme(root, saveChoice(storage, customChoice(night), [night]), false);
+    expect(root.props.has("--theme-wall-image")).toBe(false);
+    expect(root.dataset.themeMascot).toBeUndefined();
     applyTheme(root, { choice: "light" }, false);
     expect(root.props.size).toBe(0);
   });
