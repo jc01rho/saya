@@ -61,6 +61,25 @@ http://127.0.0.1:8080 {
         }
     }
 
+    # Two cores, one at a time (kanao on a PC, kamado on a Mac): list both and
+    # let the proxy follow whichever answers /health, which needs no token.
+    # Both must be given the same token. Write the URLs literally; see
+    # docs/deployment.md, "Following whichever core is up".
+    #
+    # handle @api {
+    #     uri strip_prefix /api
+    #     reverse_proxy https://pc.example.ts.net:8765 https://mac.example.ts.net:8765 {
+    #         lb_policy first
+    #         health_uri /health
+    #         health_interval 5s
+    #         health_timeout 3s
+    #         lb_try_duration 3s
+    #         header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
+    #         header_up Host {upstream_hostport}
+    #         flush_interval -1
+    #     }
+    # }
+
     # Messenger adapters (tsuba). The client reads the index, which names ids
     # only; each adapter is its own upstream with its own token, expanded here.
     # Add one handle per id listed in the index. Writes are still filtered by

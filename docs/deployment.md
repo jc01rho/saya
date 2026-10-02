@@ -125,6 +125,41 @@ answers, and a `POST` without this site's `Origin` is `403`. To update, pull
 and `bun run build`; the proxy serves the new `dist/` without a restart. While
 the core's machine is off, KakaoTalk is simply absent from the lists.
 
+### Following whichever core is up
+
+When one account is served by `kanao serve` on a PC some days and by
+`kamado serve` on a Mac on others, and only one of them runs at a time, list
+both as upstreams and let the proxy follow the live one instead of editing the
+Caddyfile to switch:
+
+```caddyfile
+reverse_proxy https://<pc>.<tailnet>.ts.net:8765 https://<mac>.<tailnet>.ts.net:8765 {
+    lb_policy first
+    health_uri /health
+    health_interval 5s
+    health_timeout 3s
+    lb_try_duration 3s
+    header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
+    header_up Host {upstream_hostport}
+    flush_interval -1
+}
+```
+
+- Both cores answer `GET /health` without a token, so the active check needs
+  no secret. A stopped core behind `tailscale serve` answers `502`, and a
+  machine that is off does not answer; either way it is skipped.
+- Give both the **same token**; the proxy injects one `SAYA_CORE_TOKEN`.
+- The client sees one core either way. The two builds share the contract, so
+  nothing in saya changes; keys one build adds (`typeCode`) are ignored by
+  the other's readers.
+- A switch takes up to one `health_interval`. Requests in that window may fail
+  once. Caddy retries a `POST` only when the connection to a core never
+  opened, so a send that reached a core is never sent again elsewhere. An open stream ends
+  when its core stops, and the client reconnects with its cursor; log ids are
+  the account's, so the cursor means the same thing on the other machine.
+- If both run at once, `lb_policy first` uses the first listed. Keep one
+  stopped.
+
 ## The link-preview endpoint
 
 `/unfurl` is optional. It is **not** part of `openapi.json` and never reaches a
