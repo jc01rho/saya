@@ -23,6 +23,13 @@ export const THEME_COPY = {
   },
   remove: (name: string) => `${name} 테마 삭제`,
   removeShort: "삭제",
+  gallery: "테마 모음",
+  galleryHelp: "누르면 그림까지 들어간 테마를 저장하고 바로 적용합니다.",
+  galleryFan: "팬 메이드·비공식",
+  galleryApply: (name: string) => `${name} 테마 저장하고 적용`,
+  galleryLoading: (name: string) => `"${name}" 테마를 불러오는 중입니다.`,
+  galleryFailed: (name: string) =>
+    `"${name}" 테마를 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.`,
   make: "테마 만들기",
   makeHelp:
     "① 프롬프트를 복사해 ChatGPT·Claude 같은 AI에 붙여 넣고, {여기에 원하는 느낌}을 원하는 분위기로 바꿔 보내세요. ② AI가 답한 JSON을 아래에 붙여 넣고 확인을 누르면 미리 보고 저장할 수 있습니다.",
