@@ -74,3 +74,100 @@
   - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.1」 스티커 805188752
     (https://store.line.me/stickershop/product/32367501/ja)
 - 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
+
+## 치이카와 (`chiikawa/`)
+
+| 파일 | 이름 | 모드 | 그림 |
+| --- | --- | --- | --- |
+| [chiikawa-light.json](chiikawa/chiikawa-light.json) | 치이카와 딸기우유 🐹 | light | 없음(색만) |
+| [chiikawa-dark.json](chiikawa/chiikawa-dark.json) | 치이카와 코코아 🐹 | dark | 없음(색만) |
+| [chiikawa-light-img.json](chiikawa/chiikawa-light-img.json) | 치이카와 딸기우유 그림 🐹 | light | 벽지·목록 무늬·마스코트·배지·로딩 |
+| [chiikawa-dark-img.json](chiikawa/chiikawa-dark-img.json) | 치이카와 코코아 그림 🐹 | dark | 벽지·목록 무늬·마스코트·배지·로딩 |
+
+### 저작권과 출처
+
+- 팬 메이드·비공식·비영리 테마입니다. 원작자나 공식 측과 관계가 없습니다.
+- 「ちいかわ」 © nagano / chiikawa committee
+- 색과 그림 테마(`-img`)의 그림은 아래 공식 그림에서 가져왔습니다.
+  - LINE STORE 공식 스티커 「ちいかわ(ちいかわ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/25264193/ja)
+  - LINE STORE 공식 스티커 「ちいかわ(モモンガ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/32411274/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.2 미리보기 그림 (https://store.line.me/stickershop/product/32855985/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.3 미리보기 그림 (https://store.line.me/stickershop/product/32855981/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.4 미리보기 그림 (https://store.line.me/stickershop/product/33799640/ja)
+  - 공식 굿즈샵 ちいかわマーケット 상품 그림 (https://chiikawamarket.jp)
+  - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.2」 스티커 816451476
+    (https://store.line.me/stickershop/product/32855985/ja)
+- 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
+
+## 모몽가 (`momonga/`)
+
+| 파일 | 이름 | 모드 | 그림 |
+| --- | --- | --- | --- |
+| [momonga-light.json](momonga/momonga-light.json) | 모몽가 솜사탕 🐿️ | light | 없음(색만) |
+| [momonga-dark.json](momonga/momonga-dark.json) | 모몽가 한밤 🐿️ | dark | 없음(색만) |
+| [momonga-light-img.json](momonga/momonga-light-img.json) | 모몽가 솜사탕 그림 🐿️ | light | 벽지·목록 무늬·마스코트·배지·로딩 |
+| [momonga-dark-img.json](momonga/momonga-dark-img.json) | 모몽가 한밤 그림 🐿️ | dark | 벽지·목록 무늬·마스코트·배지·로딩 |
+
+### 저작권과 출처
+
+- 팬 메이드·비공식·비영리 테마입니다. 원작자나 공식 측과 관계가 없습니다.
+- 「ちいかわ」 © nagano / chiikawa committee
+- 색과 그림 테마(`-img`)의 그림은 아래 공식 그림에서 가져왔습니다.
+  - LINE STORE 공식 스티커 「ちいかわ(モモンガ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/32411274/ja)
+  - LINE STORE 공식 스티커 「ちいかわ(ちいかわ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/25264193/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.2 미리보기 그림 (https://store.line.me/stickershop/product/32855985/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.1 미리보기 그림 (https://store.line.me/stickershop/product/32367501/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.4 미리보기 그림 (https://store.line.me/stickershop/product/33799640/ja)
+  - 공식 굿즈샵 ちいかわマーケット 상품 그림 (https://chiikawamarket.jp)
+  - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.2」 스티커 816451467
+    (https://store.line.me/stickershop/product/32855985/ja)
+- 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
+
+## 밤만쥬 (`kurimanju/`)
+
+| 파일 | 이름 | 모드 | 그림 |
+| --- | --- | --- | --- |
+| [kurimanju-light.json](kurimanju/kurimanju-light.json) | 밤만쥬 밤과자 🌰 | light | 없음(색만) |
+| [kurimanju-dark.json](kurimanju/kurimanju-dark.json) | 밤만쥬 선술집 🌰 | dark | 없음(색만) |
+| [kurimanju-light-img.json](kurimanju/kurimanju-light-img.json) | 밤만쥬 밤과자 그림 🌰 | light | 벽지·목록 무늬·마스코트·배지·로딩 |
+| [kurimanju-dark-img.json](kurimanju/kurimanju-dark-img.json) | 밤만쥬 선술집 그림 🌰 | dark | 벽지·목록 무늬·마스코트·배지·로딩 |
+
+### 저작권과 출처
+
+- 팬 메이드·비공식·비영리 테마입니다. 원작자나 공식 측과 관계가 없습니다.
+- 「ちいかわ」 © nagano / chiikawa committee
+- 색과 그림 테마(`-img`)의 그림은 아래 공식 그림에서 가져왔습니다.
+  - LINE STORE 공식 스티커 「ちいかわ(ちいかわ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/25264193/ja)
+  - LINE STORE 공식 스티커 「ちいかわ(モモンガ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/32411274/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.2 미리보기 그림 (https://store.line.me/stickershop/product/32855985/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.1 미리보기 그림 (https://store.line.me/stickershop/product/32367501/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.4 미리보기 그림 (https://store.line.me/stickershop/product/33799640/ja)
+  - 공식 굿즈샵 ちいかわマーケット 상품 그림 (https://chiikawamarket.jp)
+  - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.1」 스티커 805188758
+    (https://store.line.me/stickershop/product/32367501/ja)
+- 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
+
+## 갑옷 씨(관리인) (`yoroi/`)
+
+'관리인'은 공식 이름이 아니라 팬 호칭입니다. 치이카와 일행에게 일을 맡기고 생활을 돕는 갑옷 씨(鎧さん)로 보고 만들었습니다.
+
+| 파일 | 이름 | 모드 | 그림 |
+| --- | --- | --- | --- |
+| [yoroi-light.json](yoroi/yoroi-light.json) | 갑옷 씨(관리인) 은빛 🛡️ | light | 없음(색만) |
+| [yoroi-dark.json](yoroi/yoroi-dark.json) | 갑옷 씨(관리인) 야간근무 🛡️ | dark | 없음(색만) |
+| [yoroi-light-img.json](yoroi/yoroi-light-img.json) | 갑옷 씨(관리인) 낮 🛡️ | light | 벽지·목록 무늬·마스코트·배지·로딩 |
+| [yoroi-dark-img.json](yoroi/yoroi-dark-img.json) | 갑옷 씨(관리인) 밤 🛡️ | dark | 벽지·목록 무늬·마스코트·배지·로딩 |
+
+### 저작권과 출처
+
+- 팬 메이드·비공식·비영리 테마입니다. 원작자나 공식 측과 관계가 없습니다.
+- 「ちいかわ」 © nagano / chiikawa committee
+- 색과 그림 테마(`-img`)의 그림은 아래 공식 그림에서 가져왔습니다.
+  - LINE STORE 공식 스티커 「ちいかわ(モモンガ多)」(작가 ナガノ) 미리보기 그림 (https://store.line.me/stickershop/product/32411274/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.3 미리보기 그림 (https://store.line.me/stickershop/product/32855981/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.1 미리보기 그림 (https://store.line.me/stickershop/product/32367501/ja)
+  - LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ」 vol.4 미리보기 그림 (https://store.line.me/stickershop/product/33799640/ja)
+  - 공식 굿즈샵 ちいかわマーケット 상품 그림 (https://chiikawamarket.jp)
+  - 로딩 그림: LINE STORE 공식 「アニメ『ちいかわ』動くLINEスタンプ vol.4」 스티커 838685761
+    (https://store.line.me/stickershop/product/33799640/ja)
+- 그림 테마는 공식 그림을 담고 있습니다. 아는 사람끼리 비영리로만 나눠 쓰고, 다른 곳에 다시 올리지 마세요.
