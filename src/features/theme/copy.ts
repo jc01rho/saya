@@ -28,6 +28,9 @@ export const THEME_COPY = {
   galleryFan: "팬 메이드·비공식",
   galleryMode: { light: "밝은 모드", dark: "어두운 모드" },
   galleryApply: (name: string) => `${name} 테마 저장하고 적용`,
+  galleryListLoading: "테마 모음을 불러오는 중입니다.",
+  galleryListFailed: "테마 모음을 불러오지 못했습니다. 연결을 확인해 주세요.",
+  galleryRetry: "다시 불러오기",
   galleryLoading: (name: string) => `"${name}" 테마를 불러오는 중입니다.`,
   galleryFailed: (name: string) =>
     `"${name}" 테마를 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.`,

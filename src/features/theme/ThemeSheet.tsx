@@ -1,8 +1,20 @@
-import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import reads from "../reads/reads.module.css";
 import { imageVars } from "./apply";
 import { THEME_COPY } from "./copy";
-import { fetchGalleryTheme, type GalleryTheme, THEME_GALLERY } from "./gallery";
+import {
+  fetchGallery,
+  fetchGalleryTheme,
+  type GalleryCharacter,
+  type GalleryTheme,
+} from "./gallery";
 import { buildThemePrompt } from "./prompt";
 import {
   type ParseResult,
@@ -70,7 +82,7 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
 
 const CHIP_SLOTS = ["wall", "bubbleSelf", "accent", "text"] as const;
 
-/** Ready-made themes: a press fetches the theme file and saves it like a pasted theme. */
+/** Ready-made themes from the remote catalog: the list is fetched when the sheet opens, a theme file when its card is pressed. */
 function ThemeGallery({
   onSave,
   onStatus,
@@ -78,9 +90,26 @@ function ThemeGallery({
   onSave: (theme: ThemeDefinition) => boolean;
   onStatus: (status: string) => void;
 }) {
+  const [list, setList] = useState<GalleryCharacter[] | "loading" | "failed">(
+    "loading",
+  );
+  const mounted = useRef(true);
+  const loadList = useCallback(() => {
+    setList("loading");
+    void fetchGallery().then((characters) => {
+      if (mounted.current) setList(characters ?? "failed");
+    });
+  }, []);
+  useEffect(() => {
+    mounted.current = true;
+    loadList();
+    return () => {
+      mounted.current = false;
+    };
+  }, [loadList]);
   const [loading, setLoading] = useState<string | null>(null);
   const pick = async (entry: GalleryTheme) => {
-    setLoading(entry.path);
+    setLoading(entry.url);
     onStatus(THEME_COPY.galleryLoading(entry.name));
     const theme = await fetchGalleryTheme(entry);
     setLoading(null);
@@ -90,16 +119,36 @@ function ThemeGallery({
   return (
     <section className={styles.gallery} data-ui="theme-gallery">
       <h3 className={styles.subhead}>{THEME_COPY.gallery}</h3>
-      <p className={reads.muted}>{THEME_COPY.galleryHelp}</p>
+      {Array.isArray(list) ? (
+        <p className={reads.muted}>{THEME_COPY.galleryHelp}</p>
+      ) : null}
+      {list === "loading" ? (
+        <p className={reads.muted} data-ui="theme-gallery-state">
+          {THEME_COPY.galleryListLoading}
+        </p>
+      ) : null}
+      {list === "failed" ? (
+        <p className={reads.muted} data-ui="theme-gallery-state">
+          {THEME_COPY.galleryListFailed}{" "}
+          <button
+            type="button"
+            className={reads.action}
+            onClick={loadList}
+            data-ui="theme-gallery-retry"
+          >
+            {THEME_COPY.galleryRetry}
+          </button>
+        </p>
+      ) : null}
       <ul className={styles.cards}>
-        {THEME_GALLERY.flatMap((character) =>
+        {(Array.isArray(list) ? list : []).flatMap((character) =>
           character.themes.map((entry) => (
-            <li key={entry.path}>
+            <li key={entry.url}>
               <button
                 type="button"
                 className={styles.card}
                 aria-label={THEME_COPY.galleryApply(entry.name)}
-                aria-busy={loading === entry.path}
+                aria-busy={loading === entry.url}
                 disabled={loading !== null}
                 onClick={() => void pick(entry)}
                 data-ui="theme-gallery-card"
