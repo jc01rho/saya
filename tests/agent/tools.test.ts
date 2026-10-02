@@ -389,7 +389,12 @@ describe("registration against the browser's model context", () => {
   test("every tool is registered read-only, and its output is marked untrusted", async () => {
     const { context, registered } = fakeContext();
     const { tools } = fakeSource({ loaded: ROWS });
-    await registerAgentTools(context, tools, () => () => {});
+    await registerAgentTools(
+      context,
+      tools,
+      () => () => {},
+      new AbortController().signal,
+    );
     expect(registered).toHaveLength(4);
     for (const entry of registered) {
       expect(entry.tool.annotations.readOnlyHint).toBe(true);
@@ -402,10 +407,16 @@ describe("registration against the browser's model context", () => {
     const { context, registered } = fakeContext();
     const { tools } = fakeSource({ loaded: ROWS });
     const seen: string[] = [];
-    const release = await registerAgentTools(context, tools, (name) => {
-      seen.push(`start:${name}`);
-      return (ok) => seen.push(`done:${name}:${ok}`);
-    });
+    const withdraw = new AbortController();
+    await registerAgentTools(
+      context,
+      tools,
+      (name) => {
+        seen.push(`start:${name}`);
+        return (ok) => seen.push(`done:${name}:${ok}`);
+      },
+      withdraw.signal,
+    );
     const search = registered.find(
       (entry) => entry.tool.name === "search_messages",
     );
@@ -421,8 +432,63 @@ describe("registration against the browser's model context", () => {
     expect(seen.at(-1)).toBe("done:search_messages:false");
 
     expect(search?.options?.signal?.aborted).toBe(false);
-    release();
+    withdraw.abort();
     expect(search?.options?.signal?.aborted).toBe(true);
+  });
+
+  test("turning off while the browser is still registering stops the rest", async () => {
+    const registered: string[] = [];
+    let admit: () => void = () => {};
+    const withdraw = new AbortController();
+    const context: ModelContextLike = {
+      registerTool: (tool) => {
+        registered.push(tool.name);
+        // The first registration hangs until the switch is turned off.
+        return registered.length === 1
+          ? new Promise<void>((resolve) => {
+              admit = resolve;
+            })
+          : undefined;
+      },
+    };
+    const { tools } = fakeSource({ loaded: ROWS });
+    const done = registerAgentTools(
+      context,
+      tools,
+      () => () => {},
+      withdraw.signal,
+    );
+    withdraw.abort();
+    admit();
+    await done;
+    expect(registered).toHaveLength(1);
+  });
+
+  test("a read in flight when the tools are withdrawn is cancelled and its answer withheld", async () => {
+    const { context, registered } = fakeContext();
+    const { tools } = fakeSource({ loaded: ROWS });
+    const withdraw = new AbortController();
+    const outcomes: boolean[] = [];
+    await registerAgentTools(
+      context,
+      tools,
+      () => (ok) => outcomes.push(ok),
+      withdraw.signal,
+    );
+    const search = registered.find(
+      (entry) => entry.tool.name === "search_messages",
+    );
+    // The caller's own signal does not replace the withdrawal.
+    const pending = search?.tool.execute(
+      { query: "가상" },
+      { signal: new AbortController().signal },
+    );
+    withdraw.abort();
+    await expect(Promise.resolve(pending)).rejects.toThrow();
+    expect(outcomes).toEqual([false]);
+    await expect(
+      Promise.resolve(search?.tool.execute({ query: "가상" })),
+    ).rejects.toThrow();
   });
 });
 

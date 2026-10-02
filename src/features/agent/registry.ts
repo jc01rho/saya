@@ -31,18 +31,26 @@ export function modelContextOf(host: unknown): ModelContextLike | null {
 
 export type CallReport = (name: string) => (ok: boolean) => void;
 
+function withdrawn(): DOMException {
+  return new DOMException("The agent tools were turned off", "AbortError");
+}
+
 /**
  * Register every tool, each one read-only and carrying message text an agent
- * must treat as untrusted (the words are whoever wrote them). The returned
- * function withdraws all of them.
+ * must treat as untrusted (the words are whoever wrote them). Aborting
+ * `withdraw` removes every tool registered so far, stops the rest from being
+ * registered, cancels reads in flight and refuses their answers; the caller
+ * owns it before the first registration starts, so turning off never waits on
+ * the browser.
  */
 export async function registerAgentTools(
   context: ModelContextLike,
   tools: readonly AgentTool[],
   report: CallReport,
-): Promise<() => void> {
-  const controller = new AbortController();
+  withdraw: AbortSignal,
+): Promise<void> {
   for (const tool of tools) {
+    if (withdraw.aborted) return;
     await context.registerTool(
       {
         name: tool.name,
@@ -54,12 +62,17 @@ export async function registerAgentTools(
           consequentialHint: false,
         },
         execute: async (input, options) => {
+          if (withdraw.aborted) throw withdrawn();
           const finished = report(tool.name);
           try {
             const answer = await tool.run(
               input,
-              options?.signal ?? controller.signal,
+              options?.signal
+                ? AbortSignal.any([withdraw, options.signal])
+                : withdraw,
             );
+            // Turned off while reading: the answer is not handed over.
+            if (withdraw.aborted) throw withdrawn();
             finished(answer.ok !== false);
             return JSON.stringify(answer);
           } catch (error) {
@@ -68,8 +81,7 @@ export async function registerAgentTools(
           }
         },
       },
-      { signal: controller.signal },
+      { signal: withdraw },
     );
   }
-  return () => controller.abort();
 }

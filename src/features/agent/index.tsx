@@ -52,16 +52,13 @@ export function useAgentTools(
   useEffect(() => {
     const context = modelContextOf(document);
     if (!snapshot.enabled || !context) return;
-    let live = true;
-    let release: (() => void) | null = null;
-    void registerAgentTools(context, tools(), state.begin).then((stop) => {
-      if (live) release = stop;
-      else stop();
-    });
-    return () => {
-      live = false;
-      release?.();
-    };
+    // Owned before the first registration, so switching off never waits on it.
+    const withdraw = new AbortController();
+    // A registration the browser refuses withdraws the ones it already took.
+    registerAgentTools(context, tools(), state.begin, withdraw.signal).catch(
+      () => withdraw.abort(),
+    );
+    return () => withdraw.abort();
   }, [state, snapshot.enabled, tools]);
   return snapshot;
 }
