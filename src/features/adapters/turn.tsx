@@ -186,6 +186,7 @@ function Attachment({
     return (
       <Video
         now={now}
+        loading="lazy"
         video={{
           url: href,
           width: attachment.width ?? 0,

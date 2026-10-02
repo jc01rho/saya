@@ -22,21 +22,44 @@ function clock(seconds: number): string | null {
  * **The contract carries no thumbnail** — it says so, and says a viewer that
  * wants a first frame should ask the video for it. So the tile is the video
  * element itself with `preload="metadata"`, seeking to `#t=0.1` so a frame is
- * painted rather than a black box. Metadata is all that is fetched until
- * someone presses play.
+ * painted rather than a black box. This is a browser hint, not a byte limit;
+ * lazy tiles attach the address only after entering the viewport.
  *
  * An address whose deadline has passed is **never put on an `src`**: the
  * element is not rendered at all, so no request is made for something the host
  * would refuse.
  */
-export function Video({ video, now }: { video: VideoData; now: Date }) {
+export function Video({
+  video,
+  now,
+  loading = "eager",
+}: {
+  video: VideoData;
+  now: Date;
+  loading?: "eager" | "lazy";
+}) {
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const frameElement = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useCallback(() => setOpen(false), []);
   // Both sources: the deadline signed into the address and any stated one.
   const expired =
     carrierExpired(video, now) || isExpired(video.url, now, video.expiresAt);
+
+  useEffect(() => {
+    const element = frameElement.current;
+    if (loading !== "lazy" || !element) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [loading]);
 
   useEffect(() => {
     const element = dialog.current;
@@ -64,6 +87,7 @@ export function Video({ video, now }: { video: VideoData; now: Date }) {
     <>
       <button
         type="button"
+        ref={frameElement}
         className={styles.frame}
         data-ui="video"
         aria-label={COPY.videoOpen}
@@ -76,7 +100,7 @@ export function Video({ video, now }: { video: VideoData; now: Date }) {
       >
         <video
           className={styles.poster}
-          src={frame}
+          src={loading === "eager" || visible ? frame : undefined}
           preload="metadata"
           muted
           playsInline

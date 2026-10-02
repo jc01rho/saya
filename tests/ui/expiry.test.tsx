@@ -124,4 +124,12 @@ describe("an expired address is never requested", () => {
     // The running time is shown from `duration`, which needs no request.
     expect(html).toContain(">1:05<");
   });
+
+  test("a lazy video has no fetchable source before viewport observation", () => {
+    const html = renderToStaticMarkup(
+      <Video video={videoOf(signed(AFTER))} now={NOW} loading="lazy" />,
+    );
+    expect(html).toContain('data-ui="video"');
+    expect(html).not.toContain("talk.kakaocdn.test");
+  });
 });
