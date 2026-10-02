@@ -15,6 +15,7 @@ import { roomHash } from "../../app/routes";
 import type { components } from "../../contract/decoded";
 import type { ClientStores } from "../../core/stores";
 import { Cat, cx, RoomRow } from "../../ui";
+import { ThemeControl } from "../theme";
 import { ROOMS_COPY } from "./copy";
 import styles from "./RoomsPane.module.css";
 import { type RoomFilter, useSlice, useVisibleRoomIds } from "./slices";
@@ -237,6 +238,7 @@ export function RoomsPane({
                 {ROOMS_COPY.brandLatin}
               </span>
             </Brand>
+            <ThemeControl />
           </div>
           <div className={styles.search}>
             <svg viewBox="0 0 16 16" aria-hidden="true">

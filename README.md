@@ -191,6 +191,7 @@ bun run check:all        # 위 전부
 | [`CHANGELOG.md`](CHANGELOG.md) | 변경 기록 |
 | [`docs/deployment.md`](docs/deployment.md) | 정적 `dist/` 와 같은 origin 프록시, 쓰기 경계, 캐시·로그 정책 |
 | [`docs/performance.md`](docs/performance.md) | 위 측정값의 조건과 원자료 |
+| [`docs/THEMES.md`](docs/THEMES.md) | 테마 4종, 테마 JSON 스키마, AI로 테마를 만드는 프롬프트 |
 | [`contracts/`](contracts) | 카카오 코어 계약과 tsuba 어댑터 계약의 사본(원본은 각 저장소) |
 | `design/` | 방향·시드·참조 등 승인 과정의 작업 기록 (역사, 계약 아님) |
 

@@ -6,9 +6,11 @@ const steps = [
   ["contract:check", bunExe, ["run", "contract:check"]],
   ["typecheck", bunExe, ["run", "typecheck"]],
   ["lint", bunExe, ["run", "lint"]],
-  ["test", bunExe, ["test"]],
+  // proxy-boundary.test.ts scans dist/, so build before test; size before
+  // test because the QA harness test rebuilds dist/ under NODE_ENV=test.
   ["build", bunExe, ["run", "build"]],
   ["size:check", bunExe, ["run", "size:check"]],
+  ["test", bunExe, ["test"]],
 ] as const;
 
 async function runStep(

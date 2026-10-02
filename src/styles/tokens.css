@@ -1,10 +1,23 @@
 /*
  * saya design tokens. Light values are DESIGN.md r2 "Embedded tokens" verbatim;
- * the warm dark theme is the plan's measured palette and is opt-in through
- * data-theme="dark" on any ancestor. Only these variables may carry colour.
+ * the warm dark theme is the plan's measured palette and the KakaoTalk classic
+ * theme an opt-in look; each is opt-in through data-theme on any ancestor, and
+ * the document root carries the reader's choice (src/features/theme). Only
+ * these variables may carry colour. src/features/theme/builtin.ts restates the
+ * themes in the pasted-theme JSON shape; a test keeps the two equal.
  */
-:root {
+:root,
+[data-theme="light"] {
   color-scheme: light;
+
+  /*
+   * Set only by themes that need them; elsewhere var() falls back to the wall
+   * or the ink. `initial` resets an outer theme's value for a nested one.
+   */
+  --field-head: initial;
+  --bubble-self-ink: initial;
+  --bubble-other-ink: initial;
+  --link: initial;
 
   /* Fields */
   --field-wall: #cbdde9;
@@ -126,6 +139,11 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
+  --field-head: initial;
+  --bubble-self-ink: initial;
+  --bubble-other-ink: initial;
+  --link: initial;
+
   --field-wall: #332622;
   --field-list: #291f1c;
   --field-ground: #241a17;
@@ -144,5 +162,39 @@
   --active-list: color-mix(in srgb, var(--field-list) 84%, var(--ink));
 
   /* The warm dark fields sit closer together, so the seam needs a little more. */
+  --seam: color-mix(in srgb, var(--rule) 30%, transparent);
+}
+
+/*
+ * KakaoTalk classic, on the reader's call: the blue-grey wall, the yellow own
+ * bubble, white other bubbles. Every text pair here measures at least 4.5:1.
+ */
+[data-theme="kakao"] {
+  color-scheme: light;
+
+  --field-wall: #b2c7d9;
+  --field-head: #a9bfd2;
+  --field-list: #ffffff;
+  --field-ground: #ffffff;
+
+  --ink: #191919;
+  --ink-muted: #3b4650;
+  --rule: #6b7c8c;
+
+  --bubble-other: #ffffff;
+  --bubble-other-ink: #191919;
+  --bubble-self: #fee500;
+  --bubble-self-ink: #191919;
+  --link: #1a4fa0;
+  --field-input: #ffffff;
+
+  --hover-list: #f4f4f4;
+  --fill-list: #f0f0f0;
+  --active-list: #e6e6e6;
+
+  --accent-send: #fee500;
+  --accent-send-inset: #d6c000;
+  --door-ink: #191919;
+
   --seam: color-mix(in srgb, var(--rule) 30%, transparent);
 }

@@ -24,6 +24,7 @@
   padding: var(--space-8) var(--space-12);
   border-radius: var(--radius-bubble);
   background: var(--bubble-self);
+  color: var(--bubble-self-ink, var(--ink));
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   line-height: var(--leading-body);
