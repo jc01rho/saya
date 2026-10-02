@@ -58,7 +58,12 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
   );
 }
 
-function ThemeMaker({ onSave }: { onSave: (theme: ThemeDefinition) => void }) {
+function ThemeMaker({
+  onSave,
+}: {
+  /** True once the theme is kept; a refused save leaves the paste in place. */
+  onSave: (theme: ThemeDefinition) => boolean;
+}) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
@@ -171,7 +176,7 @@ function ThemeMaker({ onSave }: { onSave: (theme: ThemeDefinition) => void }) {
               type="button"
               className={reads.action}
               onClick={() => {
-                onSave(result.theme);
+                if (!onSave(result.theme)) return;
                 setText("");
                 setResult(null);
               }}
@@ -229,11 +234,12 @@ export default function ThemeSheet({
       setStatus(
         saved.reason === "limit" ? THEME_COPY.limit : THEME_COPY.storage,
       );
-      return;
+      return false;
     }
     setCustoms(saved.customs);
     choose(customChoice(theme), saved.customs);
     setStatus(THEME_COPY.saved(theme.name));
+    return true;
   };
   const remove = (name: string) => {
     const next = deleteCustomTheme(themeStorage(), customs, name);

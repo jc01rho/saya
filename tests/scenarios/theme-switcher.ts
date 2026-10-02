@@ -1,5 +1,5 @@
 import type { Page } from "playwright-core";
-import { responseBarrier } from "../harness/browser-barriers";
+import { domBarrier, responseBarrier } from "../harness/browser-barriers";
 import type { Scenario } from "../harness/runner";
 
 const VIEWS = [
@@ -145,10 +145,9 @@ export const scenario: Scenario = {
     await openSheet();
     await page.getByRole("radio", { name: LABELS.system, exact: true }).check();
     await closeSheet();
+    const followed = await domBarrier(page, 'html[data-theme="light"]');
     await page.emulateMedia({ colorScheme: "light" });
-    await page.waitForFunction(
-      () => document.documentElement.dataset.theme === "light",
-    );
+    await followed;
     log("system follows device: light");
 
     // A pasted theme: broken first, then a real one.

@@ -29,11 +29,25 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
   );
 }
 
+/**
+ * What a saved theme may set: custom properties holding colours as themeVars()
+ * writes them (hex and color-mix), nothing that could load a resource.
+ * `public/theme-boot.js` applies the same test.
+ */
+const VAR_NAME = /^--[a-z0-9-]+$/;
+const VAR_VALUE = /^[#a-z0-9\s(),.%-]+$/i;
+
 function isVars(value: unknown): value is Record<string, string> {
   return (
     typeof value === "object" &&
     value !== null &&
-    Object.values(value).every((v) => typeof v === "string")
+    Object.entries(value).every(
+      ([name, v]) =>
+        VAR_NAME.test(name) &&
+        typeof v === "string" &&
+        VAR_VALUE.test(v) &&
+        !/url\s*\(/i.test(v),
+    )
   );
 }
 

@@ -34,9 +34,11 @@ function readJson(storage: ReadStorage | null, key: string): unknown {
   }
 }
 
+/** False when nothing was kept: no storage at all counts as a failed write. */
 function writeJson(storage: WriteStorage | null, key: string, value: unknown) {
+  if (!storage) return false;
   try {
-    storage?.setItem(key, JSON.stringify(value));
+    storage.setItem(key, JSON.stringify(value));
     return true;
   } catch {
     return false;

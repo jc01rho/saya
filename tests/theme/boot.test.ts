@@ -59,6 +59,25 @@ describe("the first-paint script agrees with the app", () => {
         saveChoice(s, customChoice(night), saved.customs);
       },
     ],
+    [
+      "a cached variable that would load a resource",
+      (s) =>
+        s.setItem(
+          "saya.theme",
+          JSON.stringify({
+            choice: "custom:x",
+            vars: { "--field-wall": "url(https://example.test/a.png)" },
+          }),
+        ),
+    ],
+    [
+      "a cached variable that is not a string",
+      (s) =>
+        s.setItem(
+          "saya.theme",
+          JSON.stringify({ choice: "custom:x", vars: { "--field-wall": 123 } }),
+        ),
+    ],
   ];
   for (const [label, prepare] of cases)
     for (const dark of [false, true])
@@ -70,6 +89,13 @@ describe("the first-paint script agrees with the app", () => {
         expect(booted.dataset).toEqual(app.dataset);
         expect([...booted.props]).toEqual([...app.props]);
       });
+
+  test("a theme is not reported saved when there is no storage to keep it", () => {
+    expect(saveCustomTheme(null, [], night)).toEqual({
+      ok: false,
+      reason: "storage",
+    });
+  });
 
   test("a storage that throws still draws the system theme", () => {
     expect(runBoot(memoryStorage(true), true).dataset.theme).toBe("dark");
