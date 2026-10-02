@@ -100,8 +100,12 @@
   line-height: 1;
 }
 
-/* Artwork carries its own shape and colour; the box adds none. */
+/*
+ * Artwork carries its own shape and colour; the box adds none. It sits inset
+ * like the stroke icons beside it, which never touch their 23px edge.
+ */
 .mark[data-icon] {
+  padding: 2px;
   border: 0;
   background: transparent;
 }
