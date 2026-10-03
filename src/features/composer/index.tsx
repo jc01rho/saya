@@ -93,6 +93,7 @@ export const Composer = memo(function Composer({
   const activeRoomId = useRef(roomId);
   const previewAbort = useRef<AbortController | null>(null);
   const postAbort = useRef<AbortController | null>(null);
+  const activeOperation = useRef<AbortController | null>(null);
   const [_revision, setRevision] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -104,10 +105,11 @@ export const Composer = memo(function Composer({
   activeRoomId.current = roomId;
   const previousRoomId = useRef(roomId);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousRoomId.current === roomId) return;
     // A consent belongs to the active composition, never a room left behind.
     previousRoomId.current = roomId;
+    activeOperation.current = null;
     state.revokeConsent();
     setConfirmation(null);
     setStatus({ kind: "idle" });
@@ -115,6 +117,7 @@ export const Composer = memo(function Composer({
 
   useEffect(
     () => () => {
+      activeOperation.current = null;
       previewAbort.current?.abort();
       postAbort.current?.abort();
     },
@@ -132,6 +135,7 @@ export const Composer = memo(function Composer({
     selectionStart: number,
     selectionEnd: number,
   ) => {
+    activeOperation.current = null;
     state.setText(roomId, text);
     state.setSelection(roomId, selectionStart, selectionEnd);
     setConfirmation(null);
@@ -149,6 +153,7 @@ export const Composer = memo(function Composer({
     previewAbort.current?.abort();
     const controller = new AbortController();
     previewAbort.current = controller;
+    activeOperation.current = controller;
     setConfirmation(null);
     setStatus({ kind: "previewing" });
     try {
@@ -158,7 +163,11 @@ export const Composer = memo(function Composer({
         generationKey: `composer-preview:${roomId}`,
         body: sendBody(fingerprint, true),
       });
-      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
+      if (
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller ||
+        outcome.kind === "discarded"
+      )
         return;
       if (outcome.kind === "failure") {
         setStatus({ kind: "error", message: COPY.refused(outcome.error.code) });
@@ -185,7 +194,12 @@ export const Composer = memo(function Composer({
       });
       setStatus({ kind: "idle" });
     } catch (error) {
-      if (controller.signal.aborted || activeRoomId.current !== roomId) return;
+      if (
+        controller.signal.aborted ||
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller
+      )
+        return;
       setStatus({
         kind: "error",
         message:
@@ -215,7 +229,9 @@ export const Composer = memo(function Composer({
     }
     const controller = new AbortController();
     postAbort.current = controller;
+    activeOperation.current = controller;
     state.setPending(roomId, fingerprint.text, "posting");
+    const pendingOperation = state.getPending(roomId);
     setStatus({ kind: "posting" });
     try {
       const outcome = await http.request({
@@ -224,12 +240,17 @@ export const Composer = memo(function Composer({
         generationKey: `composer-post:${roomId}`,
         body: sendBody(fingerprint, false),
       });
+      if (state.getPending(roomId) !== pendingOperation) return;
       const draftStillMatches = state.hasConsent(fingerprint);
       state.setPending(roomId, fingerprint.text, "uncertain");
+      if (
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller ||
+        outcome.kind === "discarded"
+      )
+        return;
       state.revokeConsent();
       setConfirmation(null);
-      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
-        return;
       if (outcome.kind === "failure") {
         if (
           outcome.status >= 400 &&
@@ -253,10 +274,16 @@ export const Composer = memo(function Composer({
       setRevision((value) => value + 1);
       setStatus({ kind: "submitted" });
     } catch (error) {
+      if (state.getPending(roomId) !== pendingOperation) return;
       state.setPending(roomId, fingerprint.text, "uncertain");
+      if (
+        controller.signal.aborted ||
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller
+      )
+        return;
       state.revokeConsent();
       setConfirmation(null);
-      if (controller.signal.aborted || activeRoomId.current !== roomId) return;
       setStatus({
         kind: "error",
         message:
@@ -340,6 +367,7 @@ export const Composer = memo(function Composer({
               type="button"
               className={styles.quiet}
               onClick={() => {
+                activeOperation.current = null;
                 state.revokeConsent();
                 setConfirmation(null);
                 setStatus({ kind: "idle" });
