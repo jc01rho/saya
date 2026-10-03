@@ -26,10 +26,12 @@ import {
 } from "../features/agent";
 import { AttachmentsPanel, AttachmentsToggle } from "../features/attachments";
 import { Composer } from "../features/composer";
+import { ComposerState } from "../features/composer/state";
 import { ConnectionScreen } from "../features/connection";
 import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
 import { NoticeBar } from "../features/notice";
+import { PirateTalkSession, PirateTalkStatus } from "../features/piratetalk";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { ThemeControl } from "../features/theme";
 import { ThreadPane } from "../features/thread";
@@ -178,6 +180,8 @@ function RoomOutlet({
   http,
   roomId,
   backHref,
+  piratetalk,
+  composer,
 }: {
   stores: ClientStores;
   windows: ContextWindows;
@@ -185,6 +189,8 @@ function RoomOutlet({
   roomId: string;
   /** The list this room was opened from, for the mobile way back. */
   backHref: string;
+  piratetalk: PirateTalkSession;
+  composer: ComposerState;
 }) {
   const snapshot = useSlice(stores, `room.${roomId}`);
   const subtitle = roomSubtitle(snapshot?.room);
@@ -247,7 +253,8 @@ function RoomOutlet({
             roomId={roomId}
             http={http}
           />
-          <Composer http={http} roomId={roomId} />
+          <PirateTalkStatus session={piratetalk} />
+          <Composer http={http} roomId={roomId} sharedState={composer} />
         </div>
         {info ? (
           <AttachmentsPanel
@@ -314,6 +321,11 @@ function modeFor(route: Route, last: ListMode): ListMode | null {
  */
 export function App({ session }: { session?: Session }) {
   const [own] = useState(() => session ?? createSession());
+  const [piratetalk] = useState(() => new PirateTalkSession());
+  const [composer] = useState(() => new ComposerState());
+  useEffect(() => {
+    piratetalk.start();
+  }, [piratetalk]);
   const [agent] = useState(() => new AgentToolsState());
   const tools = useMemo(
     () => () => createAgentTools(agentSourceOf(own.stores, own.http)),
@@ -321,7 +333,11 @@ export function App({ session }: { session?: Session }) {
   );
   useAgentTools(agent, tools);
   const route = useRoute();
-  const { phase, reload } = useCatalog(own.http, own.cache);
+  const { phase, reload: reloadCatalog } = useCatalog(own.http, own.cache);
+  const reload = useCallback(() => {
+    piratetalk.reconnect();
+    reloadCatalog();
+  }, [piratetalk, reloadCatalog]);
   const adapterState = useAdapterTabs();
   const adapters = adapterState.tabs;
   const kakaoVisible = phase.kind === "loading" || phase.kind === "ready";
@@ -564,6 +580,8 @@ export function App({ session }: { session?: Session }) {
             http={own.http}
             roomId={route.roomId}
             backHref={back}
+            piratetalk={piratetalk}
+            composer={composer}
           />
         ) : route.kind === "adapter-room" ? (
           <Suspense fallback={null}>

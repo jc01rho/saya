@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { components } from "../../contract/decoded";
 import { type HttpClient, HttpProtocolError } from "../../transport/http";
@@ -78,11 +79,15 @@ function sendBody(fingerprint: ConsentFingerprint, dryRun: boolean) {
 export const Composer = memo(function Composer({
   http,
   roomId,
+  sharedState,
 }: {
   http: HttpClient;
   roomId: string;
+  sharedState?: ComposerState;
 }) {
-  const state = useRef(new ComposerState()).current;
+  const localState = useRef(new ComposerState()).current;
+  const state = sharedState ?? localState;
+  useSyncExternalStore(state.subscribe, state.getSnapshot);
   const ime = useRef(new ImeEnterGuard()).current;
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const activeRoomId = useRef(roomId);
@@ -92,6 +97,7 @@ export const Composer = memo(function Composer({
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const draft = state.getDraft(roomId);
+  const pending = state.getPending(roomId);
   const visibleConfirmation =
     confirmation?.fingerprint.roomId === roomId ? confirmation : null;
 
@@ -134,6 +140,7 @@ export const Composer = memo(function Composer({
   };
 
   const preview = async () => {
+    if (state.getPending(roomId)) return;
     const fingerprint = requestFingerprint(roomId, state);
     if (fingerprint.text === "") {
       setStatus({ kind: "error", message: COPY.empty });
@@ -178,7 +185,7 @@ export const Composer = memo(function Composer({
       });
       setStatus({ kind: "idle" });
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || activeRoomId.current !== roomId) return;
       setStatus({
         kind: "error",
         message:
@@ -208,6 +215,7 @@ export const Composer = memo(function Composer({
     }
     const controller = new AbortController();
     postAbort.current = controller;
+    state.setPending(roomId, fingerprint.text, "posting");
     setStatus({ kind: "posting" });
     try {
       const outcome = await http.request({
@@ -217,25 +225,38 @@ export const Composer = memo(function Composer({
         body: sendBody(fingerprint, false),
       });
       const draftStillMatches = state.hasConsent(fingerprint);
+      state.setPending(roomId, fingerprint.text, "uncertain");
       state.revokeConsent();
       setConfirmation(null);
       if (activeRoomId.current !== roomId || outcome.kind === "discarded")
         return;
       if (outcome.kind === "failure") {
+        if (
+          outcome.status >= 400 &&
+          outcome.status < 500 &&
+          outcome.status !== 408
+        )
+          state.dismissPending(roomId);
         setStatus({ kind: "error", message: COPY.refused(outcome.error.code) });
         return;
       }
-      if (!outcome.data.submitted || outcome.data.dryRun) {
+      if (
+        !outcome.data.submitted ||
+        outcome.data.dryRun ||
+        outcome.data.roomId !== roomId
+      ) {
         setStatus({ kind: "error", message: COPY.protocol });
         return;
       }
       if (draftStillMatches) state.clear(roomId);
+      state.setPending(roomId, fingerprint.text, "submitted");
       setRevision((value) => value + 1);
       setStatus({ kind: "submitted" });
     } catch (error) {
+      state.setPending(roomId, fingerprint.text, "uncertain");
       state.revokeConsent();
       setConfirmation(null);
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || activeRoomId.current !== roomId) return;
       setStatus({
         kind: "error",
         message:
@@ -265,6 +286,37 @@ export const Composer = memo(function Composer({
 
   return (
     <form className={styles.composer} data-ui="composer" onSubmit={submit}>
+      {pending ? (
+        <section
+          className={styles.status}
+          data-ui="composer-pending"
+          data-state={pending.kind}
+          aria-live="polite"
+        >
+          <p>{pending.text}</p>
+          <p>
+            {pending.kind === "posting"
+              ? COPY.posting
+              : pending.kind === "submitted"
+                ? COPY.submitted
+                : "결과 확인 필요 · 자동으로 다시 보내지 않습니다."}
+          </p>
+          {pending.kind !== "posting" ? (
+            <button
+              type="button"
+              className={styles.quiet}
+              data-ui="composer-pending-dismiss"
+              onClick={() => {
+                state.dismissPending(roomId);
+                setStatus({ kind: "idle" });
+                setRevision((value) => value + 1);
+              }}
+            >
+              확인 후 닫기
+            </button>
+          ) : null}
+        </section>
+      ) : null}
       {visibleConfirmation ? (
         <section
           className={styles.confirmation}
@@ -358,7 +410,11 @@ export const Composer = memo(function Composer({
             className={styles.door}
             data-ui="composer-send"
             type="submit"
-            disabled={status.kind === "previewing" || status.kind === "posting"}
+            disabled={
+              pending !== undefined ||
+              status.kind === "previewing" ||
+              status.kind === "posting"
+            }
           >
             <span className="sr-only">{COPY.send}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true">

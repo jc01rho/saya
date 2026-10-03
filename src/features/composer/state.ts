@@ -1,3 +1,5 @@
+import type { Mutation } from "../../transport/piratetalk";
+
 export type Draft = Readonly<{
   text: string;
   revision: number;
@@ -37,7 +39,55 @@ function sameFingerprint(
  */
 export class ComposerState {
   private readonly drafts = new Map<string, Draft>();
+  private readonly pending = new Map<
+    string,
+    Readonly<{ text: string; kind: "posting" | "uncertain" | "submitted" }>
+  >();
   private consent: ConsentFingerprint | null = null;
+  private revision = 0;
+  private readonly listeners = new Set<() => void>();
+  getSnapshot = () => this.revision;
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+  private publish(): void {
+    this.revision++;
+    for (const listener of this.listeners) listener();
+  }
+
+  getPending(roomId: string) {
+    return this.pending.get(roomId);
+  }
+
+  setPending(
+    roomId: string,
+    text: string,
+    kind: "posting" | "uncertain" | "submitted",
+  ): void {
+    this.pending.set(roomId, { text, kind });
+    this.publish();
+  }
+
+  dismissPending(roomId: string): void {
+    this.pending.delete(roomId);
+    this.publish();
+  }
+
+  applyMutation(fingerprint: ConsentFingerprint, result: Mutation): void {
+    switch (result.outcome) {
+      case "confirmed":
+        if (this.matches(fingerprint)) this.clear(fingerprint.roomId);
+        this.dismissPending(fingerprint.roomId);
+        break;
+      case "unconfirmed":
+        this.setPending(fingerprint.roomId, fingerprint.text, "uncertain");
+        break;
+      case "rejected":
+        this.dismissPending(fingerprint.roomId);
+        break;
+    }
+  }
 
   getDraft(roomId: string): Draft {
     return this.drafts.get(roomId) ?? EMPTY_DRAFT;
