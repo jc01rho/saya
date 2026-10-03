@@ -26,10 +26,10 @@ generated boundary. A malformed envelope, unknown schema, invalid payload or bad
 CLI flag exits nonzero; the final success line is emitted only after every check.
 
 Consumers must use generated `validateExtension(name, value)`, not the raw Ajv
-validators alone: the boundary also checks i64 ID ranges, ordered periods,
+validators alone: identity schemas check i64 ranges; the boundary checks ordered periods,
 mention scalar boundaries/overlap, mutually exclusive history anchors and cursor
 progress. Inputs are never coerced or mutated. Multipart fixtures exercise shape;
-actual byte caps/content sniffing and source/cursor/account checks are server
+actual streaming/content handling and source/cursor/account checks are server
 responsibilities, not proven by JSON fixtures.
 
 The prefix is `/extensions/piratetalk/v1` on the same core through the existing
@@ -37,13 +37,19 @@ same-origin `/api` proxy. Discovery is once per session/reconnect, not polling.
 404 means canonical-only, 401 is authentication failure, malformed/incompatible
 discovery disables optional actions with a diagnostic. No second provider or SSE.
 
-The extension declares a new single-file 64 MiB ingress policy. Retained native
-upload code has no explicit size cap or MIME allowlist; the 64 MiB media proxy cap
-is not an upload limit. Retained upload dispatch also sends: task6 must stage
+The extension declares `uploadPolicy.maxBytes: null`, preserving the retained
+uploader's absence of an explicit byte ceiling. No new ingress cap is introduced.
+The retained uploader has no MIME allowlist; the 64 MiB media proxy cap is not an
+upload limit. Retained upload dispatch also sends: task6 must stage
 first and consume the token through the singleton send gate. No album fallback.
 Periods are inclusive Unix seconds with no fixed retained duration maximum.
 The wire caps timestamps at JS safe integer maximum and rejects inverted ranges.
 Model names require the configured discovery allowlist, never client credentials.
+
+Profile music is the retained nullable serialized `musics` string, not a track
+array; backgroundColor and lastUpdatedAt preserve source metadata too. Resource
+paths forbid URL normalization escapes. Attachment IDs remain opaque strings;
+numeric-looking tokens do not inherit message identity constraints.
 
 Exact baseline service traceability, readiness dependencies and native limitations
 are in the core-owned `piratetalk-rs/contracts/piratetalk-extension.md`. In

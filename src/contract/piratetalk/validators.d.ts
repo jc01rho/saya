@@ -55,3 +55,4 @@ export const validateStickersResponse: ValidateFunction<components["schemas"]["S
 export const validateMembersResponse: ValidateFunction<components["schemas"]["MembersResponse"]>;
 export const validateProfileResponse: ValidateFunction<components["schemas"]["ProfileResponse"]>;
 export const validateStickerResourceResponse: ValidateFunction<components["schemas"]["StickerResourceResponse"]>;
+export const validateCoreResourcePath: ValidateFunction<components["schemas"]["CoreResourcePath"]>;

@@ -1984,13 +1984,13 @@
     "schemas": {
       "Id": {
         "type": "string",
-        "pattern": "^[1-9][0-9]{0,18}$",
-        "description": "Positive signed 64-bit decimal ID, no leading zero. Maximum 9223372036854775807; range enforced by generated semantic boundary."
+        "pattern": "^(?:[1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-6]|9223372036854775807)$",
+        "description": "Positive signed 64-bit decimal identity, maximum 9223372036854775807, no leading zero. Range enforced by this schema."
       },
       "RoomId": {
         "type": "string",
-        "pattern": "^-?[1-9][0-9]{0,18}$",
-        "description": "Signed 64-bit nonzero decimal room identity, preserved from canonical core. No leading zero or plus; range enforced by semantic boundary."
+        "pattern": "^(?:-?(?:[1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-6]|9223372036854775807)|-9223372036854775808)$",
+        "description": "Nonzero signed 64-bit decimal room identity, without leading zero or plus; range enforced by this schema."
       },
       "Cursor": {
         "type": "string",
@@ -2159,7 +2159,8 @@
             "type": "object",
             "properties": {
               "maxBytes": {
-                "const": 67108864
+                "type": "null",
+                "description": "No explicit byte cap exists in the retained native uploader. Null means no declared byte ceiling, not native acceptance or operational readiness."
               },
               "maxFiles": {
                 "const": 1
@@ -2642,8 +2643,7 @@
           "file": {
             "type": "string",
             "format": "binary",
-            "maxLength": 67108864,
-            "description": "One raw multipart file, 1..67108864 bytes; metadata not accepted as bytes. This is an extension ingress cap, not a retained native uploader limit.",
+            "description": "One raw multipart file; retained uploader has no explicit byte ceiling. Bound streaming memory independently of total file length; no invented ingress size policy.",
             "minLength": 1
           }
         },
@@ -2675,7 +2675,8 @@
           "size": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 67108864
+            "maximum": 9007199254740991,
+            "description": "Observed byte count represented losslessly on the wire, not an upload acceptance ceiling."
           },
           "mimeType": {
             "type": "string",
@@ -3032,12 +3033,10 @@
             "type": "string"
           },
           "image": {
-            "type": "string",
-            "pattern": "^/[^/]"
+            "$ref": "#/components/schemas/CoreResourcePath"
           },
           "background": {
-            "type": "string",
-            "pattern": "^/[^/]"
+            "$ref": "#/components/schemas/CoreResourcePath"
           },
           "birthday": {
             "type": "string"
@@ -3058,6 +3057,31 @@
           },
           "roomId": {
             "$ref": "#/components/schemas/RoomId"
+          },
+          "musics": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Retained Profile.musics serialized metadata string, preserved verbatim rather than inventing a track DTO; null when source is absent, blank or [] as in routes::get_user_profile. Not executable content or a resource URL."
+          },
+          "backgroundColor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Retained profile background colorCode metadata, not a URL."
+          },
+          "lastUpdatedAt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UnixSeconds"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Retained profile lastUpdatedAt timestamp when available."
           }
         },
         "required": [
@@ -3339,6 +3363,11 @@
         "format": "binary",
         "minLength": 1,
         "description": "Binary raster bytes with image/png, image/gif, image/webp or image/jpeg. No arbitrary external URL. A missing resource is a JSON error, never an empty successful image."
+      },
+      "CoreResourcePath": {
+        "type": "string",
+        "pattern": "^/(?!/)[^\\\\\\u0000-\\u0020\\u007f]*$",
+        "description": "Root-relative same-origin core resource path. Backslashes, ASCII whitespace/control characters and network-path references are forbidden so WHATWG URL normalization cannot change the origin."
       }
     }
   },
@@ -3346,8 +3375,8 @@
     "upload": {
       "nativeMaxBytes": null,
       "nativeMimeAllowlist": null,
-      "meaning": "No explicit size cap or MIME validator exists in retained send_media/upload_media_pure; 64 MiB here is the extension ingress policy, not inherited native evidence.",
-      "extensionMaxBytes": 67108864,
+      "meaning": "No explicit size cap or MIME validator exists in retained send_media/upload_media_pure. No new byte ceiling is introduced; stream without whole-file buffering.",
+      "extensionMaxBytes": null,
       "maxFiles": 1,
       "photoExtensions": [
         "png",

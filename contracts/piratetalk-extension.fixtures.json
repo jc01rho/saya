@@ -64,7 +64,7 @@
           "synthetic-model"
         ],
         "uploadPolicy": {
-          "maxBytes": 67108864,
+          "maxBytes": null,
           "maxFiles": 1,
           "kinds": [
             "photo",
@@ -521,6 +521,108 @@
           "detail": "Synthetic source unavailable"
         }
       }
+    },
+    {
+      "name": "image-local-resource",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "/file?resource=synthetic"
+      }
+    },
+    {
+      "name": "background-local-resource",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "/file?resource=synthetic"
+      }
+    },
+    {
+      "name": "opaque-numeric-attachment",
+      "schema": "AttachmentsResponse",
+      "data": {
+        "items": [
+          {
+            "id": "9223372036854775808",
+            "messageId": "11",
+            "roomId": "9",
+            "kind": "file",
+            "name": "x.txt"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "opaque-zero-attachment",
+      "schema": "Attachment",
+      "data": {
+        "id": "0",
+        "messageId": "11",
+        "roomId": "9",
+        "kind": "file",
+        "name": "x.txt"
+      }
+    },
+    {
+      "name": "identity-upper-bound",
+      "schema": "Id",
+      "data": "9223372036854775807"
+    },
+    {
+      "name": "room-lower-bound",
+      "schema": "RoomId",
+      "data": "-9223372036854775808"
+    },
+    {
+      "name": "retained-profile-musics",
+      "schema": "ProfileResponse",
+      "data": {
+        "profile": {
+          "userId": "42",
+          "name": "Synthetic",
+          "musics": "[{\"title\":\"Synthetic track\"}]",
+          "backgroundColor": "#112233",
+          "lastUpdatedAt": 1700000000
+        },
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "absent-profile-metadata",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "musics": null,
+        "backgroundColor": null,
+        "lastUpdatedAt": null
+      }
+    },
+    {
+      "name": "upload-above-removed-cap",
+      "schema": "UploadResponse",
+      "data": {
+        "roomId": "9",
+        "uploadId": "abcdefghijklmnop",
+        "kind": "file",
+        "size": 67108865,
+        "mimeType": "application/octet-stream",
+        "expiresAt": 1791039999
+      }
     }
   ],
   "invalid": [
@@ -590,7 +692,7 @@
           "synthetic-model"
         ],
         "uploadPolicy": {
-          "maxBytes": 67108864,
+          "maxBytes": null,
           "maxFiles": 1,
           "kinds": [
             "photo",
@@ -1214,6 +1316,176 @@
         "roomId": "1001",
         "beforeId": "2",
         "messageId": "3"
+      }
+    },
+    {
+      "name": "image-normalization-51",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "/\\evil.example/x"
+      }
+    },
+    {
+      "name": "image-normalization-52",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "//evil.example/x"
+      }
+    },
+    {
+      "name": "image-normalization-53",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "/\t/evil.example/x"
+      }
+    },
+    {
+      "name": "image-normalization-54",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "/\n/evil.example/x"
+      }
+    },
+    {
+      "name": "image-normalization-55",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "/\r/evil.example/x"
+      }
+    },
+    {
+      "name": "image-normalization-56",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "/file\u0000x"
+      }
+    },
+    {
+      "name": "image-normalization-57",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "image": "https://evil.example/x"
+      }
+    },
+    {
+      "name": "background-normalization-58",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "/\\evil.example/x"
+      }
+    },
+    {
+      "name": "background-normalization-59",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "//evil.example/x"
+      }
+    },
+    {
+      "name": "background-normalization-60",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "/\t/evil.example/x"
+      }
+    },
+    {
+      "name": "background-normalization-61",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "/\n/evil.example/x"
+      }
+    },
+    {
+      "name": "background-normalization-62",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "/\r/evil.example/x"
+      }
+    },
+    {
+      "name": "background-normalization-63",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "/file\u0000x"
+      }
+    },
+    {
+      "name": "background-normalization-64",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "background": "https://evil.example/x"
+      }
+    },
+    {
+      "name": "message-identity-overflow",
+      "schema": "Message",
+      "data": {
+        "id": "9223372036854775808",
+        "roomId": "1001",
+        "userId": "42",
+        "text": "Synthetic",
+        "kind": "text",
+        "at": 1700000000
+      }
+    },
+    {
+      "name": "identity-overflow",
+      "schema": "Id",
+      "data": "9223372036854775808"
+    },
+    {
+      "name": "room-underflow",
+      "schema": "RoomId",
+      "data": "-9223372036854775809"
+    },
+    {
+      "name": "music-not-retained-string",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "musics": [
+          {
+            "title": "Synthetic track"
+          }
+        ]
+      }
+    },
+    {
+      "name": "music-invalid-number",
+      "schema": "Person",
+      "data": {
+        "userId": "42",
+        "name": "Synthetic",
+        "musics": 12
       }
     }
   ]

@@ -66,6 +66,105 @@ test("preserves large identities and rejects overflow or numeric ids", () => {
   ).toBe(false);
 });
 
+test("rejects resource normalization escapes while keeping local paths", () => {
+  const person = { userId: "42", name: "Synthetic" };
+  for (const field of ["image", "background"]) {
+    expect(
+      validateExtension("Person", {
+        ...person,
+        [field]: "/file?resource=synthetic",
+      }),
+    ).toBe(true);
+    for (const path of [
+      "/\\evil.example/x",
+      "//evil.example/x",
+      "/\t/evil.example/x",
+      "/\n/evil.example/x",
+      "/\r/evil.example/x",
+      "/file\u0000x",
+    ]) {
+      expect(validateExtension("Person", { ...person, [field]: path })).toBe(
+        false,
+      );
+    }
+  }
+  expect(new URL("/\\evil.example/x", "https://core.example").origin).toBe(
+    "https://evil.example",
+  );
+});
+
+test("accepts opaque numeric attachment ids but rejects message identity overflow", () => {
+  const attachment = {
+    id: "9223372036854775808",
+    roomId: "9",
+    messageId: "11",
+    kind: "file",
+    name: "x.txt",
+  };
+  expect(validateExtension("Attachment", attachment)).toBe(true);
+  expect(
+    validateExtension("AttachmentsResponse", {
+      items: [attachment],
+      hasMore: false,
+      nextCursor: null,
+      coverage: { source: "archive", complete: true, stale: false },
+    }),
+  ).toBe(true);
+  expect(
+    validateExtension("Attachment", {
+      ...attachment,
+      messageId: attachment.id,
+    }),
+  ).toBe(false);
+  expect(
+    validateExtension("Message", {
+      id: attachment.id,
+      roomId: "9",
+      userId: "42",
+      text: "Synthetic",
+      kind: "text",
+      at: 1700000000,
+    }),
+  ).toBe(false);
+});
+
+test("preserves retained nullable serialized music and profile metadata", () => {
+  const profile = {
+    userId: "42",
+    name: "Synthetic",
+    musics: '[{"title":"Synthetic track"}]',
+    backgroundColor: "#112233",
+    lastUpdatedAt: 1700000000,
+  };
+  const before = JSON.stringify(profile);
+  expect(validateExtension("Person", profile)).toBe(true);
+  expect(JSON.stringify(profile)).toBe(before);
+  expect(
+    validateExtension("Person", {
+      ...profile,
+      musics: null,
+      backgroundColor: null,
+      lastUpdatedAt: null,
+    }),
+  ).toBe(true);
+  expect(validateExtension("Person", { ...profile, musics: 12 })).toBe(false);
+});
+
+test("accepts upload sizes above the removed invented ceiling", () => {
+  const upload = {
+    roomId: "9",
+    uploadId: "abcdefghijklmnop",
+    kind: "file",
+    size: 67108865,
+    mimeType: "application/octet-stream",
+    expiresAt: 1791039999,
+  };
+  expect(validateExtension("UploadResponse", upload)).toBe(true);
+  expect(validateExtension("UploadResponse", { ...upload, size: 0 })).toBe(
+    false,
+  );
+});
+
 test("rejects overlapping mentions while preserving valid input bytes", () => {
   const input = {
     roomId: "1001",

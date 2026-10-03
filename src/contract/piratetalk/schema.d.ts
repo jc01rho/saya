@@ -260,9 +260,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Positive signed 64-bit decimal ID, no leading zero. Maximum 9223372036854775807; range enforced by generated semantic boundary. */
+        /** @description Positive signed 64-bit decimal identity, maximum 9223372036854775807, no leading zero. Range enforced by this schema. */
         Id: string;
-        /** @description Signed 64-bit nonzero decimal room identity, preserved from canonical core. No leading zero or plus; range enforced by semantic boundary. */
+        /** @description Nonzero signed 64-bit decimal room identity, without leading zero or plus; range enforced by this schema. */
         RoomId: string;
         /** @description Opaque account/room/filter/snapshot-bound scan cursor; invalid or mismatched cursor is 400. Advance on scanned messages even when items is empty. */
         Cursor: string;
@@ -306,8 +306,8 @@ export interface components {
             };
             models: string[];
             uploadPolicy: {
-                /** @constant */
-                maxBytes: 67108864;
+                /** @description No explicit byte cap exists in the retained native uploader. Null means no declared byte ceiling, not native acceptance or operational readiness. */
+                maxBytes: null;
                 /** @constant */
                 maxFiles: 1;
                 kinds: ("photo" | "video" | "file")[];
@@ -430,7 +430,7 @@ export interface components {
             roomId: components["schemas"]["RoomId"];
             /**
              * Format: binary
-             * @description One raw multipart file, 1..67108864 bytes; metadata not accepted as bytes. This is an extension ingress cap, not a retained native uploader limit.
+             * @description One raw multipart file; retained uploader has no explicit byte ceiling. Bound streaming memory independently of total file length; no invented ingress size policy.
              */
             file: string;
         };
@@ -440,6 +440,7 @@ export interface components {
             uploadId: string;
             /** @enum {string} */
             kind: "photo" | "video" | "file";
+            /** @description Observed byte count represented losslessly on the wire, not an upload acceptance ceiling. */
             size: number;
             mimeType: string;
             expiresAt: components["schemas"]["UnixSeconds"];
@@ -532,11 +533,17 @@ export interface components {
             userId: components["schemas"]["Id"];
             name: string;
             status?: string;
-            image?: string;
-            background?: string;
+            image?: components["schemas"]["CoreResourcePath"];
+            background?: components["schemas"]["CoreResourcePath"];
             birthday?: string;
             sections?: ("favorites" | "updated" | "channels" | "birthday" | "hidden" | "blocked")[];
             roomId?: components["schemas"]["RoomId"];
+            /** @description Retained Profile.musics serialized metadata string, preserved verbatim rather than inventing a track DTO; null when source is absent, blank or [] as in routes::get_user_profile. Not executable content or a resource URL. */
+            musics?: string | null;
+            /** @description Retained profile background colorCode metadata, not a URL. */
+            backgroundColor?: string | null;
+            /** @description Retained profile lastUpdatedAt timestamp when available. */
+            lastUpdatedAt?: components["schemas"]["UnixSeconds"] | null;
         };
         Sticker: {
             itemId: components["schemas"]["StickerId"];
@@ -592,6 +599,8 @@ export interface components {
          * @description Binary raster bytes with image/png, image/gif, image/webp or image/jpeg. No arbitrary external URL. A missing resource is a JSON error, never an empty successful image.
          */
         StickerResourceResponse: string;
+        /** @description Root-relative same-origin core resource path. Backslashes, ASCII whitespace/control characters and network-path references are forbidden so WHATWG URL normalization cannot change the origin. */
+        CoreResourcePath: string;
     };
     responses: never;
     parameters: never;
