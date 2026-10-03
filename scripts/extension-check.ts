@@ -109,13 +109,23 @@ for (const item of Object.values(document.paths)) {
     )
       throw new Error("Malformed operation");
     const refs: unknown[] = [operation["x-request-schema"].$ref];
-    const success = operation.responses["200"];
-    if (!record(success) || !record(success.content))
-      throw new Error("Missing response schema");
-    for (const media of Object.values(success.content)) {
-      if (!record(media) || !record(media.schema))
-        throw new Error("Malformed media schema");
-      refs.push(media.schema.$ref);
+    const successes = Object.entries(operation.responses).filter(([status]) =>
+      /^2[0-9]{2}$/u.test(status),
+    );
+    if (!successes.length) throw new Error("Missing success response");
+    for (const [status, success] of successes) {
+      if (!record(success)) throw new Error("Malformed success response");
+      if (status === "204") {
+        if (success.content !== undefined)
+          throw new Error("No-content response declares a body");
+        continue;
+      }
+      if (!record(success.content)) throw new Error("Missing response schema");
+      for (const media of Object.values(success.content)) {
+        if (!record(media) || !record(media.schema))
+          throw new Error("Malformed media schema");
+        refs.push(media.schema.$ref);
+      }
     }
     for (const ref of refs) {
       if (typeof ref !== "string") throw new Error("Expected named schema");

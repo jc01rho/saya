@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { components } from "../contract/decoded";
 import { Coordinator } from "../coordination/coordinator";
@@ -31,7 +32,16 @@ import { ConnectionScreen } from "../features/connection";
 import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
 import { NoticeBar } from "../features/notice";
-import { PirateTalkSession, PirateTalkStatus } from "../features/piratetalk";
+import {
+  PirateTalkActions,
+  PirateTalkSession,
+  PirateTalkStatus,
+} from "../features/piratetalk";
+import {
+  hasDecoration,
+  richTextRequest,
+  type TextDecoration,
+} from "../features/piratetalk/authoring/model";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { ThemeControl } from "../features/theme";
 import { ThreadPane } from "../features/thread";
@@ -193,6 +203,67 @@ function RoomOutlet({
   composer: ComposerState;
 }) {
   const snapshot = useSlice(stores, `room.${roomId}`);
+  const capabilities = useSyncExternalStore(
+    piratetalk.subscribe,
+    piratetalk.getSnapshot,
+  );
+  useSyncExternalStore(composer.subscribe, composer.getSnapshot);
+  const currentDecoration = composer.getDecoration(roomId);
+  const setDecoration = (value: TextDecoration) =>
+    composer.setDecoration(value);
+  const [navigationError, setNavigationError] = useState<string>();
+  const [anchor, setAnchor] = useState<components["schemas"]["Message"]>();
+  const anchorRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => anchorRequest.current?.abort(), []);
+  const navigate = useCallback(
+    (targetRoom: string, messageId: string) => {
+      anchorRequest.current?.abort();
+      const controller = new AbortController();
+      anchorRequest.current = controller;
+      window.location.hash = `#/room/${encodeURIComponent(targetRoom)}?messageId=${encodeURIComponent(messageId)}`;
+      setAnchor(undefined);
+      void http
+        .request({
+          path: "/context",
+          signal: controller.signal,
+          generationKey: "piratetalk-anchor",
+          query: new URLSearchParams({
+            roomId: targetRoom,
+            messageId,
+            limit: "50",
+          }),
+        })
+        .then((result) => {
+          if (controller.signal.aborted || anchorRequest.current !== controller)
+            return;
+          if (result.kind !== "success") {
+            setNavigationError("선택한 기록을 읽을 수 없습니다.");
+            return;
+          }
+          const exact = result.data.messages.find(
+            (message) =>
+              message.id === messageId && message.roomId === targetRoom,
+          );
+          if (!exact) {
+            setNavigationError("선택한 기록이 응답에 없습니다.");
+            return;
+          }
+          setAnchor(exact);
+          setNavigationError(undefined);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted)
+            setNavigationError("선택한 기록에 연결할 수 없습니다.");
+        });
+    },
+    [http],
+  );
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split("?")[1]);
+    const id = params.get("messageId");
+    if (id && (!anchor || anchor.roomId !== roomId || anchor.id !== id))
+      navigate(roomId, id);
+  }, [roomId, anchor, navigate]);
   const subtitle = roomSubtitle(snapshot?.room);
   // The side panel stays open across rooms, as a messenger's info pane does;
   // what it shows is keyed by the room inside it.
@@ -248,13 +319,118 @@ function RoomOutlet({
       <div className={styles.lower}>
         <div className={styles.conversation}>
           <ThreadPane
+            storedStickers={
+              capabilities.kind === "available" &&
+              capabilities.capabilities.features.storedStickers?.available ===
+                true
+            }
             stores={stores}
             windows={windows}
             roomId={roomId}
             http={http}
+            anchor={anchor?.roomId === roomId ? anchor : undefined}
+            onCloseAnchor={() => {
+              anchorRequest.current?.abort();
+              setAnchor(undefined);
+              window.location.hash = `#/room/${encodeURIComponent(roomId)}`;
+            }}
+            onReply={
+              capabilities.kind === "available" &&
+              capabilities.capabilities.features.reply.available
+                ? (message) =>
+                    setDecoration({
+                      ...currentDecoration,
+                      reply: {
+                        roomId,
+                        messageId: message.id,
+                        text: message.text,
+                      },
+                    })
+                : undefined
+            }
+            onThread={
+              capabilities.kind === "available" &&
+              capabilities.capabilities.features.thread.available
+                ? (message) =>
+                    setDecoration({
+                      ...currentDecoration,
+                      reply: {
+                        roomId,
+                        messageId: message.id,
+                        text: message.text,
+                      },
+                      threadRoot: message.id,
+                    })
+                : undefined
+            }
           />
-          <PirateTalkStatus session={piratetalk} />
-          <Composer http={http} roomId={roomId} sharedState={composer} />
+          <div className={styles.extensions}>
+            <PirateTalkStatus session={piratetalk} />
+            <PirateTalkActions
+              key={roomId}
+              anchor={anchor?.roomId === roomId ? anchor : undefined}
+              session={piratetalk}
+              roomId={roomId}
+              stores={stores}
+              composer={composer}
+              decoration={currentDecoration}
+              onDecoration={setDecoration}
+              onNavigate={navigate}
+              onAttachment={(room, message) => {
+                navigate(room, message);
+                setInfo(true);
+              }}
+              onRefresh={() => {
+                windows.retry(roomId);
+                void http
+                  .request({
+                    path: "/rooms",
+                    signal: new AbortController().signal,
+                    generationKey: "piratetalk-local-overlay",
+                  })
+                  .then((result) => {
+                    if (result.kind === "success")
+                      stores.setCatalog(result.data.rooms);
+                  })
+                  .catch(() =>
+                    setNavigationError(
+                      "로컬 읽음 정보를 다시 불러오지 못했습니다.",
+                    ),
+                  );
+              }}
+            />
+            {navigationError && <p role="status">{navigationError}</p>}
+          </div>
+          <Composer
+            http={http}
+            roomId={roomId}
+            sharedState={composer}
+            richSend={
+              hasDecoration(currentDecoration)
+                ? async (text) => {
+                    const request = richTextRequest(
+                      roomId,
+                      text,
+                      currentDecoration,
+                    );
+                    if (!request) return;
+                    const result = await piratetalk.send(
+                      request,
+                      composer,
+                      new AbortController().signal,
+                    );
+                    if (result.outcome !== "confirmed")
+                      throw new Error(result.error.detail);
+                    if (composer.getDraft(roomId).text === "")
+                      setDecoration({
+                        roomId,
+                        mentions: [],
+                        mentionEveryone: false,
+                      });
+                  }
+                : undefined
+            }
+          />
         </div>
         {info ? (
           <AttachmentsPanel
@@ -325,7 +501,8 @@ export function App({ session }: { session?: Session }) {
   const [composer] = useState(() => new ComposerState());
   useEffect(() => {
     piratetalk.start();
-  }, [piratetalk]);
+    return piratetalk.observeLocal(own.stores);
+  }, [piratetalk, own]);
   const [agent] = useState(() => new AgentToolsState());
   const tools = useMemo(
     () => () => createAgentTools(agentSourceOf(own.stores, own.http)),

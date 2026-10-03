@@ -4,6 +4,7 @@ const bunExe = process.execPath;
 
 const steps = [
   ["contract:check", bunExe, ["run", "contract:check"]],
+  ["extension:check", bunExe, ["run", "extension:check"]],
   ["typecheck", bunExe, ["run", "typecheck"]],
   ["lint", bunExe, ["run", "lint"]],
   // proxy-boundary.test.ts scans dist/, so build before test; size before

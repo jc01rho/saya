@@ -1,0 +1,84 @@
+.panel {
+  color: var(--ink);
+  background: var(--field-list);
+  padding: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.panel h2 {
+  font-size: var(--text-room);
+  margin: 0 0 16px;
+}
+.panel button,
+.actions button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--fill-list);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.panel button:hover,
+.actions button:hover {
+  background: var(--hover-list);
+}
+.panel button[aria-pressed="true"],
+.actions button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--field-list);
+}
+.panel button:focus-visible,
+.actions button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.panel button:disabled,
+.actions button:disabled {
+  cursor: progress;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-block: 8px;
+}
+.row .person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  border-radius: var(--radius-row);
+  background: transparent;
+}
+.note {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 12px;
+  margin-block: 4px;
+}
+.metadata {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+}
+.background {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radius-tile);
+}

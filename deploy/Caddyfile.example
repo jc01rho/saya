@@ -38,9 +38,33 @@ http://127.0.0.1:8080 {
         reverse_proxy 127.0.0.1:8791
     }
 
-    # Browser writes must be JSON and demonstrably originate at this site. The
-    # inverse match fails closed when Origin or Fetch Metadata is absent.
     @blocked_write {
+        method POST PUT PATCH DELETE
+        not {
+            header Origin http://127.0.0.1:8080
+            header Sec-Fetch-Site same-origin
+        }
+    }
+    respond @blocked_write 403
+
+    @core_upload {
+        method POST
+        path /api/extensions/piratetalk/v1/uploads
+        header Origin http://127.0.0.1:8080
+        header Sec-Fetch-Site same-origin
+        header_regexp Content-Type `(?i)^multipart/form-data\s*;\s*boundary=(?:[A-Za-z0-9'()+_,./:=?-]{1,70}|"[A-Za-z0-9'()+_,./:=? -]{1,70}")\s*$`
+    }
+    handle @core_upload {
+        uri strip_prefix /api
+        reverse_proxy {env.SAYA_CORE_URL} {
+            header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
+            flush_interval -1
+        }
+    }
+
+    # Other browser writes must be JSON and originate at this site. The
+    # inverse match fails closed when Origin or Fetch Metadata is absent.
+    @blocked_json_write {
         method POST PUT PATCH DELETE
         not {
             header Origin http://127.0.0.1:8080
@@ -48,7 +72,7 @@ http://127.0.0.1:8080 {
             header Content-Type application/json*
         }
     }
-    respond @blocked_write 403
+    respond @blocked_json_write 403
 
     handle @api {
         uri strip_prefix /api

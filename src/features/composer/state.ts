@@ -1,4 +1,8 @@
-import type { Mutation } from "../../transport/piratetalk";
+import type { Mutation, Send } from "../../transport/piratetalk";
+import {
+  editMentions,
+  type TextDecoration,
+} from "../piratetalk/authoring/model";
 
 export type Draft = Readonly<{
   text: string;
@@ -39,9 +43,29 @@ function sameFingerprint(
  */
 export class ComposerState {
   private readonly drafts = new Map<string, Draft>();
+  private readonly decorations = new Map<string, TextDecoration>();
+  private readonly receipts = new Map<string, string>();
+  getReceipt(roomId: string): string | undefined {
+    return this.receipts.get(roomId);
+  }
+  getDecoration(roomId: string): TextDecoration {
+    const old = this.decorations.get(roomId);
+    if (old) return old;
+    const value = { roomId, mentions: [], mentionEveryone: false };
+    this.decorations.set(roomId, value);
+    return value;
+  }
+  setDecoration(value: TextDecoration): void {
+    this.decorations.set(value.roomId, value);
+    this.publish();
+  }
   private readonly pending = new Map<
     string,
-    Readonly<{ text: string; kind: "posting" | "uncertain" | "submitted" }>
+    Readonly<{
+      text: string;
+      kind: "posting" | "uncertain" | "submitted";
+      request?: Send;
+    }>
   >();
   private consent: ConsentFingerprint | null = null;
   private revision = 0;
@@ -74,6 +98,63 @@ export class ComposerState {
     this.publish();
   }
 
+  /** Rich and canonical sends share the same per-room pending slot. */
+  async sendExtension(
+    request: Send,
+    send: (request: Send, signal: AbortSignal) => Promise<Mutation>,
+    signal: AbortSignal,
+  ): Promise<Mutation> {
+    if (this.pending.has(request.roomId) || signal.aborted)
+      return {
+        outcome: "rejected",
+        error: {
+          code: "busy",
+          detail: "Resolve the pending operation before sending again.",
+        },
+      };
+    const draft = this.getDraft(request.roomId);
+    const text =
+      request.kind === "text"
+        ? request.text
+        : request.kind === "media"
+          ? request.uploadId
+          : request.itemId;
+    const operation = { text, kind: "posting", request } as const;
+    this.receipts.delete(request.roomId);
+    this.pending.set(request.roomId, operation);
+    this.publish();
+    let result: Mutation;
+    try {
+      result = await send(request, signal);
+    } catch {
+      result = {
+        outcome: "unconfirmed",
+        error: {
+          code: "delivery_unconfirmed",
+          detail: "Delivery could not be confirmed.",
+        },
+      };
+    }
+    // An older completion cannot overwrite a dismissed/replaced operation.
+    if (this.pending.get(request.roomId) !== operation) return result;
+    if (result.outcome === "unconfirmed") {
+      this.pending.set(request.roomId, { text, kind: "uncertain", request });
+    } else {
+      this.pending.delete(request.roomId);
+      if (result.outcome === "confirmed")
+        this.receipts.set(request.roomId, result.messageId);
+      if (
+        result.outcome === "confirmed" &&
+        request.kind === "text" &&
+        draft.text === request.text &&
+        this.getDraft(request.roomId) === draft
+      )
+        this.clear(request.roomId);
+    }
+    this.publish();
+    return result;
+  }
+
   applyMutation(fingerprint: ConsentFingerprint, result: Mutation): void {
     switch (result.outcome) {
       case "confirmed":
@@ -103,7 +184,13 @@ export class ComposerState {
       selectionEnd: text.length,
     };
     this.drafts.set(roomId, next);
+    const decoration = this.getDecoration(roomId);
+    this.decorations.set(roomId, {
+      ...decoration,
+      mentions: editMentions(previous.text, text, decoration.mentions),
+    });
     this.consent = null;
+    this.publish();
     return next;
   }
 

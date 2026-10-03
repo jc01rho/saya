@@ -14,6 +14,7 @@ import { bounded, deferred } from "./barriers";
 
 export const ROOT = resolve(import.meta.dir, "../..");
 export interface ScenarioContext {
+  core: "synthetic" | "rust";
   browser: Browser;
   context: BrowserContext;
   page: Page;
@@ -29,6 +30,7 @@ export interface Scenario {
   run: (context: ScenarioContext) => Promise<void>;
 }
 export interface RunOptions {
+  core?: Readonly<{ url: string; token: string }>;
   evidence: string;
   port?: number;
   dataset?: Dataset;
@@ -76,6 +78,7 @@ export async function runScenario(scenario: Scenario, options: RunOptions) {
   const evidence = resolve(options.evidence);
   await mkdir(evidence, { recursive: true });
   const actions: Record<string, unknown>[] = [];
+  const browserEvents = { console: 0, consoleErrors: 0, pageErrors: 0 };
   const log = (action: string, details: Record<string, unknown> = {}) => {
     actions.push({ sequence: actions.length + 1, action, ...details });
   };
@@ -110,7 +113,8 @@ export async function runScenario(scenario: Scenario, options: RunOptions) {
         env: {
           ...process.env,
           SAYA_QA_ROOT: ROOT,
-          SAYA_QA_BRIDGE: bridge.url,
+          SAYA_QA_BRIDGE: options.core?.url ?? bridge.url,
+          SAYA_QA_CORE_TOKEN: options.core?.token ?? "",
           SAYA_QA_PORT: String(options.port ?? 4173),
         },
         stdout: "pipe",
@@ -165,6 +169,26 @@ export async function runScenario(scenario: Scenario, options: RunOptions) {
           ? { width: 390, height: 844 }
           : { width: 1440, height: 900 },
     });
+    // Record occurrence metadata only: messages, arguments, URLs and stacks can
+    // contain credentials or user data, even when an exception looks routine.
+    context.on("page", (observedPage) => {
+      observedPage.on("console", (message) => {
+        browserEvents.console++;
+        if (message.type() === "error") browserEvents.consoleErrors++;
+        const { lineNumber, columnNumber } = message.location();
+        log("browser-console", {
+          type: message.type(),
+          lineNumber,
+          columnNumber,
+          contentOmitted: true,
+        });
+      });
+      observedPage.on("pageerror", () => {
+        browserEvents.pageErrors++;
+        log("browser-pageerror", { contentOmitted: true });
+      });
+    });
+    log("browser-error-capture-start", { policy: "metadata-only" });
     const page = await context.newPage();
     page.setDefaultTimeout(10_000);
     page.setDefaultNavigationTimeout(30_000);
@@ -193,6 +217,7 @@ export async function runScenario(scenario: Scenario, options: RunOptions) {
     log("scenario-start", { id: scenario.id });
     await bounded(
       scenario.run({
+        core: options.core ? "rust" : "synthetic",
         browser,
         context,
         page,
@@ -306,6 +331,7 @@ export async function runScenario(scenario: Scenario, options: RunOptions) {
         profileRemoved &&
         cleanupErrors.length === 0,
     };
+    log("browser-error-capture-summary", browserEvents);
     await Bun.write(
       resolve(evidence, "actions.json"),
       `${JSON.stringify(actions, null, 2)}\n`,

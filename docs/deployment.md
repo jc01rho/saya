@@ -28,7 +28,7 @@ with `flush_interval -1`. It deliberately sets no stream or idle timeout: the
 core contract does not promise any ping cadence, so a short timeout would
 silently sever a healthy stream.
 
-The proxy returns `403` for `POST`, `PUT`, `PATCH`, and `DELETE` unless all of
+Except for the exact upload route described below, the proxy returns `403` for `POST`, `PUT`, `PATCH`, and `DELETE` unless all of
 the following are true:
 
 - `Origin` is this site's origin;
@@ -58,6 +58,59 @@ removing `/api`, an upstream-only `Authorization: Bearer` header sourced from
 its environment or secret store, `proxy_buffering off` for SSE, no short
 read/idle timeout, and the same fail-closed Origin, Fetch-Metadata, and JSON
 write checks before proxying.
+
+## Optional PirateTalk core extension
+
+PirateTalk owns the separate `contracts/piratetalk-extension.openapi.json`
+contract. The same upstream core serves `/extensions/piratetalk/v1/*`; the
+browser reaches it through `/api/extensions/piratetalk/v1/*`. Keep the existing
+server-side bearer injection. Do not register PirateTalk as a tsuba adapter,
+create a second room identity, or open another SSE connection.
+
+Discovery is one authenticated `GET capabilities` per client session, repeated
+only on explicit reconnect. A 404 means canonical-only operation; 401,
+incompatible versions and malformed envelopes are distinct failures. Individual
+features are offered only when discovery reports readiness, and a particular
+room may still be refused. Optional resources are requested when opened, not
+prefetched with discovery. After changing upstream cores, explicitly reconnect
+to refresh the optional capability declaration.
+
+Canonical `/send` reports `submitted`, not attributable delivery. Extension
+mutations distinguish `confirmed` with a correlated decimal-string message ID,
+`unconfirmed`, and `rejected`. Neither a successful HTTP response nor native
+queue acceptance establishes delivery. Uncertain writes retain user input and
+pending state and must not be automatically replayed by the client or proxy.
+The extension's confirmed read response has `scope: "local"`: it records a
+local read boundary, not a recipient receipt or native window activation.
+
+Model gateway URLs, credentials and the model allowlist stay in the core's
+server-side configuration. Saya receives only the allowed model names and
+model-generated results. Missing configuration, unavailable data and model
+failures remain errors; no local prose fallback substitutes for model output.
+The canonical extractive `/digest` remains separate.
+
+The development proxy and Caddy example admit multipart only for
+`POST /api/extensions/piratetalk/v1/uploads`, with a nonempty multipart boundary
+of at most 70 characters and the same Origin and Fetch-Metadata checks. All
+other multipart writes remain refused. When changing the deployment origin,
+update both the ordinary write matcher and the upload matcher. The proxy
+replaces browser authorization with the server-held token and forwards the
+request stream without parsing or buffering the file in JavaScript. The core
+enforces its declared single-file policy, validates room-bound upload tokens,
+and bounds streaming memory. The contract declares no total byte ceiling
+(`maxBytes: null`); this exception does not invent or raise one. Keep any
+existing deployment ingress limits in place. Native filesystem paths are not
+accepted as browser upload inputs.
+
+Cancellation uses authenticated JSON `DELETE /api/extensions/piratetalk/v1/uploads`
+with `{roomId, uploadId}` and returns 204 after staging is released. It passes
+the ordinary same-origin JSON write guard, not the multipart exception. Expired
+or already-consumed tokens are explicit errors; cancellation is not a native
+message recall.
+
+This section describes the extension deployment contract, not a completed
+deployment or verification result. Full feature integration and aggregate QA
+are pending. Canonical-only deployments need no extension configuration.
 
 ## Messenger adapters (tsuba)
 

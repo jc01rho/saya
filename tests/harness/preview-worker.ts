@@ -34,6 +34,13 @@ const server = await preview({
       "/api": {
         target: bridge,
         changeOrigin: true,
+        configure(proxy) {
+          proxy.on("proxyReq", (request) => {
+            request.removeHeader("authorization");
+            const token = process.env.SAYA_QA_CORE_TOKEN;
+            if (token) request.setHeader("authorization", `Bearer ${token}`);
+          });
+        },
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },

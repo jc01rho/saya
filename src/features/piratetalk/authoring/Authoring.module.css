@@ -1,0 +1,63 @@
+.panel {
+  color: var(--ink);
+  padding: 12px;
+  max-height: 40vh;
+  overflow: auto;
+}
+.panel header,
+.reply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel button,
+.reply button {
+  color: inherit;
+  font: inherit;
+  min-height: 36px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.panel button:hover,
+.reply button:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.panel button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.panel button:focus-visible,
+.reply button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.reply {
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.reply span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.panel ul {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+.stickers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+.stickers button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.preview {
+  object-fit: contain;
+}

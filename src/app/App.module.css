@@ -37,9 +37,26 @@
 .conversation {
   display: grid;
   flex: 1;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   min-height: 0;
   min-width: 0;
+}
+
+.extensions {
+  min-width: 0;
+  max-height: 55dvh;
+  overflow: auto;
+}
+
+.extensions:empty {
+  display: none;
+}
+
+.extensions button,
+.extensions select,
+.extensions input {
+  max-width: 100%;
+  font: inherit;
 }
 
 /* r4: rail, list and conversation from 768px, the messenger arrangement. */

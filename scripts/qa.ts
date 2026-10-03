@@ -11,6 +11,7 @@ export async function discoverScenarios() {
     onlyFiles: true,
   })) {
     const stem = file.slice(0, -3);
+    if (stem.endsWith("-fixture")) continue;
     const module = await import(
       pathToFileURL(resolve(ROOT, "tests/scenarios", file)).href
     );
@@ -34,9 +35,11 @@ async function main() {
   const args = process.argv.slice(2).filter((arg) => arg !== "--");
   let id: string | undefined;
   let evidence: string | undefined;
+  let coreUrl: string | undefined;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--scenario") id = args[++i];
     else if (args[i] === "--evidence") evidence = args[++i];
+    else if (args[i] === "--rust-core") coreUrl = args[++i];
     else throw new Error(`Unknown argument: ${args[i]}`);
   }
   if (!id || !evidence)
@@ -44,6 +47,17 @@ async function main() {
       "Usage: bun run qa -- --scenario <id|all> --evidence <dir>",
     );
   const scenarios = await discoverScenarios();
+  const coreToken = process.env.SAYA_QA_CORE_TOKEN;
+  if (coreUrl && !coreToken)
+    throw new Error("SAYA_QA_CORE_TOKEN is required for --rust-core");
+  if (coreUrl) {
+    const target = new URL(coreUrl);
+    if (
+      target.protocol !== "http:" ||
+      !["127.0.0.1", "localhost", "[::1]"].includes(target.hostname)
+    )
+      throw new Error("Rust QA core must be an isolated loopback fixture");
+  }
   const selected =
     id === "all"
       ? [...scenarios.values()].sort((a, b) => a.id.localeCompare(b.id))
@@ -80,6 +94,13 @@ async function main() {
     if (!scenario) throw new Error("Missing scenario");
     await runScenario(scenario, {
       evidence: id === "all" ? resolve(evidence, scenario.id) : evidence,
+      // Two viewports each exercise the real 30-second media confirmation budget.
+      ...(scenario.id === "piratetalk-rust-media-failure"
+        ? { timeoutMs: 120_000 }
+        : {}),
+      ...(coreUrl && coreToken
+        ? { core: { url: coreUrl, token: coreToken } }
+        : {}),
     });
     executed++;
     console.log(`PASS ${scenario.id}`);

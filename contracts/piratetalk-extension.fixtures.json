@@ -1,5 +1,6 @@
 {
   "valid": [
+    {"name":"StoredStickerResourceRequest","schema":"StoredStickerResourceRequest","data":{"roomId":"1003","messageId":"9007199254740993"}},
     {
       "name": "CapabilitiesRequest",
       "schema": "CapabilitiesRequest",
@@ -623,9 +624,19 @@
         "mimeType": "application/octet-stream",
         "expiresAt": 1791039999
       }
+    },
+    {
+      "name": "CancelUploadRequest",
+      "schema": "CancelUploadRequest",
+      "data": {
+        "roomId": "1003",
+        "uploadId": "synthetic-upload"
+      }
     }
   ],
   "invalid": [
+    {"name":"StoredStickerResourceRequest-url","schema":"StoredStickerResourceRequest","data":{"roomId":"1003","messageId":"9007199254740993","url":"https://example.com/image.webp"}},
+    {"name":"StoredStickerResourceRequest-id","schema":"StoredStickerResourceRequest","data":{"roomId":"1003","messageId":"01"}},
     {
       "name": "CapabilitiesRequest-wrong-shape-0",
       "schema": "CapabilitiesRequest",
@@ -1486,6 +1497,13 @@
         "userId": "42",
         "name": "Synthetic",
         "musics": 12
+      }
+    },
+    {
+      "name": "CancelUploadRequest-missing-token",
+      "schema": "CancelUploadRequest",
+      "data": {
+        "roomId": "1003"
       }
     }
   ]

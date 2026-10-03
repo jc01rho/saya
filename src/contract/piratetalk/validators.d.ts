@@ -2,6 +2,7 @@
 import type { ValidateFunction } from "ajv";
 import type { components, paths } from "./decoded";
 
+export const validateStoredStickerResourceRequest: ValidateFunction<components["schemas"]["StoredStickerResourceRequest"]>;
 export const validateId: ValidateFunction<components["schemas"]["Id"]>;
 export const validateRoomId: ValidateFunction<components["schemas"]["RoomId"]>;
 export const validateCursor: ValidateFunction<components["schemas"]["Cursor"]>;
@@ -56,3 +57,4 @@ export const validateMembersResponse: ValidateFunction<components["schemas"]["Me
 export const validateProfileResponse: ValidateFunction<components["schemas"]["ProfileResponse"]>;
 export const validateStickerResourceResponse: ValidateFunction<components["schemas"]["StickerResourceResponse"]>;
 export const validateCoreResourcePath: ValidateFunction<components["schemas"]["CoreResourcePath"]>;
+export const validateCancelUploadRequest: ValidateFunction<components["schemas"]["CancelUploadRequest"]>;

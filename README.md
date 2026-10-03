@@ -39,6 +39,11 @@
 `/context` 나 `/stream` 으로 **관찰될 때까지** 아래에 남아 있고, 사용자가 `이 기록으로 확인`
 을 눌러 직접 연결합니다. 불확실한 전송을 자동으로 다시 보내는 경로는 이 저장소에 없습니다.
 
+위 설명은 기본 카카오 계약의 `submitted` 응답 기준입니다. 선택적 PirateTalk 확장의
+`confirmed`는 코어가 이번 쓰기에 귀속되는 되읽기를 확인하고 문자열 `messageId`를 반환한
+경우에만 사용합니다. `unconfirmed`는 전달 여부 미확인이므로 입력과 대기 상태를 유지하고,
+`rejected`는 명시적 거절입니다. HTTP 성공이나 네이티브 큐 접수만으로 전달됐다고 표시하지 않습니다.
+
 ## 되는 것
 
 | 영역 | 내용 |
@@ -80,6 +85,7 @@ bun run dev              # http://127.0.0.1:5173
 | --- | --- | --- |
 | [`contracts/kakao.openapi.json`](contracts/kakao.openapi.json) | kanao·kamado 의 `openapi.json` (두 코어가 바이트 단위로 같음) | `5f6ce4e9…5709949` · 0.19.0 |
 | [`contracts/tsuba.openapi.json`](contracts/tsuba.openapi.json) | tsuba 의 `contract/openapi.json` | `99316a26…7e2b28` · 0.2.2 |
+| [`contracts/piratetalk-extension.openapi.json`](contracts/piratetalk-extension.openapi.json) | PirateTalk 코어의 동명 확장 계약 | 별도 `extension:check`로 고정 사본·생성물 확인 · 1.0.0 |
 
 사본은 고치지 않고, 원본을 바이트 그대로 복사해 온 뒤 `scripts/contract-generate.ts` 의 해시를 바꿉니다.
 아래는 카카오 계약 이야기입니다. OpenAPI 3.1 문서 하나에 라우트, 파라미터와 기본값, 요청 본문, 응답 모양, 상한,
@@ -98,6 +104,23 @@ bun run dev              # http://127.0.0.1:5173
 **타입은 손으로 쓰지 않습니다.** `bun run contract:generate` 가 이 문서에서 `src/contract/`
 전체를 만드는 유일한 경로이고, `bun run contract:check` 가 해시와 생성물 동일성을 바이트로
 확인합니다. 계약이 움직이면 사용자의 화면이 아니라 빌드가 깨집니다.
+
+### 선택적 PirateTalk 확장
+
+확장은 기존 코어의 `/extensions/piratetalk/v1` 아래에 있고, 브라우저는 기존 같은-origin
+`/api` 프록시로 접근합니다. 별도 어댑터나 방 목록, SSE 연결을 만들지 않습니다.
+세션당 한 번 `capabilities`를 조회하며 명시적 재연결만 다시 조회합니다. `404`인 코어는
+기본 카카오 기능을 계속 사용하고, `401`·호환되지 않는 버전·잘못된 응답은 확장 오류로 구분합니다.
+기능별 `available`은 서비스와 데이터 준비 상태이며, 방별 요청이 거절될 수도 있습니다.
+
+확장 계약은 답장·멘션·미디어·스티커, 검색·기록·스레드, 반응·사람 정보, 로컬 읽음,
+모델 요약·질문을 별도로 정의합니다. 로컬 읽음은 로컬 오버레이이며 상대방의 읽음 확인이나
+본체 창 활성화가 아닙니다. 모델 설정과 자격 증명은 코어에만 남고, 브라우저는 코어가 공개한
+모델 목록에서 선택합니다. 모델 실패 시 로컬 문장으로 대체하지 않습니다. `/digest`의 추출
+요약과도 구분됩니다. 구현 통합과 전체 검증은 아직 진행 중이며, 이 설명은 배포·QA 완료 보고가 아닙니다.
+
+확장 사본과 `src/contract/piratetalk/` 생성물은 `bun run extension:generate`와
+`bun run extension:check`로 별도 관리합니다. 기본 카카오·tsuba 계약은 바꾸지 않습니다.
 
 ## 브라우저에서 부딪히는 것
 
@@ -119,7 +142,8 @@ bun run dev              # http://127.0.0.1:5173
 
 ## 화면이 약속하지 않는 것
 
-계약에 없는 것은 화면도 지어내지 않습니다. 각 항목은 `DESIGN.md` 의 G1–G9 결정과 같습니다.
+기본 카카오 계약에 없는 것은 화면도 지어내지 않습니다. 아래 한계는 선택적 확장이 없는
+코어 기준이며, 확장 응답의 준비 상태·범위·결과는 별도로 구분합니다.
 
 - **방 미리보기 본문이 없습니다.** 방 행에는 이 클라이언트가 이미 읽은 본문만 보이고, 없으면
   `미리보기 없음` 입니다. 미리보기를 채우려고 행마다 `/context` 를 부르지 않습니다.

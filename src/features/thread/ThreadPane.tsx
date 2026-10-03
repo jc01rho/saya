@@ -1,5 +1,6 @@
 import {
   memo,
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -18,6 +19,7 @@ import {
 import type { ClientStores } from "../../core/stores";
 import { Cat, COPY, CoverageLine, cx, MessageBubble } from "../../ui";
 import { connectionStateFor } from "../connection";
+import { StoredSticker } from "../piratetalk/StoredSticker";
 import { FileDownload, type FileTransport } from "../reads/FileDownload";
 import { RevisionsDialog, type RevisionsTransport } from "../revisions";
 import { useSlice } from "../rooms";
@@ -38,6 +40,11 @@ import { VirtualThreadTurns } from "./virtual";
 type Message = components["schemas"]["Message"];
 
 export interface ThreadPaneProps {
+  storedStickers?: boolean | undefined;
+  anchor?: Message | undefined;
+  onCloseAnchor?: (() => void) | undefined;
+  onReply?: ((message: Message) => void) | undefined;
+  onThread?: ((message: Message) => void) | undefined;
   stores: ClientStores;
   windows: ContextWindows;
   /** The room the route names, as the wire string. */
@@ -101,6 +108,8 @@ const MessageRow = memo(function MessageRow({
   onRevisions,
   onJump,
   highlighted,
+  extraActions,
+  storedStickers,
 }: {
   stores: ClientStores;
   roomId: string;
@@ -116,6 +125,8 @@ const MessageRow = memo(function MessageRow({
   onRevisions: ((messageId: string) => void) | undefined;
   onJump: (replyId: string) => void;
   highlighted: boolean;
+  extraActions?: ((message: Message) => ReactNode) | undefined;
+  storedStickers: boolean;
 }) {
   const message = useSlice(stores, `message.${roomId}.${id}`);
   const jump = useCallback(() => onJump(id), [onJump, id]);
@@ -151,6 +162,17 @@ const MessageRow = memo(function MessageRow({
         // The store's rows are deep-frozen; the bubble only reads them.
         <MessageBubble
           message={message as Message}
+          mediaContent={
+            storedStickers &&
+            message.kind === "emoticon" &&
+            !message.covered ? (
+              <StoredSticker
+                key={`${roomId}:${id}`}
+                roomId={roomId}
+                messageId={id}
+              />
+            ) : undefined
+          }
           now={now}
           continued={!run.first}
           last={run.last}
@@ -158,15 +180,17 @@ const MessageRow = memo(function MessageRow({
           onQuote={jumpable ? jump : undefined}
           highlighted={highlighted}
           actions={
-            // Message carries no file member; `/file` answers MESSAGE_NOT_FOUND for any other kind.
-            http && message.kind === "file" ? (
-              <FileDownload
-                http={http}
-                roomId={roomId}
-                messageId={id}
-                name={message.text || undefined}
-              />
-            ) : undefined
+            <>
+              {extraActions?.(message as Message)}
+              {http && message.kind === "file" ? (
+                <FileDownload
+                  http={http}
+                  roomId={roomId}
+                  messageId={id}
+                  name={message.text || undefined}
+                />
+              ) : undefined}
+            </>
           }
         />
       ) : (
@@ -249,6 +273,11 @@ export function ThreadPane({
   roomId,
   className,
   http,
+  anchor,
+  onCloseAnchor,
+  onReply,
+  onThread,
+  storedStickers = false,
 }: ThreadPaneProps) {
   const thread = useSlice(stores, `thread.${roomId}`);
   const window = useWindow(windows, roomId);
@@ -434,6 +463,55 @@ export function ThreadPane({
       data-limit={view.limit}
       data-stale={view.stale || undefined}
     >
+      {anchor && anchor.roomId === roomId && (
+        <section
+          data-ui="piratetalk-canonical-anchor"
+          data-message-id={anchor.id}
+          ref={(node) => node?.scrollIntoView({ block: "center" })}
+        >
+          <p>선택한 저장 기록 · 최신 메시지 창과 별도 범위</p>
+          <button type="button" onClick={onCloseAnchor}>
+            최신 대화로 돌아가기
+          </button>
+          <MessageBubble
+            message={anchor}
+            mediaContent={
+              storedStickers &&
+              anchor.kind === "emoticon" &&
+              !anchor.covered ? (
+                <StoredSticker
+                  key={`${roomId}:${anchor.id}`}
+                  roomId={roomId}
+                  messageId={anchor.id}
+                />
+              ) : undefined
+            }
+            now={now}
+            actions={
+              <>
+                {onReply && (
+                  <button type="button" onClick={() => onReply(anchor)}>
+                    답장
+                  </button>
+                )}
+                {onThread && (
+                  <button type="button" onClick={() => onThread(anchor)}>
+                    스레드 보기
+                  </button>
+                )}
+                {http && anchor.kind === "file" && (
+                  <FileDownload
+                    http={http}
+                    roomId={roomId}
+                    messageId={anchor.id}
+                    name={anchor.text || undefined}
+                  />
+                )}
+              </>
+            }
+          />
+        </section>
+      )}
       {view.coverage ? (
         <CoverageLine
           kind="coverage"
@@ -465,7 +543,7 @@ export function ThreadPane({
         </button>
       ) : null}
       {view.edge === "ceiling" ? <CoverageLine kind="ceiling" /> : null}
-      {view.order.length > 0 ? (
+      {!anchor && view.order.length > 0 ? (
         <VirtualThreadTurns
           key={roomId}
           order={view.order}
@@ -474,6 +552,7 @@ export function ThreadPane({
             <MessageRow
               key={id}
               stores={stores}
+              storedStickers={storedStickers}
               roomId={roomId}
               id={id}
               prevId={neighbours.get(id)?.prev ?? null}
@@ -485,6 +564,20 @@ export function ThreadPane({
               onRevisions={http ? openRevisions : undefined}
               onJump={startJump}
               highlighted={highlighted === id}
+              extraActions={(message) => (
+                <>
+                  {onReply && (
+                    <button type="button" onClick={() => onReply(message)}>
+                      답장
+                    </button>
+                  )}
+                  {onThread && (
+                    <button type="button" onClick={() => onThread(message)}>
+                      스레드 보기
+                    </button>
+                  )}
+                </>
+              )}
             />
           )}
         />

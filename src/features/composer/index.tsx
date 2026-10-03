@@ -80,10 +80,12 @@ export const Composer = memo(function Composer({
   http,
   roomId,
   sharedState,
+  richSend,
 }: {
   http: HttpClient;
   roomId: string;
   sharedState?: ComposerState;
+  richSend?: ((text: string) => Promise<void>) | undefined;
 }) {
   const localState = useRef(new ComposerState()).current;
   const state = sharedState ?? localState;
@@ -145,6 +147,29 @@ export const Composer = memo(function Composer({
 
   const preview = async () => {
     if (state.getPending(roomId)) return;
+    if (richSend) {
+      const controller = new AbortController();
+      activeOperation.current = controller;
+      setStatus({ kind: "posting" });
+      try {
+        await richSend(state.getDraft(roomId).text);
+        if (
+          activeOperation.current === controller &&
+          activeRoomId.current === roomId
+        )
+          setStatus({ kind: "idle" });
+      } catch (error) {
+        if (
+          activeOperation.current === controller &&
+          activeRoomId.current === roomId
+        )
+          setStatus({
+            kind: "error",
+            message: error instanceof Error ? error.message : COPY.network,
+          });
+      }
+      return;
+    }
     const fingerprint = requestFingerprint(roomId, state);
     if (fingerprint.text === "") {
       setStatus({ kind: "error", message: COPY.empty });
@@ -313,6 +338,16 @@ export const Composer = memo(function Composer({
 
   return (
     <form className={styles.composer} data-ui="composer" onSubmit={submit}>
+      {state.getReceipt(roomId) && !pending && (
+        <p
+          role="status"
+          data-ui="composer-pending"
+          data-state="confirmed"
+          data-message-id={state.getReceipt(roomId)}
+        >
+          전송 확인됨
+        </p>
+      )}
       {pending ? (
         <section
           className={styles.status}

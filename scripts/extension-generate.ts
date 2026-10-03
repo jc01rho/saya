@@ -15,9 +15,9 @@ export const corpusSource = new URL(
   import.meta.url,
 );
 export const extensionHash =
-  "6621371a9f36af6fdf360a12a790b615dd61e290dc020caeea5ae8f687a6ade9";
+  "33377a958915560f7d13449e2fc16875939a012acd48d0b7eb205b201dce60b4";
 export const corpusHash =
-  "8c74035d96ea0da52df40768696bed9e637ffe8fc23cbfea2689dcb2621eb951";
+  "9bc7ad7c86a99c1b8d3d68214d10c34eb0abbcc2038265e6319246cb512661cb";
 
 export async function pinnedBytes(path: URL, hash: string): Promise<string> {
   const bytes = await readFile(path);

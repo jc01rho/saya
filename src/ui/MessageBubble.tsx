@@ -59,6 +59,7 @@ export interface MessageBubbleProps {
   state?: SendState;
   /** Controls the composer feature supplies, e.g. 이 기록으로 확인 or 다시 보내기. */
   actions?: ReactNode;
+  mediaContent?: ReactNode;
   /** Present where `/revisions` can be asked; without it 수정됨 is a plain word. */
   onRevisions?: (() => void) | undefined;
   /**
@@ -115,6 +116,7 @@ export function MessageBubble({
   now,
   state,
   actions,
+  mediaContent,
   onRevisions,
   continued = false,
   last = true,
@@ -139,7 +141,7 @@ export function MessageBubble({
   // and it is the raw `other:27` for a kind the core could not name, which says
   // nothing to anyone. The body beside it is the client's placeholder for the
   // same attachment. Both go; a real caption, which is neither, stays.
-  const media = Boolean(message.photo || message.video);
+  const media = Boolean(message.photo || message.video || mediaContent);
   const placeholder = isMediaPlaceholder(message.text, message, kind);
   const showLabel = Boolean(kind) && !media && !placeholder;
   const showText = Boolean(message.text) && !placeholder;
@@ -218,6 +220,7 @@ export function MessageBubble({
               )}
               {message.photo ? <Photo photo={message.photo} now={now} /> : null}
               {message.video ? <Video video={message.video} now={now} /> : null}
+              {mediaContent}
               {linked && !covered ? <LinkCard url={linked} /> : null}
               {message.reactions?.length ? (
                 <Reactions reactions={message.reactions} />

@@ -11,6 +11,140 @@
     }
   ],
   "paths": {
+    "/extensions/piratetalk/v1/stored-sticker-resource": {
+      "get": {
+        "operationId": "storedStickerResource",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/StoredStickerResourceRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RoomId"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "description": "Resolve only the retained native type20 attachment path for this room and message. Fixed resource origin, no caller URL or filesystem path. Independent of send readiness."
+      }
+    },
     "/extensions/piratetalk/v1/capabilities": {
       "get": {
         "operationId": "capabilities",
@@ -1517,6 +1651,107 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "cancelUpload",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/CancelUploadRequest"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Staged upload cancelled and bytes released."
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/extensions/piratetalk/v1/reaction": {
@@ -1982,6 +2217,22 @@
       }
     },
     "schemas": {
+      "StoredStickerResourceRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "roomId",
+          "messageId"
+        ],
+        "additionalProperties": false
+      },
       "Id": {
         "type": "string",
         "pattern": "^(?:[1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-6]|9223372036854775807)$",
@@ -2108,6 +2359,9 @@
                 "$ref": "#/components/schemas/Feature"
               },
               "stickers": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "storedStickers": {
                 "$ref": "#/components/schemas/Feature"
               },
               "reactions": {
@@ -3368,6 +3622,24 @@
         "type": "string",
         "pattern": "^/(?!/)[^\\\\\\u0000-\\u0020\\u007f]*$",
         "description": "Root-relative same-origin core resource path. Backslashes, ASCII whitespace/control characters and network-path references are forbidden so WHATWG URL normalization cannot change the origin."
+      },
+      "CancelUploadRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "roomId",
+          "uploadId"
+        ],
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "uploadId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
       }
     }
   },

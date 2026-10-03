@@ -1,0 +1,109 @@
+.root {
+  color: var(--ink);
+  min-width: 0;
+}
+.panel {
+  background: var(--field-list);
+  padding: 16px;
+  border-radius: var(--radius-row);
+}
+.panel h2 {
+  font-size: var(--text-room);
+  margin: 0 0 8px;
+}
+.note {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.fields legend {
+  padding: 8px 0;
+  font-weight: 700;
+}
+.fields label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.fields input:not([type="checkbox"]),
+.fields select,
+.fields textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: var(--fill-list);
+  color: var(--ink);
+  border: 0;
+  border-radius: var(--radius-field);
+  padding: 8px;
+  font: inherit;
+}
+.fields input[type="checkbox"] {
+  justify-self: start;
+}
+.fields textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quiet,
+.citation {
+  color: var(--ink);
+  background: var(--fill-wall);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+.quiet:hover,
+.citation:hover {
+  background: var(--hover-list);
+}
+.quiet:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.panel :focus-visible,
+.quiet:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.answer {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 62ch;
+  line-height: 1.6;
+}
+.citations {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.citation {
+  text-align: start;
+  border-radius: var(--radius-field);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .quiet,
+  .citation,
+  .fields select,
+  .fields input:not([type="checkbox"]) {
+    min-height: 44px;
+  }
+}
