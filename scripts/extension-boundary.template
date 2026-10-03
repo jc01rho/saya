@@ -1,0 +1,42 @@
+import * as validators from "./validators.js";
+import type { components } from "./decoded";
+
+type SchemaName = keyof components["schemas"];
+
+function semantic(value: unknown, key = ""): boolean {
+  if (typeof value === "string" && ["roomId", "messageId", "userId", "id", "beforeId", "replyTo", "threadRoot"].includes(key)) {
+    // Attachment ids are opaque; numeric identity schemas reject lexical errors first.
+    if (/^-?[0-9]+$/.test(value)) {
+      const id = BigInt(value);
+      if (id < -9223372036854775808n || id > 9223372036854775807n || id === 0n) return false;
+    }
+  }
+  if (Array.isArray(value)) return value.every((item: unknown) => semantic(item));
+  if (value === null || typeof value !== "object") return true;
+  if ("from" in value && "to" in value && typeof value.from === "number" && typeof value.to === "number" && value.from > value.to) return false;
+  if ("hasMore" in value && "nextCursor" in value && (value.hasMore === true) !== (typeof value.nextCursor === "string")) return false;
+  if ("text" in value && typeof value.text === "string" && "mentions" in value && Array.isArray(value.mentions)) {
+    const text = value.text;
+    const occupied = new Set<number>();
+    const boundary = (i: number) => i === 0 || i === text.length || !(text.charCodeAt(i) >= 0xdc00 && text.charCodeAt(i) <= 0xdfff);
+    for (const mention of value.mentions) {
+      if (mention === null || typeof mention !== "object" || !("start" in mention) || !("length" in mention) || typeof mention.start !== "number" || typeof mention.length !== "number") return false;
+      const end = mention.start + mention.length;
+      if (end > text.length || !boundary(mention.start) || !boundary(end)) return false;
+      for (let i = mention.start; i < end; i++) {
+        if (occupied.has(i)) return false;
+        occupied.add(i);
+      }
+    }
+  }
+  return Object.entries(value).every(([name, child]) => semantic(child, name));
+}
+
+/** Validate shape and cross-field invariants without coercing or mutating input. */
+export function validateExtension<Name extends SchemaName>(name: Name, value: unknown): value is components["schemas"][Name] {
+  const entry = Object.entries(validators).find(([key]) => key === `validate${name}`);
+  if (!entry || !entry[1](value) || !semantic(value)) return false;
+  if ((name === "Id" || name === "RoomId") && typeof value === "string" && !semantic(value, name === "Id" ? "id" : "roomId")) return false;
+  if (name === "HistoryRequest" && value !== null && typeof value === "object" && ["beforeId", "messageId", "cursor"].filter((key) => key in value).length > 1) return false;
+  return true;
+}

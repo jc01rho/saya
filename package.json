@@ -8,6 +8,8 @@
     "dev": "vite",
     "contract:generate": "bun scripts/contract-generate.ts",
     "contract:check": "bun scripts/contract-check.ts",
+    "extension:generate": "bun scripts/extension-generate.ts",
+    "extension:check": "bun scripts/extension-check.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "build": "vite build",

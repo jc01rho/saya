@@ -1,0 +1,3384 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PirateTalk optional feature extension",
+    "version": "1.0.0",
+    "description": "Core-owned contract foundation; routes are not mounted by task1. Same canonical room identities, same bearer middleware and SendGate, no new provider or SSE. Discovery 404 is canonical-only; 401 is auth failure. Incompatible/malformed discovery disables optional actions with diagnostic. Reconnect may rediscover; no polling."
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/extensions/piratetalk/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/CapabilitiesRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/extensions/piratetalk/v1/history": {
+      "get": {
+        "operationId": "history",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/HistoryRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RoomId"
+            }
+          },
+          {
+            "name": "beforeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Cursor"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/search": {
+      "get": {
+        "operationId": "search",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/SearchRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/RoomId"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "messages",
+                "names"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Cursor"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/thread": {
+      "get": {
+        "operationId": "thread",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/ThreadRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RoomId"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Cursor"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/attachments": {
+      "get": {
+        "operationId": "attachments",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/AttachmentsRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RoomId"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "photo",
+                "video",
+                "file",
+                "link"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Cursor"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/members": {
+      "get": {
+        "operationId": "members",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/MembersRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RoomId"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/friends": {
+      "get": {
+        "operationId": "friends",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/FriendsRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Cursor"
+            }
+          },
+          {
+            "name": "section",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "favorites",
+                "updated",
+                "channels",
+                "birthday",
+                "hidden",
+                "blocked"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/profile": {
+      "get": {
+        "operationId": "profile",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/ProfileRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/stickers": {
+      "get": {
+        "operationId": "stickers",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/StickersRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Cursor"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/sticker-resource": {
+      "get": {
+        "operationId": "stickerResource",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/StickerResourceRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/StickerResourceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/StickerId"
+            }
+          }
+        ]
+      }
+    },
+    "/extensions/piratetalk/v1/send": {
+      "post": {
+        "operationId": "send",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/SendRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unconfirmed or rejected mutation; no automatic replay.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Unconfirmed"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Rejected"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extensions/piratetalk/v1/uploads": {
+      "post": {
+        "operationId": "upload",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/UploadRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extensions/piratetalk/v1/reaction": {
+      "post": {
+        "operationId": "reaction",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/ReactionRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unconfirmed or rejected mutation; no automatic replay.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Unconfirmed"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Rejected"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extensions/piratetalk/v1/read": {
+      "post": {
+        "operationId": "read",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/ReadRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unconfirmed or rejected mutation; no automatic replay.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Unconfirmed"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Rejected"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extensions/piratetalk/v1/summary": {
+      "post": {
+        "operationId": "summary",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/SummaryRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummaryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extensions/piratetalk/v1/question": {
+      "post": {
+        "operationId": "question",
+        "x-request-schema": {
+          "$ref": "#/components/schemas/QuestionRequest"
+        },
+        "responses": {
+          "200": {
+            "description": "Validated result; coverage is local source coverage, never global conversation completeness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Explicit failure; missing data is not an empty successful result. Sanitized machine code and detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Id": {
+        "type": "string",
+        "pattern": "^[1-9][0-9]{0,18}$",
+        "description": "Positive signed 64-bit decimal ID, no leading zero. Maximum 9223372036854775807; range enforced by generated semantic boundary."
+      },
+      "RoomId": {
+        "type": "string",
+        "pattern": "^-?[1-9][0-9]{0,18}$",
+        "description": "Signed 64-bit nonzero decimal room identity, preserved from canonical core. No leading zero or plus; range enforced by semantic boundary."
+      },
+      "Cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2048,
+        "pattern": "^[A-Za-z0-9_-]+$",
+        "description": "Opaque account/room/filter/snapshot-bound scan cursor; invalid or mismatched cursor is 400. Advance on scanned messages even when items is empty."
+      },
+      "Coverage": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "live",
+              "archive",
+              "live+archive",
+              "cache"
+            ]
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "source",
+          "complete",
+          "stale"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": false
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        },
+        "required": [
+          "ok",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Feature": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "additionalProperties": false
+      },
+      "CapabilitiesRequest": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "CapabilitiesResponse": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": "1.0.0"
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "reply": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "thread": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "mentions": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "media": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "stickers": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "reactions": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "history": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "search": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "readLocal": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "people": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "summary": {
+                "$ref": "#/components/schemas/Feature"
+              },
+              "question": {
+                "$ref": "#/components/schemas/Feature"
+              }
+            },
+            "required": [
+              "reply",
+              "thread",
+              "mentions",
+              "media",
+              "stickers",
+              "reactions",
+              "history",
+              "search",
+              "readLocal",
+              "people",
+              "summary",
+              "question"
+            ],
+            "additionalProperties": false
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "uploadPolicy": {
+            "type": "object",
+            "properties": {
+              "maxBytes": {
+                "const": 67108864
+              },
+              "maxFiles": {
+                "const": 1
+              },
+              "kinds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "photo",
+                    "video",
+                    "file"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "maxBytes",
+              "maxFiles",
+              "kinds"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "version",
+          "features",
+          "models",
+          "uploadPolicy"
+        ],
+        "additionalProperties": false
+      },
+      "Mention": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "userId",
+          "start",
+          "length"
+        ],
+        "additionalProperties": false
+      },
+      "TextSend": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "kind": {
+            "const": "text"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "replyTo": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "threadRoot": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mention"
+            }
+          },
+          "mentionEveryone": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "roomId",
+          "kind",
+          "text"
+        ],
+        "additionalProperties": false,
+        "description": "Mention start/length are UTF-16 code units in text, must be in bounds at scalar boundaries, nonoverlapping, and server checks membership before converting native offsets."
+      },
+      "MediaSend": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "kind": {
+            "const": "media"
+          },
+          "uploadId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]{16,128}$"
+          }
+        },
+        "required": [
+          "roomId",
+          "kind",
+          "uploadId"
+        ],
+        "additionalProperties": false
+      },
+      "StickerId": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[1-9][0-9]*:[1-9][0-9]*$",
+        "description": "Catalog pack item code plus one-based sticker index, separated by colon; not a pack list position."
+      },
+      "StickerSend": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "kind": {
+            "const": "sticker"
+          },
+          "itemId": {
+            "$ref": "#/components/schemas/StickerId"
+          }
+        },
+        "required": [
+          "roomId",
+          "kind",
+          "itemId"
+        ],
+        "additionalProperties": false
+      },
+      "SendRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextSend"
+          },
+          {
+            "$ref": "#/components/schemas/MediaSend"
+          },
+          {
+            "$ref": "#/components/schemas/StickerSend"
+          }
+        ]
+      },
+      "Confirmed": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "const": "confirmed"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "outcome",
+          "messageId"
+        ],
+        "additionalProperties": false,
+        "description": "Only attributable native readback; never inferred from ret 0x1 or HTTP acceptance."
+      },
+      "Unconfirmed": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "const": "unconfirmed"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        },
+        "required": [
+          "outcome",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Rejected": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "const": "rejected"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        },
+        "required": [
+          "outcome",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "MutationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Confirmed"
+          },
+          {
+            "$ref": "#/components/schemas/Unconfirmed"
+          },
+          {
+            "$ref": "#/components/schemas/Rejected"
+          }
+        ],
+        "description": "Do not automatically retry once bytes may have been sent; retain draft/pending state. Unknown error code remains an error."
+      },
+      "ReactionRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "selected": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "roomId",
+          "messageId",
+          "code",
+          "selected"
+        ],
+        "additionalProperties": false
+      },
+      "ReadRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "roomId",
+          "messageId"
+        ],
+        "additionalProperties": false
+      },
+      "ReadResponse": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "const": "confirmed"
+          },
+          "scope": {
+            "const": "local"
+          },
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "outcome",
+          "scope",
+          "roomId",
+          "messageId"
+        ],
+        "additionalProperties": false,
+        "description": "Durable local overlay only; no recipient receipt and no native activation. Rejected/unconfirmed use MutationResponse error branches."
+      },
+      "UnixSeconds": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Inclusive Unix seconds, not milliseconds. Retained i64 validators have no fixed duration maximum; wire values restricted to JS safe integers. from <= to. No row cap may silently truncate a selected period."
+      },
+      "SummaryRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "from": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "to": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Must match a model returned by authenticated discovery; validated against configured server allowlist."
+          }
+        },
+        "required": [
+          "roomId",
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      },
+      "QuestionRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "from": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "to": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Must match a model returned by authenticated discovery; validated against configured server allowlist."
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "roomId",
+          "from",
+          "to",
+          "question"
+        ],
+        "additionalProperties": false
+      },
+      "Citation": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "text": {
+            "type": "string"
+          },
+          "at": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          }
+        },
+        "required": [
+          "messageId",
+          "userId",
+          "text",
+          "at"
+        ],
+        "additionalProperties": false
+      },
+      "SummaryResponse": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "from": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "to": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "messageCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "chunkCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "roomId",
+          "from",
+          "to",
+          "model",
+          "summary",
+          "coverage",
+          "messageCount",
+          "chunkCount"
+        ],
+        "additionalProperties": false
+      },
+      "QuestionResponse": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "from": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "to": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            }
+          },
+          "matchCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "windowCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "roomId",
+          "from",
+          "to",
+          "model",
+          "answer",
+          "coverage",
+          "citations",
+          "matchCount",
+          "windowCount"
+        ],
+        "additionalProperties": false
+      },
+      "UploadRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "maxLength": 67108864,
+            "description": "One raw multipart file, 1..67108864 bytes; metadata not accepted as bytes. This is an extension ingress cap, not a retained native uploader limit.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "roomId",
+          "file"
+        ],
+        "additionalProperties": false
+      },
+      "UploadResponse": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "uploadId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]{16,128}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "video",
+              "file"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 67108864
+          },
+          "mimeType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          }
+        },
+        "required": [
+          "roomId",
+          "uploadId",
+          "kind",
+          "size",
+          "mimeType",
+          "expiresAt"
+        ],
+        "additionalProperties": false,
+        "description": "Opaque account+room-bound single-file staging token, not native send or proof of upload delivery. Reject expired/wrong-room tokens before native IPC; release staged bytes on cancellation/expiry. Raster photo and video classifications follow retained extensions; other files are download-only, never executable inline content."
+      },
+      "HistoryRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "beforeId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Cursor"
+          }
+        },
+        "required": [
+          "roomId"
+        ],
+        "additionalProperties": false,
+        "description": "messageId loads context around exact anchor. beforeId, messageId and cursor are mutually exclusive."
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "q": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "messages",
+              "names"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Cursor"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "additionalProperties": false
+      },
+      "ThreadRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Cursor"
+          }
+        },
+        "required": [
+          "roomId",
+          "messageId"
+        ],
+        "additionalProperties": false
+      },
+      "AttachmentsRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "video",
+              "file",
+              "link"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Cursor"
+          }
+        },
+        "required": [
+          "roomId"
+        ],
+        "additionalProperties": false
+      },
+      "MembersRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          }
+        },
+        "required": [
+          "roomId"
+        ],
+        "additionalProperties": false
+      },
+      "FriendsRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Cursor"
+          },
+          "section": {
+            "type": "string",
+            "enum": [
+              "all",
+              "favorites",
+              "updated",
+              "channels",
+              "birthday",
+              "hidden",
+              "blocked"
+            ]
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "ProfileRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "additionalProperties": false
+      },
+      "StickersRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Cursor"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "StickerResourceRequest": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "$ref": "#/components/schemas/StickerId"
+          }
+        },
+        "required": [
+          "itemId"
+        ],
+        "additionalProperties": false
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "photo",
+              "video",
+              "file",
+              "sticker",
+              "other"
+            ]
+          },
+          "at": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "replyTo": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "threadRoot": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "roomId",
+          "userId",
+          "text",
+          "kind",
+          "at"
+        ],
+        "additionalProperties": false
+      },
+      "SearchHit": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "text": {
+            "type": "string"
+          },
+          "at": {
+            "$ref": "#/components/schemas/UnixSeconds"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "messages",
+              "names"
+            ]
+          }
+        },
+        "required": [
+          "roomId",
+          "messageId",
+          "userId",
+          "text",
+          "at",
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "messageId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "video",
+              "file",
+              "link"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mimeType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "messageId",
+          "roomId",
+          "kind",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "Person": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "pattern": "^/[^/]"
+          },
+          "background": {
+            "type": "string",
+            "pattern": "^/[^/]"
+          },
+          "birthday": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "favorites",
+                "updated",
+                "channels",
+                "birthday",
+                "hidden",
+                "blocked"
+              ]
+            }
+          },
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          }
+        },
+        "required": [
+          "userId",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "Sticker": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "$ref": "#/components/schemas/StickerId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^/extensions/piratetalk/v1/sticker-resource\\?itemId="
+          }
+        },
+        "required": [
+          "itemId",
+          "name",
+          "resource"
+        ],
+        "additionalProperties": false
+      },
+      "HistoryResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cursor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore",
+          "nextCursor",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cursor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore",
+          "nextCursor",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "ThreadResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cursor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore",
+          "nextCursor",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "AttachmentsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cursor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore",
+          "nextCursor",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "FriendsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Person"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cursor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore",
+          "nextCursor",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "StickersResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sticker"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cursor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore",
+          "nextCursor",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "MembersResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Person"
+            }
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "items",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Person"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          }
+        },
+        "required": [
+          "profile",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "StickerResourceResponse": {
+        "type": "string",
+        "format": "binary",
+        "minLength": 1,
+        "description": "Binary raster bytes with image/png, image/gif, image/webp or image/jpeg. No arbitrary external URL. A missing resource is a JSON error, never an empty successful image."
+      }
+    }
+  },
+  "x-retained-policy": {
+    "upload": {
+      "nativeMaxBytes": null,
+      "nativeMimeAllowlist": null,
+      "meaning": "No explicit size cap or MIME validator exists in retained send_media/upload_media_pure; 64 MiB here is the extension ingress policy, not inherited native evidence.",
+      "extensionMaxBytes": 67108864,
+      "maxFiles": 1,
+      "photoExtensions": [
+        "png",
+        "jpg",
+        "jpeg",
+        "gif",
+        "bmp",
+        "webp"
+      ],
+      "videoExtensions": [
+        "mp4",
+        "mov",
+        "m4v",
+        "avi",
+        "mkv",
+        "webm",
+        "wmv"
+      ],
+      "otherExtensions": "file",
+      "album": "rejected"
+    },
+    "period": {
+      "unit": "unix-seconds",
+      "inclusive": true,
+      "fixedMaximumSpanSeconds": null,
+      "meaning": "Retained summary accepts nonnegative ordered i64 timestamps and all; no fixed duration cap. Wire safe-integer bound is explicit. Question normalizes selected range; extension rejects inverted ranges instead.",
+      "legacyQuestionRows": 4000,
+      "legacyQuestionContext": 80,
+      "summaryChunkChars": 24000,
+      "summaryChunkSeconds": 3600,
+      "modelPromptChars": 120000
+    }
+  }
+}

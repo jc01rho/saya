@@ -1,0 +1,1220 @@
+{
+  "valid": [
+    {
+      "name": "CapabilitiesRequest",
+      "schema": "CapabilitiesRequest",
+      "data": {}
+    },
+    {
+      "name": "CapabilitiesResponse",
+      "schema": "CapabilitiesResponse",
+      "data": {
+        "version": "1.0.0",
+        "features": {
+          "reply": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "thread": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "mentions": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "media": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "stickers": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "reactions": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "history": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "search": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "readLocal": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "people": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "summary": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "question": {
+            "available": false,
+            "reason": "not_mounted"
+          }
+        },
+        "models": [
+          "synthetic-model"
+        ],
+        "uploadPolicy": {
+          "maxBytes": 67108864,
+          "maxFiles": 1,
+          "kinds": [
+            "photo",
+            "video",
+            "file"
+          ]
+        }
+      }
+    },
+    {
+      "name": "HistoryRequest",
+      "schema": "HistoryRequest",
+      "data": {
+        "roomId": "1001"
+      }
+    },
+    {
+      "name": "AttachmentsRequest",
+      "schema": "AttachmentsRequest",
+      "data": {
+        "roomId": "1001"
+      }
+    },
+    {
+      "name": "MembersRequest",
+      "schema": "MembersRequest",
+      "data": {
+        "roomId": "1001"
+      }
+    },
+    {
+      "name": "SearchRequest",
+      "schema": "SearchRequest",
+      "data": {
+        "q": "Synthetic",
+        "scope": "names",
+        "limit": 200
+      }
+    },
+    {
+      "name": "ThreadRequest",
+      "schema": "ThreadRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": "9007199254740993"
+      }
+    },
+    {
+      "name": "FriendsRequest",
+      "schema": "FriendsRequest",
+      "data": {
+        "limit": 50
+      }
+    },
+    {
+      "name": "StickersRequest",
+      "schema": "StickersRequest",
+      "data": {
+        "limit": 50
+      }
+    },
+    {
+      "name": "ProfileRequest",
+      "schema": "ProfileRequest",
+      "data": {
+        "userId": "42"
+      }
+    },
+    {
+      "name": "StickerResourceRequest",
+      "schema": "StickerResourceRequest",
+      "data": {
+        "itemId": "123:1"
+      }
+    },
+    {
+      "name": "SendRequest",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "text",
+        "text": "Hi 😀 peer",
+        "mentions": [
+          {
+            "userId": "42",
+            "start": 6,
+            "length": 4
+          }
+        ],
+        "replyTo": "9007199254740993"
+      }
+    },
+    {
+      "name": "SendRequest",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "media",
+        "uploadId": "synthetic_upload_123"
+      }
+    },
+    {
+      "name": "SendRequest",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "sticker",
+        "itemId": "123:1"
+      }
+    },
+    {
+      "name": "UploadRequest",
+      "schema": "UploadRequest",
+      "data": {
+        "roomId": "1001",
+        "file": "synthetic bytes"
+      }
+    },
+    {
+      "name": "UploadResponse",
+      "schema": "UploadResponse",
+      "data": {
+        "roomId": "1001",
+        "uploadId": "synthetic_upload_123",
+        "kind": "file",
+        "size": 15,
+        "mimeType": "text/plain",
+        "expiresAt": 1700001000
+      }
+    },
+    {
+      "name": "ReactionRequest",
+      "schema": "ReactionRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": "9007199254740993",
+        "code": "1",
+        "selected": true
+      }
+    },
+    {
+      "name": "ReadRequest",
+      "schema": "ReadRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": "9007199254740993"
+      }
+    },
+    {
+      "name": "ReadResponse",
+      "schema": "ReadResponse",
+      "data": {
+        "outcome": "confirmed",
+        "scope": "local",
+        "roomId": "1001",
+        "messageId": "9007199254740993"
+      }
+    },
+    {
+      "name": "MutationResponse",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "confirmed",
+        "messageId": "9007199254740993"
+      }
+    },
+    {
+      "name": "MutationResponse",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "unconfirmed",
+        "error": {
+          "code": "future_error",
+          "detail": "Synthetic refusal or uncertain write"
+        }
+      }
+    },
+    {
+      "name": "MutationResponse",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "rejected",
+        "error": {
+          "code": "future_error",
+          "detail": "Synthetic refusal or uncertain write"
+        }
+      }
+    },
+    {
+      "name": "SummaryRequest",
+      "schema": "SummaryRequest",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model"
+      }
+    },
+    {
+      "name": "QuestionRequest",
+      "schema": "QuestionRequest",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "question": "What happened?"
+      }
+    },
+    {
+      "name": "SummaryResponse",
+      "schema": "SummaryResponse",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "summary": "Synthetic model output",
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "messageCount": 1,
+        "chunkCount": 1
+      }
+    },
+    {
+      "name": "QuestionResponse",
+      "schema": "QuestionResponse",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "answer": "Synthetic model output",
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "citations": [
+          {
+            "messageId": "9007199254740993",
+            "userId": "42",
+            "text": "Synthetic",
+            "at": 1700000000
+          }
+        ],
+        "matchCount": 1,
+        "windowCount": 1
+      }
+    },
+    {
+      "name": "HistoryResponse",
+      "schema": "HistoryResponse",
+      "data": {
+        "items": [
+          {
+            "id": "9007199254740993",
+            "roomId": "1001",
+            "userId": "42",
+            "text": "Synthetic",
+            "kind": "text",
+            "at": 1700000000
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "SearchResponse",
+      "schema": "SearchResponse",
+      "data": {
+        "items": [
+          {
+            "roomId": "1001",
+            "messageId": "9007199254740993",
+            "userId": "42",
+            "text": "Synthetic",
+            "at": 1700000000,
+            "scope": "messages"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "ThreadResponse",
+      "schema": "ThreadResponse",
+      "data": {
+        "items": [
+          {
+            "id": "9007199254740993",
+            "roomId": "1001",
+            "userId": "42",
+            "text": "Synthetic",
+            "kind": "text",
+            "at": 1700000000
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "AttachmentsResponse",
+      "schema": "AttachmentsResponse",
+      "data": {
+        "items": [
+          {
+            "id": "opaque",
+            "messageId": "9007199254740993",
+            "roomId": "1001",
+            "kind": "file",
+            "name": "sample.txt"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "FriendsResponse",
+      "schema": "FriendsResponse",
+      "data": {
+        "items": [
+          {
+            "userId": "42",
+            "name": "Synthetic peer"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "StickersResponse",
+      "schema": "StickersResponse",
+      "data": {
+        "items": [
+          {
+            "itemId": "123:1",
+            "name": "Synthetic sticker",
+            "resource": "/extensions/piratetalk/v1/sticker-resource?itemId=123%3A1"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "AttachmentsResponse",
+      "schema": "AttachmentsResponse",
+      "data": {
+        "items": [],
+        "hasMore": true,
+        "nextCursor": "scan_1002",
+        "coverage": {
+          "source": "archive",
+          "complete": false,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "MembersResponse",
+      "schema": "MembersResponse",
+      "data": {
+        "items": [
+          {
+            "userId": "42",
+            "name": "Synthetic peer"
+          }
+        ],
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "ProfileResponse",
+      "schema": "ProfileResponse",
+      "data": {
+        "profile": {
+          "userId": "42",
+          "name": "Synthetic peer"
+        },
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "ProfileResponse",
+      "schema": "ProfileResponse",
+      "data": {
+        "profile": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "StickerResourceResponse",
+      "schema": "StickerResourceResponse",
+      "data": "synthetic raster bytes"
+    },
+    {
+      "name": "ErrorResponse",
+      "schema": "ErrorResponse",
+      "data": {
+        "ok": false,
+        "error": {
+          "code": "source_unavailable",
+          "detail": "Synthetic source unavailable"
+        }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "CapabilitiesRequest-wrong-shape-0",
+      "schema": "CapabilitiesRequest",
+      "data": {
+        "unexpected": true
+      }
+    },
+    {
+      "name": "CapabilitiesResponse-wrong-shape-1",
+      "schema": "CapabilitiesResponse",
+      "data": {
+        "version": "1.0.0",
+        "features": {
+          "reply": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "thread": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "mentions": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "media": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "stickers": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "reactions": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "history": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "search": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "readLocal": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "people": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "summary": {
+            "available": false,
+            "reason": "not_mounted"
+          },
+          "question": {
+            "available": false,
+            "reason": "not_mounted"
+          }
+        },
+        "models": [
+          "synthetic-model"
+        ],
+        "uploadPolicy": {
+          "maxBytes": 67108864,
+          "maxFiles": 1,
+          "kinds": [
+            "photo",
+            "video",
+            "file"
+          ]
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "HistoryRequest-wrong-shape-2",
+      "schema": "HistoryRequest",
+      "data": {
+        "roomId": "1001",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "AttachmentsRequest-wrong-shape-3",
+      "schema": "AttachmentsRequest",
+      "data": {
+        "roomId": "1001",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "MembersRequest-wrong-shape-4",
+      "schema": "MembersRequest",
+      "data": {
+        "roomId": "1001",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SearchRequest-wrong-shape-5",
+      "schema": "SearchRequest",
+      "data": {
+        "q": "Synthetic",
+        "scope": "names",
+        "limit": 200,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ThreadRequest-wrong-shape-6",
+      "schema": "ThreadRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": "9007199254740993",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "FriendsRequest-wrong-shape-7",
+      "schema": "FriendsRequest",
+      "data": {
+        "limit": 50,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "StickersRequest-wrong-shape-8",
+      "schema": "StickersRequest",
+      "data": {
+        "limit": 50,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ProfileRequest-wrong-shape-9",
+      "schema": "ProfileRequest",
+      "data": {
+        "userId": "42",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "StickerResourceRequest-wrong-shape-10",
+      "schema": "StickerResourceRequest",
+      "data": {
+        "itemId": "123:1",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SendRequest-wrong-shape-11",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "text",
+        "text": "Hi 😀 peer",
+        "mentions": [
+          {
+            "userId": "42",
+            "start": 6,
+            "length": 4
+          }
+        ],
+        "replyTo": "9007199254740993",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SendRequest-wrong-shape-12",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "media",
+        "uploadId": "synthetic_upload_123",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SendRequest-wrong-shape-13",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "sticker",
+        "itemId": "123:1",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "UploadRequest-wrong-shape-14",
+      "schema": "UploadRequest",
+      "data": {
+        "roomId": "1001",
+        "file": "synthetic bytes",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "UploadResponse-wrong-shape-15",
+      "schema": "UploadResponse",
+      "data": {
+        "roomId": "1001",
+        "uploadId": "synthetic_upload_123",
+        "kind": "file",
+        "size": 15,
+        "mimeType": "text/plain",
+        "expiresAt": 1700001000,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ReactionRequest-wrong-shape-16",
+      "schema": "ReactionRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": "9007199254740993",
+        "code": "1",
+        "selected": true,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ReadRequest-wrong-shape-17",
+      "schema": "ReadRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": "9007199254740993",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ReadResponse-wrong-shape-18",
+      "schema": "ReadResponse",
+      "data": {
+        "outcome": "confirmed",
+        "scope": "local",
+        "roomId": "1001",
+        "messageId": "9007199254740993",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "MutationResponse-wrong-shape-19",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "confirmed",
+        "messageId": "9007199254740993",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "MutationResponse-wrong-shape-20",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "unconfirmed",
+        "error": {
+          "code": "future_error",
+          "detail": "Synthetic refusal or uncertain write"
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "MutationResponse-wrong-shape-21",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "rejected",
+        "error": {
+          "code": "future_error",
+          "detail": "Synthetic refusal or uncertain write"
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SummaryRequest-wrong-shape-22",
+      "schema": "SummaryRequest",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "QuestionRequest-wrong-shape-23",
+      "schema": "QuestionRequest",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "question": "What happened?",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SummaryResponse-wrong-shape-24",
+      "schema": "SummaryResponse",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "summary": "Synthetic model output",
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "messageCount": 1,
+        "chunkCount": 1,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "QuestionResponse-wrong-shape-25",
+      "schema": "QuestionResponse",
+      "data": {
+        "roomId": "1001",
+        "from": 1700000000,
+        "to": 1700003600,
+        "model": "synthetic-model",
+        "answer": "Synthetic model output",
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "citations": [
+          {
+            "messageId": "9007199254740993",
+            "userId": "42",
+            "text": "Synthetic",
+            "at": 1700000000
+          }
+        ],
+        "matchCount": 1,
+        "windowCount": 1,
+        "unexpected": true
+      }
+    },
+    {
+      "name": "HistoryResponse-wrong-shape-26",
+      "schema": "HistoryResponse",
+      "data": {
+        "items": [
+          {
+            "id": "9007199254740993",
+            "roomId": "1001",
+            "userId": "42",
+            "text": "Synthetic",
+            "kind": "text",
+            "at": 1700000000
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "SearchResponse-wrong-shape-27",
+      "schema": "SearchResponse",
+      "data": {
+        "items": [
+          {
+            "roomId": "1001",
+            "messageId": "9007199254740993",
+            "userId": "42",
+            "text": "Synthetic",
+            "at": 1700000000,
+            "scope": "messages"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ThreadResponse-wrong-shape-28",
+      "schema": "ThreadResponse",
+      "data": {
+        "items": [
+          {
+            "id": "9007199254740993",
+            "roomId": "1001",
+            "userId": "42",
+            "text": "Synthetic",
+            "kind": "text",
+            "at": 1700000000
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "AttachmentsResponse-wrong-shape-29",
+      "schema": "AttachmentsResponse",
+      "data": {
+        "items": [
+          {
+            "id": "opaque",
+            "messageId": "9007199254740993",
+            "roomId": "1001",
+            "kind": "file",
+            "name": "sample.txt"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "FriendsResponse-wrong-shape-30",
+      "schema": "FriendsResponse",
+      "data": {
+        "items": [
+          {
+            "userId": "42",
+            "name": "Synthetic peer"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "StickersResponse-wrong-shape-31",
+      "schema": "StickersResponse",
+      "data": {
+        "items": [
+          {
+            "itemId": "123:1",
+            "name": "Synthetic sticker",
+            "resource": "/extensions/piratetalk/v1/sticker-resource?itemId=123%3A1"
+          }
+        ],
+        "hasMore": false,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "AttachmentsResponse-wrong-shape-32",
+      "schema": "AttachmentsResponse",
+      "data": {
+        "items": [],
+        "hasMore": true,
+        "nextCursor": "scan_1002",
+        "coverage": {
+          "source": "archive",
+          "complete": false,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "MembersResponse-wrong-shape-33",
+      "schema": "MembersResponse",
+      "data": {
+        "items": [
+          {
+            "userId": "42",
+            "name": "Synthetic peer"
+          }
+        ],
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ProfileResponse-wrong-shape-34",
+      "schema": "ProfileResponse",
+      "data": {
+        "profile": {
+          "userId": "42",
+          "name": "Synthetic peer"
+        },
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "ProfileResponse-wrong-shape-35",
+      "schema": "ProfileResponse",
+      "data": {
+        "profile": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "StickerResourceResponse-wrong-shape-36",
+      "schema": "StickerResourceResponse",
+      "data": {}
+    },
+    {
+      "name": "ErrorResponse-wrong-shape-37",
+      "schema": "ErrorResponse",
+      "data": {
+        "ok": false,
+        "error": {
+          "code": "source_unavailable",
+          "detail": "Synthetic source unavailable"
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "wrong-kind",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "future",
+        "text": "test"
+      }
+    },
+    {
+      "name": "numeric-room",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": 9007199254740992,
+        "kind": "text",
+        "text": "test"
+      }
+    },
+    {
+      "name": "unsafe-room",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "9223372036854775808",
+        "kind": "text",
+        "text": "test"
+      }
+    },
+    {
+      "name": "leading-zero",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "01",
+        "kind": "text",
+        "text": "test"
+      }
+    },
+    {
+      "name": "local-path",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "media",
+        "uploadId": "synthetic_upload_123",
+        "file_path": "/tmp/x"
+      }
+    },
+    {
+      "name": "split-surrogate",
+      "schema": "SendRequest",
+      "data": {
+        "roomId": "1001",
+        "kind": "text",
+        "text": "😀x",
+        "mentions": [
+          {
+            "userId": "42",
+            "start": 1,
+            "length": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-outcome",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "delivered",
+        "messageId": "9007199254740993"
+      }
+    },
+    {
+      "name": "confirmed-without-id",
+      "schema": "MutationResponse",
+      "data": {
+        "outcome": "confirmed"
+      }
+    },
+    {
+      "name": "inverted-period",
+      "schema": "SummaryRequest",
+      "data": {
+        "roomId": "1001",
+        "from": 1700003601,
+        "to": 1700003600,
+        "model": "synthetic-model"
+      }
+    },
+    {
+      "name": "numeric-message-id",
+      "schema": "ReadRequest",
+      "data": {
+        "roomId": "1001",
+        "messageId": 9007199254740992
+      }
+    },
+    {
+      "name": "cursor-without-more",
+      "schema": "HistoryResponse",
+      "data": {
+        "items": [],
+        "hasMore": false,
+        "nextCursor": "abc",
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "missing-progress",
+      "schema": "AttachmentsResponse",
+      "data": {
+        "items": [],
+        "hasMore": true,
+        "nextCursor": null,
+        "coverage": {
+          "source": "archive",
+          "complete": true,
+          "stale": false
+        }
+      }
+    },
+    {
+      "name": "ambiguous-anchor",
+      "schema": "HistoryRequest",
+      "data": {
+        "roomId": "1001",
+        "beforeId": "2",
+        "messageId": "3"
+      }
+    }
+  ]
+}

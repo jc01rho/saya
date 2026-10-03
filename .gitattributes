@@ -2,3 +2,6 @@ contracts/kakao.openapi.json -text
 src/contract/* text eol=lf
 src/contract/tsuba/* text eol=lf
 contracts/tsuba.openapi.json -text
+contracts/piratetalk-extension.openapi.json -text
+contracts/piratetalk-extension.fixtures.json -text
+src/contract/piratetalk/* text eol=lf
