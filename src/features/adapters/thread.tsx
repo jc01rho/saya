@@ -27,7 +27,7 @@ import {
   type UploadFeature,
   uploadFile,
 } from "../../transport/adapters";
-import { AttachButton, StagedFile } from "../attach";
+import { ATTACH_COPY, AttachButton, pickable, StagedFile } from "../attach";
 import { problemSentence } from "./copy";
 import { actionMember, groupMessages } from "./group";
 import { adapterConnections, subscribeAdapterRooms } from "./liveRooms";
@@ -176,6 +176,17 @@ function Composer({
   const captionLimit = upload?.captionMaxLength ?? 0;
   const captionOver =
     caption !== undefined && [...caption].length > captionLimit;
+  // Only the media types the adapter sends: a picker, and a guard that keeps a
+  // file it would refuse out of the box in the first place.
+  const picks = pickable(upload?.types);
+  const onPick = (file: File) => {
+    if (!picks.accepts(file)) {
+      setNote(ATTACH_COPY.wrongType);
+      return;
+    }
+    setStaged(file);
+    setNote(null);
+  };
 
   useEffect(() => {
     if (mode.kind === "edit") setRevision(mode.message.text);
@@ -353,21 +364,21 @@ function Composer({
       <div className={styles.box}>
         {upload && !editing ? (
           <>
-            <AttachButton
-              photo
-              disabled={fileBusy}
-              onPick={(file) => {
-                setStaged(file);
-                setNote(null);
-              }}
-            />
-            <AttachButton
-              disabled={fileBusy}
-              onPick={(file) => {
-                setStaged(file);
-                setNote(null);
-              }}
-            />
+            {picks.imagesOnly || picks.accept === undefined ? (
+              <AttachButton
+                photo
+                disabled={fileBusy}
+                accept={picks.accept}
+                onPick={onPick}
+              />
+            ) : null}
+            {picks.imagesOnly ? null : (
+              <AttachButton
+                disabled={fileBusy}
+                accept={picks.accept}
+                onPick={onPick}
+              />
+            )}
           </>
         ) : null}
         <textarea

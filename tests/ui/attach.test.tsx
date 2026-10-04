@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ATTACH_COPY, AttachButton } from "../../src/features/attach";
+import { ATTACH_COPY, AttachButton, pickable } from "../../src/features/attach";
 import { StagedFile } from "../../src/features/attach/Staged";
 
 const file = (bytes: number, name = "synthetic.png") =>
@@ -32,6 +32,40 @@ describe("attaching a file", () => {
     expect(
       renderToStaticMarkup(<AttachButton onPick={() => {}} />),
     ).not.toContain("accept=");
+  });
+
+  test("a declared type list makes the picker offer exactly those", () => {
+    const html = renderToStaticMarkup(
+      <AttachButton
+        photo
+        accept={pickable(["image/jpeg", "image/png"]).accept}
+        onPick={() => {}}
+      />,
+    );
+    expect(html).toContain('accept="image/jpeg,image/png"');
+  });
+
+  test("pickable narrows to images, builds the accept list, and guards a file", () => {
+    const images = pickable(["image/jpeg", "image/png", "image/gif"]);
+    expect(images.imagesOnly).toBe(true);
+    expect(images.accept).toBe("image/jpeg,image/png,image/gif");
+    expect(images.accepts(file(3, "a.png"))).toBe(true);
+    expect(
+      images.accepts(
+        new File([new Uint8Array(3)], "a.txt", { type: "text/plain" }),
+      ),
+    ).toBe(false);
+
+    const mixed = pickable(["image/png", "video/mp4"]);
+    expect(mixed.imagesOnly).toBe(false);
+    expect(mixed.accept).toBe("image/png,video/mp4");
+
+    const any = pickable(undefined);
+    expect(any.imagesOnly).toBe(false);
+    expect(any.accept).toBeUndefined();
+    expect(
+      any.accepts(new File([new Uint8Array(3)], "a.bin", { type: "" })),
+    ).toBe(true);
   });
 
   test("a file that fits can be sent and says its name and size", () => {

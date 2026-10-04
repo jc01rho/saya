@@ -813,6 +813,7 @@ function validate90(data, { instancePath = "", parentData, parentDataProperty, r
   return errors === 0;
 }
 validate90.evaluated = { dynamicProps: false, dynamicItems: false };
+var pattern5 = new RegExp("^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$", "u");
 function validate92(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -863,15 +864,77 @@ function validate92(data, { instancePath = "", parentData, parentDataProperty, r
               var valid0 = true;
             }
             if (valid0) {
-              if (data.receipt !== undefined) {
+              if (data.types !== undefined) {
+                let data3 = data.types;
                 const _errs5 = errors;
-                if (typeof data.receipt !== "string") {
-                  validate92.errors = [{ instancePath: instancePath + "/receipt", schemaPath: "#/properties/receipt/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
-                  return false;
+                if (errors === _errs5) {
+                  if (Array.isArray(data3)) {
+                    if (data3.length < 1) {
+                      validate92.errors = [{ instancePath: instancePath + "/types", schemaPath: "#/properties/types/minItems", keyword: "minItems", params: { limit: 1 }, message: "must NOT have fewer than 1 items" }];
+                      return false;
+                    } else {
+                      var valid1 = true;
+                      const len0 = data3.length;
+                      for (let i0 = 0;i0 < len0; i0++) {
+                        let data4 = data3[i0];
+                        const _errs7 = errors;
+                        if (errors === _errs7) {
+                          if (typeof data4 === "string") {
+                            if (!pattern5.test(data4)) {
+                              validate92.errors = [{ instancePath: instancePath + "/types/" + i0, schemaPath: "#/properties/types/items/pattern", keyword: "pattern", params: { pattern: "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$" }, message: 'must match pattern "' + "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$" + '"' }];
+                              return false;
+                            }
+                          } else {
+                            validate92.errors = [{ instancePath: instancePath + "/types/" + i0, schemaPath: "#/properties/types/items/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                            return false;
+                          }
+                        }
+                        var valid1 = _errs7 === errors;
+                        if (!valid1) {
+                          break;
+                        }
+                      }
+                      if (valid1) {
+                        let i1 = data3.length;
+                        let j0;
+                        if (i1 > 1) {
+                          const indices0 = {};
+                          for (;i1--; ) {
+                            let item0 = data3[i1];
+                            if (typeof item0 !== "string") {
+                              continue;
+                            }
+                            if (typeof indices0[item0] == "number") {
+                              j0 = indices0[item0];
+                              validate92.errors = [{ instancePath: instancePath + "/types", schemaPath: "#/properties/types/uniqueItems", keyword: "uniqueItems", params: { i: i1, j: j0 }, message: "must NOT have duplicate items (items ## " + j0 + " and " + i1 + " are identical)" }];
+                              return false;
+                              break;
+                            }
+                            indices0[item0] = i1;
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    validate92.errors = [{ instancePath: instancePath + "/types", schemaPath: "#/properties/types/type", keyword: "type", params: { type: "array" }, message: "must be array" }];
+                    return false;
+                  }
                 }
                 var valid0 = _errs5 === errors;
               } else {
                 var valid0 = true;
+              }
+              if (valid0) {
+                if (data.receipt !== undefined) {
+                  const _errs9 = errors;
+                  if (typeof data.receipt !== "string") {
+                    validate92.errors = [{ instancePath: instancePath + "/receipt", schemaPath: "#/properties/receipt/type", keyword: "type", params: { type: "string" }, message: "must be string" }];
+                    return false;
+                  }
+                  var valid0 = _errs9 === errors;
+                } else {
+                  var valid0 = true;
+                }
               }
             }
           }
@@ -885,8 +948,8 @@ function validate92(data, { instancePath = "", parentData, parentDataProperty, r
   validate92.errors = vErrors;
   return errors === 0;
 }
-validate92.evaluated = { props: { maxBytes: true, caption: true, captionMaxLength: true, receipt: true }, dynamicProps: false, dynamicItems: false };
-var pattern5 = new RegExp("^x-[a-z][a-z0-9-]*\\.", "u");
+validate92.evaluated = { props: { maxBytes: true, caption: true, captionMaxLength: true, types: true, receipt: true }, dynamicProps: false, dynamicItems: false };
+var pattern6 = new RegExp("^x-[a-z][a-z0-9-]*\\.", "u");
 function validate58(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -1081,7 +1144,7 @@ function validate58(data, { instancePath = "", parentData, parentDataProperty, r
                                     props0["avatars.read"] = true;
                                     props0["attachments.send"] = true;
                                     for (const key0 in data) {
-                                      if (pattern5.test(key0)) {
+                                      if (pattern6.test(key0)) {
                                         let data15 = data[key0];
                                         if (!(data15 && typeof data15 == "object" && !Array.isArray(data15))) {
                                           validate58.errors = [{ instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/patternProperties/%5Ex-%5Ba-z%5D%5Ba-z0-9-%5D*%5C./type", keyword: "type", params: { type: "object" }, message: "must be object" }];
@@ -2133,6 +2196,7 @@ function validate97(data, { instancePath = "", parentData, parentDataProperty, r
                                       props6.maxBytes = true;
                                       props6.caption = true;
                                       props6.captionMaxLength = true;
+                                      props6.types = true;
                                       props6.receipt = true;
                                     }
                                     if (!valid15) {
@@ -2177,7 +2241,7 @@ function validate97(data, { instancePath = "", parentData, parentDataProperty, r
                                     props7["avatars.read"] = true;
                                     props7["attachments.send"] = true;
                                     for (const key0 in data) {
-                                      if (pattern5.test(key0)) {
+                                      if (pattern6.test(key0)) {
                                         let data15 = data[key0];
                                         const _errs62 = errors;
                                         let valid17 = false;

@@ -168,7 +168,7 @@ export interface paths {
         put?: never;
         /**
          * Send one file to a room.
-         * @description Feature `attachments.send`. A `multipart/form-data` body with one file part named `file`, the `roomId`, and optionally `caption` and `replyTo`; no other part, and no part twice. The file part's name and type are the file's. The adapter sends a picture or video its messenger shows inline as one, and anything else as a file. Uploads share the adapter's one write line with `POST /send`: one at a time, at most four admitted, and the next is `429 RATE_LIMITED` having changed nothing. A file larger than the feature's `maxBytes` is `400 INVALID_REQUEST`, refused before it is read whole when the length says so. A caption is `400 INVALID_REQUEST` where the feature declares `caption: false` or past its `captionMaxLength` code points. `replyTo` is as for `POST /send`, `501 NOT_SUPPORTED` without `messages.reply`. Every error but `INTERNAL` means nothing was sent; an upload whose outcome is uncertain is never retried by the adapter.
+         * @description Feature `attachments.send`. A `multipart/form-data` body with one file part named `file`, the `roomId`, and optionally `caption` and `replyTo`; no other part, and no part twice. The file part's name and type are the file's. The adapter sends a picture or video its messenger shows inline as one, and anything else as a file. Uploads share the adapter's one write line with `POST /send`: one at a time, at most four admitted, and the next is `429 RATE_LIMITED` having changed nothing. A file larger than the feature's `maxBytes` is `400 INVALID_REQUEST`, refused before it is read whole when the length says so, and so is a file whose type is not among the feature's `types` when it declares them. A caption is `400 INVALID_REQUEST` where the feature declares `caption: false` or past its `captionMaxLength` code points. `replyTo` is as for `POST /send`, `501 NOT_SUPPORTED` without `messages.reply`. Every error but `INTERNAL` means nothing was sent; an upload whose outcome is uncertain is never retried by the adapter.
          */
         post: operations["upload"];
         delete?: never;
@@ -399,6 +399,8 @@ export interface components {
             caption: boolean;
             /** @description With `caption: true`, and only then: the longest caption the messenger accepts, in Unicode code points. */
             captionMaxLength?: components["schemas"]["PositiveInteger"];
+            /** @description When present, the only media types the adapter sends, as lowercase `type/subtype` without parameters: a file whose part carries any other type is refused. Absent means any type. A client offers only these when a person picks a file. */
+            types?: string[];
             /** @description As for `messages.send`: `stored` means the answer carries the message the messenger stored. */
             receipt: string;
         };

@@ -62,28 +62,43 @@ export const scenario: Scenario = {
       });
       await page.route("**/adapters{,/**}", (route) => {
         const request = new URL(route.request().url());
+        const photos = request.pathname.includes("/photos/");
         if (request.pathname === "/adapters")
-          return route.fulfill({ json: { adapters: [{ id: "synthetic" }] } });
+          return route.fulfill({
+            json: { adapters: [{ id: "synthetic" }, { id: "photos" }] },
+          });
         if (request.pathname.endsWith("/capabilities"))
           return route.fulfill({
             json: {
               ok: true,
               contract: { version: CONTRACT_VERSION },
-              adapter: { name: "synthetic", version: "0.0.0" },
-              provider: { id: "invented", name: "Synthetic messenger" },
+              adapter: {
+                name: photos ? "photos" : "synthetic",
+                version: "0.0.0",
+              },
+              provider: photos
+                ? { id: "photos", name: "Pictures only" }
+                : { id: "invented", name: "Synthetic messenger" },
               account: { kind: "user" },
-              revision: "0123456789abcdef",
+              revision: photos ? "fedcba9876543210" : "0123456789abcdef",
               features: {
                 "rooms.list": {},
                 "messages.read": { paging: "none", maxLimit: 50 },
                 "attachments.read": {},
                 "messages.send": { maxLength: 4096, receipt: "stored" },
-                "attachments.send": {
-                  maxBytes: 10 * 1024 * 1024,
-                  caption: true,
-                  captionMaxLength: 1024,
-                  receipt: "stored",
-                },
+                "attachments.send": photos
+                  ? {
+                      maxBytes: 10 * 1024 * 1024,
+                      caption: false,
+                      types: ["image/jpeg", "image/png", "image/gif"],
+                      receipt: "stored",
+                    }
+                  : {
+                      maxBytes: 10 * 1024 * 1024,
+                      caption: true,
+                      captionMaxLength: 1024,
+                      receipt: "stored",
+                    },
               },
             },
           });
@@ -95,7 +110,7 @@ export const scenario: Scenario = {
               rooms: [
                 {
                   id: "room",
-                  title: "가상 업로드 방",
+                  title: photos ? "사진 전용 방" : "가상 업로드 방",
                   kind: "group",
                   unread: 0,
                 },
@@ -215,6 +230,24 @@ export const scenario: Scenario = {
       assert.equal(adapterUploads[0]?.caption, CAPTION);
       assert.equal(await adapter.locator("textarea").inputValue(), "");
       await page.screenshot({ path: `${evidence}/adapter-sent-${width}.png` });
+      // An adapter that declares attachments.send types for pictures only draws
+      // just the photo button, with the picker offering exactly those types.
+      await page.goto(`${url}/#/adapters/photos/room`, { waitUntil: "load" });
+      const pictures = page.locator('[data-ui="adapter-composer"]');
+      await pictures
+        .locator('[data-ui="attach-photo"]')
+        .waitFor({ timeout: 10_000 });
+      assert.equal(await pictures.locator('[data-ui="attach"]').count(), 0);
+      assert.equal(
+        await pictures
+          .locator('[data-ui="attach-photo-input"]')
+          .getAttribute("accept"),
+        "image/jpeg,image/png,image/gif",
+      );
+      await page.screenshot({
+        path: `${evidence}/adapter-images-only-${width}.png`,
+      });
+
       log(`file upload checked at ${width}px`);
       await page.close();
     }
