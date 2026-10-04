@@ -25,6 +25,15 @@ describe("attaching a file", () => {
     expect(html).toContain('type="file"');
   });
 
+  test("the photo button asks the browser for pictures only", () => {
+    const html = renderToStaticMarkup(<AttachButton photo onPick={() => {}} />);
+    expect(html).toContain(`aria-label="${ATTACH_COPY.pickPhoto}"`);
+    expect(html).toContain('accept="image/*"');
+    expect(
+      renderToStaticMarkup(<AttachButton onPick={() => {}} />),
+    ).not.toContain("accept=");
+  });
+
   test("a file that fits can be sent and says its name and size", () => {
     const html = staged();
     expect(html).toContain("synthetic.png");

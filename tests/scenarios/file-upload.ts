@@ -146,6 +146,12 @@ export const scenario: Scenario = {
       await page.goto(`${url}/#/room/${FIRST_ROOM_ID}`, { waitUntil: "load" });
       const composer = page.locator('[data-ui="composer"]');
       await composer.locator('[data-ui="attach"]').waitFor({ timeout: 10_000 });
+      assert.equal(
+        await composer
+          .locator('[data-ui="attach-photo-input"]')
+          .getAttribute("accept"),
+        "image/*",
+      );
       await composer.locator('[data-ui="attach-input"]').setInputFiles({
         name: "too-large.bin",
         mimeType: "application/octet-stream",
@@ -189,7 +195,7 @@ export const scenario: Scenario = {
       const adapter = page.locator('[data-ui="adapter-composer"]');
       await adapter.locator('[data-ui="attach"]').waitFor({ timeout: 10_000 });
       await adapter.locator("textarea").fill(CAPTION);
-      await adapter.locator('[data-ui="attach-input"]').setInputFiles({
+      await adapter.locator('[data-ui="attach-photo-input"]').setInputFiles({
         name: "synthetic.png",
         mimeType: "image/png",
         buffer: png,

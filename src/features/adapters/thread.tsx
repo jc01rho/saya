@@ -352,13 +352,23 @@ function Composer({
       ) : null}
       <div className={styles.box}>
         {upload && !editing ? (
-          <AttachButton
-            disabled={fileBusy}
-            onPick={(file) => {
-              setStaged(file);
-              setNote(null);
-            }}
-          />
+          <>
+            <AttachButton
+              photo
+              disabled={fileBusy}
+              onPick={(file) => {
+                setStaged(file);
+                setNote(null);
+              }}
+            />
+            <AttachButton
+              disabled={fileBusy}
+              onPick={(file) => {
+                setStaged(file);
+                setNote(null);
+              }}
+            />
+          </>
         ) : null}
         <textarea
           ref={field}

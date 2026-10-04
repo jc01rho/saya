@@ -435,15 +435,27 @@ export const Composer = memo(function Composer({
         />
         <div className={styles.tools}>
           {uploadLimit !== null ? (
-            <AttachButton
-              disabled={
-                status.kind === "previewing" || status.kind === "posting"
-              }
-              onPick={(file) => {
-                setStaged(file);
-                setStatus({ kind: "idle" });
-              }}
-            />
+            <>
+              <AttachButton
+                photo
+                disabled={
+                  status.kind === "previewing" || status.kind === "posting"
+                }
+                onPick={(file) => {
+                  setStaged(file);
+                  setStatus({ kind: "idle" });
+                }}
+              />
+              <AttachButton
+                disabled={
+                  status.kind === "previewing" || status.kind === "posting"
+                }
+                onPick={(file) => {
+                  setStaged(file);
+                  setStatus({ kind: "idle" });
+                }}
+              />
+            </>
           ) : null}
           <span className={styles.hint} aria-hidden="true">
             {COPY.hint}
