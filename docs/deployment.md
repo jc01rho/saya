@@ -37,11 +37,14 @@ the following are true:
   two upload routes, `/api/upload` and `/adapters/<id>/upload`.
 
 Those two routes also carry `request_body max_size 60MiB`, above the largest
-`maxBytes` a core or adapter declares (50 MB), so a larger body is answered
-`413` by the proxy before it travels to the core or adapter. Keep both parts
-when you copy the example: without the multipart allowance a file send is
-refused with `403`, and without the size bound a body is limited only by the
-core or adapter behind it.
+`maxBytes` a core or adapter declares (50 MB): the proxy passes on no more than
+that, whatever the request claims. The core or adapter answers a file past its
+own limit with `400`, from the declared length or while it reads; measured on
+the tailnet deployment, a 61 MiB upload to a 10 MiB adapter was refused by the
+adapter both with a declared length and chunked. Keep both parts when you copy
+the example: without the multipart allowance a file send is refused with `403`,
+and without the size bound a body is limited only by the core or adapter
+behind it.
 
 This is a fail-closed browser-write boundary, not a substitute for user access
 control. The core bearer credential remains hidden from JavaScript, but anyone

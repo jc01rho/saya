@@ -61,8 +61,9 @@ http://127.0.0.1:8080 {
     respond @blocked_write 403
 
     # An upload is bounded here too, above the largest maxBytes a core or an
-    # adapter declares (50 MB), so a larger body is refused with 413 before
-    # it travels to them.
+    # adapter declares (50 MB): no more than this is passed on, whatever the
+    # request claims. The core or adapter refuses a file past its own limit
+    # with 400, from the declared length or while it reads.
     @upload_body path_regexp upload_body ^/(?:api|adapters/[a-z][a-z0-9-]*)/upload$
     request_body @upload_body {
         max_size 60MiB
