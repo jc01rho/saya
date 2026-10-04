@@ -1,5 +1,6 @@
 import {
   type KeyboardEvent,
+  Suspense,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -23,7 +24,10 @@ import {
   sendMessage,
   setReactions,
   streamAdapter,
+  type UploadFeature,
+  uploadFile,
 } from "../../transport/adapters";
+import { AttachButton, StagedFile } from "../attach";
 import { problemSentence } from "./copy";
 import { actionMember, groupMessages } from "./group";
 import { adapterConnections, subscribeAdapterRooms } from "./liveRooms";
@@ -58,6 +62,11 @@ const COPY = {
   uncertainEdit:
     "수정됐는지 알 수 없습니다. 대화에서 확인한 뒤 필요하면 다시 수정하세요.",
   uncertainDelete: "삭제됐는지 알 수 없습니다. 대화에서 확인하세요.",
+  uncertainFile:
+    "파일을 보냈는지 알 수 없습니다. 대화에 나타나는지 확인한 뒤 필요하면 다시 보내세요.",
+  withCaption: "입력한 글을 설명으로 함께 보냅니다.",
+  captionTooLong: (max: number) =>
+    `설명으로 보낼 글은 ${max.toLocaleString("ko-KR")}자까지입니다. 글을 줄이거나 따로 보내세요.`,
   uncertainReact: "반응이 남았는지 알 수 없습니다. 대화에서 확인하세요.",
   replyingTo: (name: string) => `${name}에게 답장`,
   editing: "메시지 수정",
@@ -135,6 +144,7 @@ function Composer({
   roomId,
   sendLimit,
   editLimit,
+  upload,
   mode,
   onCancelMode,
   onStored,
@@ -144,6 +154,8 @@ function Composer({
   roomId: string;
   sendLimit: number;
   editLimit: number | undefined;
+  /** `attachments.send` as this room allows it; absent, no file control is drawn. */
+  upload: UploadFeature | undefined;
   mode: Mode;
   onCancelMode: () => void;
   onStored: (message: AdapterMessage) => void;
@@ -154,8 +166,16 @@ function Composer({
   const [revision, setRevision] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [staged, setStaged] = useState<File | null>(null);
+  const [fileBusy, setFileBusy] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const editing = mode.kind === "edit";
+  // Where the adapter takes a caption, the words in the box go with the file.
+  const caption =
+    upload?.caption && !editing && draft.trim() ? draft : undefined;
+  const captionLimit = upload?.captionMaxLength ?? 0;
+  const captionOver =
+    caption !== undefined && [...caption].length > captionLimit;
 
   useEffect(() => {
     if (mode.kind === "edit") setRevision(mode.message.text);
@@ -222,6 +242,53 @@ function Composer({
     );
   }
 
+  // One file, one attempt: a refusal keeps it to try again by hand, anything
+  // else puts it down and says the outcome is unknown.
+  async function sendFile() {
+    const file = staged;
+    if (
+      !file ||
+      !upload ||
+      fileBusy ||
+      file.size === 0 ||
+      file.size > upload.maxBytes ||
+      captionOver
+    )
+      return;
+    setFileBusy(true);
+    setNote(null);
+    const replyTo = mode.kind === "reply" ? mode.message.id : undefined;
+    let result: Awaited<ReturnType<typeof uploadFile>>;
+    try {
+      result = await uploadFile(
+        adapterId,
+        {
+          roomId,
+          file,
+          ...(caption === undefined ? {} : { caption }),
+          ...(replyTo === undefined ? {} : { replyTo }),
+        },
+        new AbortController().signal,
+      );
+    } catch {
+      result = { kind: "unreachable" };
+    }
+    setFileBusy(false);
+    if (result.kind === "ok") {
+      setStaged(null);
+      if (caption !== undefined) setDraft("");
+      onStored(result.data.message);
+      if (replyTo !== undefined) onCancelMode();
+      return;
+    }
+    if (result.kind === "refused") {
+      setNote(problemSentence(result));
+      return;
+    }
+    setStaged(null);
+    setNote(COPY.uncertainFile);
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Escape" && mode.kind !== "send") {
       event.preventDefault();
@@ -262,7 +329,37 @@ function Composer({
           </button>
         </div>
       ) : null}
+      {staged && upload && !editing ? (
+        <Suspense fallback={null}>
+          <StagedFile
+            file={staged}
+            maxBytes={upload.maxBytes}
+            busy={fileBusy}
+            blocked={captionOver}
+            onSend={() => void sendFile()}
+            onCancel={() => {
+              setStaged(null);
+              setNote(null);
+            }}
+          >
+            {caption === undefined
+              ? null
+              : captionOver
+                ? COPY.captionTooLong(captionLimit)
+                : COPY.withCaption}
+          </StagedFile>
+        </Suspense>
+      ) : null}
       <div className={styles.box}>
+        {upload && !editing ? (
+          <AttachButton
+            disabled={fileBusy}
+            onPick={(file) => {
+              setStaged(file);
+              setNote(null);
+            }}
+          />
+        ) : null}
         <textarea
           ref={field}
           className={styles.field}
@@ -725,6 +822,7 @@ export function AdapterThread({
           roomId={roomId}
           sendLimit={send.maxLength}
           editLimit={edit?.maxLength}
+          upload={roomFeature(features, room, "attachments.send")}
           mode={mode}
           onCancelMode={() => setMode({ kind: "send" })}
           onStored={(message) => {

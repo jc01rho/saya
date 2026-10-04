@@ -157,6 +157,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send one file to a room.
+         * @description Feature `attachments.send`. A `multipart/form-data` body with one file part named `file`, the `roomId`, and optionally `caption` and `replyTo`; no other part, and no part twice. The file part's name and type are the file's. The adapter sends a picture or video its messenger shows inline as one, and anything else as a file. Uploads share the adapter's one write line with `POST /send`: one at a time, at most four admitted, and the next is `429 RATE_LIMITED` having changed nothing. A file larger than the feature's `maxBytes` is `400 INVALID_REQUEST`, refused before it is read whole when the length says so. A caption is `400 INVALID_REQUEST` where the feature declares `caption: false` or past its `captionMaxLength` code points. `replyTo` is as for `POST /send`, `501 NOT_SUPPORTED` without `messages.reply`. Every error but `INTERNAL` means nothing was sent; an upload whose outcome is uncertain is never retried by the adapter.
+         */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/edit": {
         parameters: {
             query?: never;
@@ -384,12 +404,19 @@ export interface components {
         FeatureAttachmentsRead: Record<string, never>;
         /** @description Messages carry their sender's profile picture: `Message.senderAvatar`, an id `GET /media` answers. Declared only beside `attachments.read`, whose route serves the bytes. */
         FeatureAvatarsRead: Record<string, never>;
-        /** @description Reserved. Send a file: `POST /upload`. */
+        /** @description Send one file: `POST /upload`. */
         FeatureAttachmentsSend: {
-            /** @description Largest file the messenger accepts from this account. */
+            /** @description Largest file the adapter takes from this account, in bytes: the smaller of the messenger's limit and the adapter's own. */
             maxBytes: components["schemas"]["PositiveInteger"];
             /** @description Whether a file can carry text with it. */
             caption: boolean;
+            /** @description With `caption: true`, and only then: the longest caption the messenger accepts, in Unicode code points. */
+            captionMaxLength?: components["schemas"]["PositiveInteger"];
+            /**
+             * @description As for `messages.send`: `stored` means the answer carries the message the messenger stored.
+             * @enum {string}
+             */
+            receipt: "accepted" | "stored";
         };
         /** @description A room's own features where they differ from the declaration. A key replaces the declared value of that feature for this room, and `false` means the feature is unsupported here; an absent key leaves the declaration as it is. Only declared features appear: a room narrows the declaration and never adds to it. */
         RoomFeatures: {
@@ -560,6 +587,18 @@ export interface components {
             /** @constant */
             ok: true;
             message: components["schemas"]["Message"];
+        };
+        UploadRequest: {
+            roomId: string;
+            /**
+             * Format: binary
+             * @description Exactly one file. Its part's file name and content type are the file's.
+             */
+            file: string;
+            /** @description With `caption: true`: text sent with the file, at most `captionMaxLength` code points. */
+            caption?: string;
+            /** @description With `messages.reply`: as `SendRequest.replyTo`. */
+            replyTo?: string;
         };
         EditRequest: {
             roomId: string;
@@ -897,6 +936,38 @@ export interface operations {
         };
         responses: {
             /** @description Stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendAnswer"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["Internal"];
+            501: components["responses"]["NotSupported"];
+            503: components["responses"]["ReauthRequired"];
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["UploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Sent. */
             200: {
                 headers: {
                     [name: string]: unknown;

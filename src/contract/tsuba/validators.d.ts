@@ -39,6 +39,7 @@ export const validateStreamCursor: ValidateFunction<components["schemas"]["Strea
 export const validateStreamPing: ValidateFunction<components["schemas"]["StreamPing"]>;
 export const validateSendRequest: ValidateFunction<components["schemas"]["SendRequest"]>;
 export const validateSendAnswer: ValidateFunction<components["schemas"]["SendAnswer"]>;
+export const validateUploadRequest: ValidateFunction<components["schemas"]["UploadRequest"]>;
 export const validateEditRequest: ValidateFunction<components["schemas"]["EditRequest"]>;
 export const validateEditAnswer: ValidateFunction<components["schemas"]["EditAnswer"]>;
 export const validateDeleteRequest: ValidateFunction<components["schemas"]["DeleteRequest"]>;

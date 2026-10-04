@@ -21,6 +21,14 @@ export type AdapterReaction = Schema["Reaction"];
 export type RoomsAnswer = Schema["RoomsAnswer"];
 export type MessagesAnswer = Schema["MessagesAnswer"];
 export type SendAnswer = Schema["SendAnswer"];
+export type UploadFeature = Schema["FeatureAttachmentsSend"];
+
+/** The code a proxy's own `413` stands for: it answers without the adapter's envelope. */
+export const PROXY_TOO_LARGE = "PAYLOAD_TOO_LARGE";
+const TOO_LARGE = {
+  ok: false,
+  error: { code: PROXY_TOO_LARGE, message: "The proxy refused the body" },
+};
 
 export type AdapterIndexOutcome =
   | { kind: "listed"; ids: string[] }
@@ -65,16 +73,22 @@ async function call(
     signal,
     ...(body === undefined
       ? {}
-      : {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        }),
+      : body instanceof FormData
+        ? // The browser writes the multipart boundary into the content type.
+          { method: "POST", body }
+        : {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          }),
   });
   const text = await response.text();
   try {
     return { status: response.status, ok: response.ok, body: JSON.parse(text) };
   } catch {
+    // The proxy's own size refusal carries no envelope; nothing reached the adapter.
+    if (response.status === 413)
+      return { status: 413, ok: false, body: TOO_LARGE };
     return response.status >= 500
       ? { status: response.status, ok: false, body: undefined }
       : "not-json";
@@ -261,6 +275,28 @@ export function sendMessage(
     validateSendAnswer,
     signal,
     body,
+  );
+}
+
+/**
+ * One file, one attempt, never retried here. `caption` is sent only where the
+ * feature declares `caption: true`, `replyTo` only where `messages.reply` is.
+ */
+export function uploadFile(
+  id: string,
+  body: { roomId: string; file: File; caption?: string; replyTo?: string },
+  signal: AbortSignal,
+) {
+  const form = new FormData();
+  form.set("roomId", body.roomId);
+  form.set("file", body.file, body.file.name);
+  if (body.caption !== undefined) form.set("caption", body.caption);
+  if (body.replyTo !== undefined) form.set("replyTo", body.replyTo);
+  return request<SendAnswer>(
+    adapterPath(id, "/upload"),
+    validateSendAnswer,
+    signal,
+    form,
   );
 }
 

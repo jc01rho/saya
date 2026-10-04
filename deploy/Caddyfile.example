@@ -40,8 +40,10 @@ http://127.0.0.1:8080 {
         reverse_proxy 127.0.0.1:8791
     }
 
-    # Browser writes must be JSON and demonstrably originate at this site. The
-    # inverse match fails closed when Origin or Fetch Metadata is absent.
+    # Browser writes must demonstrably originate at this site and be JSON, or
+    # be a file upload: multipart, and only on the two upload routes. A write
+    # is blocked unless one of the two `not` blocks holds; the inverse match
+    # fails closed when Origin or Fetch Metadata is absent.
     @blocked_write {
         method POST PUT PATCH DELETE
         not {
@@ -49,8 +51,22 @@ http://127.0.0.1:8080 {
             header Sec-Fetch-Site same-origin
             header Content-Type application/json*
         }
+        not {
+            path_regexp upload_write ^/(?:api|adapters/[a-z][a-z0-9-]*)/upload$
+            header Origin http://127.0.0.1:8080
+            header Sec-Fetch-Site same-origin
+            header Content-Type multipart/form-data*
+        }
     }
     respond @blocked_write 403
+
+    # An upload is bounded here too, above the largest maxBytes a core or an
+    # adapter declares (50 MB), so a larger body is refused with 413 before
+    # it travels to them.
+    @upload_body path_regexp upload_body ^/(?:api|adapters/[a-z][a-z0-9-]*)/upload$
+    request_body @upload_body {
+        max_size 60MiB
+    }
 
     handle @api {
         uri strip_prefix /api

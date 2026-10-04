@@ -18,6 +18,8 @@ export const validateDigestSlice: ValidateFunction<components["schemas"]["Digest
 export const validateDigest: ValidateFunction<components["schemas"]["Digest"]>;
 export const validateSendRequest: ValidateFunction<components["schemas"]["SendRequest"]>;
 export const validateSendResult: ValidateFunction<components["schemas"]["SendResult"]>;
+export const validateUploadRequest: ValidateFunction<components["schemas"]["UploadRequest"]>;
+export const validateUploadResult: ValidateFunction<components["schemas"]["UploadResult"]>;
 export const validateStreamReady: ValidateFunction<components["schemas"]["StreamReady"]>;
 export const validateStreamMessage: ValidateFunction<components["schemas"]["StreamMessage"]>;
 export const validateStreamCursor: ValidateFunction<components["schemas"]["StreamCursor"]>;

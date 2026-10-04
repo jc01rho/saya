@@ -33,7 +33,15 @@ the following are true:
 
 - `Origin` is this site's origin;
 - `Sec-Fetch-Site` is `same-origin`;
-- `Content-Type` is `application/json`.
+- `Content-Type` is `application/json`, or `multipart/form-data` on one of the
+  two upload routes, `/api/upload` and `/adapters/<id>/upload`.
+
+Those two routes also carry `request_body max_size 60MiB`, above the largest
+`maxBytes` a core or adapter declares (50 MB), so a larger body is answered
+`413` by the proxy before it travels to the core or adapter. Keep both parts
+when you copy the example: without the multipart allowance a file send is
+refused with `403`, and without the size bound a body is limited only by the
+core or adapter behind it.
 
 This is a fail-closed browser-write boundary, not a substitute for user access
 control. The core bearer credential remains hidden from JavaScript, but anyone

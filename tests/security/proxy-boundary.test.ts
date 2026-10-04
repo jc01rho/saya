@@ -53,6 +53,22 @@ describe("same-origin proxy boundary", () => {
     expect(caddyfile).toContain("header Origin http://127.0.0.1:8080");
     expect(caddyfile).toContain("header Sec-Fetch-Site same-origin");
     expect(caddyfile).toContain("header Content-Type application/json*");
+    // Multipart is let through only for the two upload routes, same-origin.
+    const multipart = caddyfile.indexOf(
+      "header Content-Type multipart/form-data*",
+    );
+    const uploadPath = caddyfile.indexOf(
+      "path_regexp upload_write ^/(?:api|adapters/[a-z][a-z0-9-]*)/upload$",
+    );
+    expect(uploadPath).toBeGreaterThan(-1);
+    expect(multipart).toBeGreaterThan(uploadPath);
+    expect(multipart).toBeLessThan(
+      caddyfile.indexOf("respond @blocked_write 403"),
+    );
+    expect(caddyfile).toContain("max_size 60MiB");
+    expect(caddyfile.indexOf("request_body @upload_body")).toBeLessThan(
+      caddyfile.indexOf("reverse_proxy {env.SAYA_CORE_URL}"),
+    );
     expect(caddyfile).toContain("respond @blocked_write 403");
     expect(caddyfile.indexOf("respond @blocked_write 403")).toBeLessThan(
       caddyfile.indexOf("reverse_proxy {env.SAYA_CORE_URL}"),

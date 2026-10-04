@@ -2,6 +2,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   memo,
+  Suspense,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -9,6 +10,8 @@ import {
 } from "react";
 import type { components } from "../../contract/decoded";
 import { type HttpClient, HttpProtocolError } from "../../transport/http";
+import { AttachButton, StagedFile } from "../attach";
+import { useCoreUploadLimit } from "../attach/core";
 import styles from "./Composer.module.css";
 import { ComposerState, type ConsentFingerprint, ImeEnterGuard } from "./state";
 
@@ -23,7 +26,8 @@ type Status =
   | Readonly<{ kind: "previewing" }>
   | Readonly<{ kind: "posting" }>
   | Readonly<{ kind: "error"; message: string }>
-  | Readonly<{ kind: "submitted" }>;
+  | Readonly<{ kind: "submitted" }>
+  | Readonly<{ kind: "fileSubmitted" }>;
 
 const OPEN_ROOM = true;
 const COPY = {
@@ -46,7 +50,20 @@ const COPY = {
   network: "브리지에 연결할 수 없습니다. 전송 여부를 확인하세요.",
   protocol: "브리지 응답을 해석할 수 없습니다. 전송 여부를 확인하세요.",
   refused: (code: string) => `브리지가 전송을 거절했습니다: ${code}`,
+  /** The desktop client's file confirmation closed: it took the file, nothing more is known. */
+  fileSubmitted: "파일 입력됨 · 전달 미확인",
+  fileRefused: (code: string) =>
+    `브리지가 파일 전송을 거절했습니다: ${code}. 보낸 것은 없습니다.`,
+  fileUncertain:
+    "파일을 보냈는지 알 수 없습니다. 대화에 나타나는지 확인한 뒤 필요하면 다시 보내세요.",
 } as const;
+
+/**
+ * `SEND_FAILED` is the one code a file send answers both before the client's
+ * confirmation (nothing sent) and after it (outcome unknown), so it is read as
+ * unknown; every other refusal changed nothing.
+ */
+const UNCERTAIN_UPLOAD = new Set(["SEND_FAILED"]);
 
 function requestFingerprint(
   roomId: string,
@@ -91,6 +108,8 @@ export const Composer = memo(function Composer({
   const [_revision, setRevision] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [staged, setStaged] = useState<File | null>(null);
+  const uploadLimit = useCoreUploadLimit(http);
   const draft = state.getDraft(roomId);
   const visibleConfirmation =
     confirmation?.fingerprint.roomId === roomId ? confirmation : null;
@@ -104,6 +123,7 @@ export const Composer = memo(function Composer({
     previousRoomId.current = roomId;
     state.revokeConsent();
     setConfirmation(null);
+    setStaged(null);
     setStatus({ kind: "idle" });
   }, [roomId, state]);
 
@@ -244,6 +264,55 @@ export const Composer = memo(function Composer({
     }
   }
 
+  /** One file, one attempt; the confirmation the client shows is pressed by the core. */
+  async function sendFile() {
+    const file = staged;
+    if (
+      !file ||
+      uploadLimit === null ||
+      file.size === 0 ||
+      file.size > uploadLimit ||
+      status.kind === "previewing" ||
+      status.kind === "posting"
+    )
+      return;
+    const controller = new AbortController();
+    postAbort.current = controller;
+    setStatus({ kind: "posting" });
+    try {
+      const outcome = await http.upload({
+        room: roomId,
+        file,
+        signal: controller.signal,
+      });
+      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
+        return;
+      if (outcome.kind === "failure") {
+        if (UNCERTAIN_UPLOAD.has(outcome.error.code)) {
+          setStaged(null);
+          setStatus({ kind: "error", message: COPY.fileUncertain });
+        } else
+          setStatus({
+            kind: "error",
+            message: COPY.fileRefused(outcome.error.code),
+          });
+        return;
+      }
+      setStaged(null);
+      setStatus(
+        outcome.data.submitted
+          ? { kind: "fileSubmitted" }
+          : { kind: "error", message: COPY.protocol },
+      );
+    } catch {
+      if (controller.signal.aborted) return;
+      // A broken or missing answer leaves the outcome unknown: the file is
+      // put down so a second press is the person's decision, not a reflex.
+      setStaged(null);
+      setStatus({ kind: "error", message: COPY.fileUncertain });
+    }
+  }
+
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (status.kind === "previewing" || status.kind === "posting") return;
@@ -318,10 +387,24 @@ export const Composer = memo(function Composer({
           {status.message}
         </p>
       ) : null}
-      {status.kind === "submitted" ? (
+      {status.kind === "submitted" || status.kind === "fileSubmitted" ? (
         <p className={styles.status} role="status" data-ui="composer-submitted">
-          {COPY.submitted}
+          {status.kind === "submitted" ? COPY.submitted : COPY.fileSubmitted}
         </p>
+      ) : null}
+      {staged && uploadLimit !== null ? (
+        <Suspense fallback={null}>
+          <StagedFile
+            file={staged}
+            maxBytes={uploadLimit}
+            busy={status.kind === "posting"}
+            onSend={() => void sendFile()}
+            onCancel={() => {
+              setStaged(null);
+              setStatus({ kind: "idle" });
+            }}
+          />
+        </Suspense>
       ) : null}
       <div className={styles.entry}>
         <textarea
@@ -351,6 +434,17 @@ export const Composer = memo(function Composer({
           onKeyDown={onKeyDown}
         />
         <div className={styles.tools}>
+          {uploadLimit !== null ? (
+            <AttachButton
+              disabled={
+                status.kind === "previewing" || status.kind === "posting"
+              }
+              onPick={(file) => {
+                setStaged(file);
+                setStatus({ kind: "idle" });
+              }}
+            />
+          ) : null}
           <span className={styles.hint} aria-hidden="true">
             {COPY.hint}
           </span>

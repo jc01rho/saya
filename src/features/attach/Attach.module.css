@@ -1,0 +1,40 @@
+/* The paperclip: as quiet as the hint beside it until it is pointed at. */
+.clip {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.clip svg {
+  width: 20px;
+  height: 20px;
+}
+
+.clip:hover {
+  background: color-mix(in srgb, var(--field-input) 88%, var(--ink));
+  color: var(--ink);
+}
+
+.clip:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.clip:disabled {
+  cursor: progress;
+}
+
+@media (max-width: 767.98px) {
+  .clip {
+    width: var(--touch-min);
+    height: var(--touch-min);
+  }
+}

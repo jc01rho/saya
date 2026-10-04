@@ -78,8 +78,8 @@ bun run dev              # http://127.0.0.1:5173
 
 | 사본 | 원본 | sha256 · `info.version` |
 | --- | --- | --- |
-| [`contracts/kakao.openapi.json`](contracts/kakao.openapi.json) | kanao·kamado 의 `openapi.json` (두 코어가 바이트 단위로 같음) | `5f6ce4e9…5709949` · 0.19.0 |
-| [`contracts/tsuba.openapi.json`](contracts/tsuba.openapi.json) | tsuba 의 `contract/openapi.json` | `99316a26…7e2b28` · 0.2.2 |
+| [`contracts/kakao.openapi.json`](contracts/kakao.openapi.json) | kanao·kamado 의 `openapi.json` (두 코어가 바이트 단위로 같음) | `bee36dc5…c4ef7e3` · 0.22.0 |
+| [`contracts/tsuba.openapi.json`](contracts/tsuba.openapi.json) | tsuba 의 `contract/openapi.json` | `4a4450aa…7d7f386` · 0.2.6 |
 
 사본은 고치지 않고, 원본을 바이트 그대로 복사해 온 뒤 `scripts/contract-generate.ts` 의 해시를 바꿉니다.
 아래는 카카오 계약 이야기입니다. OpenAPI 3.1 문서 하나에 라우트, 파라미터와 기본값, 요청 본문, 응답 모양, 상한,

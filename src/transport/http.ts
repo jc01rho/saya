@@ -1,4 +1,4 @@
-import type { components } from "../contract/decoded";
+import type { components, paths } from "../contract/decoded";
 import {
   validateAttachments,
   validateContext,
@@ -9,6 +9,7 @@ import {
   validateRevisions,
   validateRoomsResponse,
   validateSendResult,
+  validateUploadResult,
 } from "../contract/validators.js";
 
 type Schema = components["schemas"];
@@ -23,8 +24,12 @@ export type JsonRoute =
   | "/attachments"
   | "/revisions";
 
+export type Health =
+  paths["/health"]["get"]["responses"][200]["content"]["application/json"];
+export type UploadResult = Schema["UploadResult"];
+
 type RoutePayload = {
-  "/health": { ok: true };
+  "/health": Health;
   "/rooms": { ok: true; rooms: Schema["Room"][] };
   "/context": Schema["Context"];
   "/digest": Schema["Digest"];
@@ -77,6 +82,9 @@ export function dispositionName(header: string | null): string | null {
   const name = (plain?.[2] ?? plain?.[1])?.trim();
   return name || null;
 }
+
+/** The code a proxy's own `413` stands for: it answers without the core's envelope. */
+export const PROXY_TOO_LARGE = "PAYLOAD_TOO_LARGE";
 
 export type HttpSuccess<T> = { kind: "success"; data: T };
 export type HttpFailure = {
@@ -213,6 +221,62 @@ export class HttpClient {
     if (request.signal.aborted) return { kind: "discarded" };
     if (!validateErrorEnvelope(envelope)) throw new HttpProtocolError();
     return { kind: "failure", status: response.status, error: envelope.error };
+  }
+
+  /**
+   * `POST /upload`: one file, sent through the desktop client's own file
+   * button. One attempt, like `/send`: a refusal changed nothing, and anything
+   * else leaves the outcome to be read back. The proxy's own size refusal
+   * (`413`, no envelope) is a refusal too: nothing reached the core.
+   */
+  async upload(request: {
+    room: string;
+    file: File;
+    signal: AbortSignal;
+  }): Promise<HttpOutcome<UploadResult>> {
+    if (request.signal.aborted) return { kind: "discarded" };
+    const form = new FormData();
+    form.set("room", request.room);
+    form.set("file", request.file, request.file.name);
+    form.set("openRoom", "true");
+    let response: Response;
+    try {
+      response = await fetch("/api/upload", {
+        method: "POST",
+        body: form,
+        credentials: "same-origin",
+        signal: request.signal,
+      });
+    } catch (error) {
+      if (request.signal.aborted) return { kind: "discarded" };
+      throw error;
+    }
+    const text = await response.text();
+    if (request.signal.aborted) return { kind: "discarded" };
+    let envelope: unknown;
+    try {
+      envelope = JSON.parse(text);
+    } catch {
+      if (response.status === 413)
+        return {
+          kind: "failure",
+          status: 413,
+          error: {
+            code: PROXY_TOO_LARGE,
+            message: "The proxy refused the body",
+          },
+        };
+      throw new HttpProtocolError();
+    }
+    if (validateErrorEnvelope(envelope))
+      return {
+        kind: "failure",
+        status: response.status,
+        error: envelope.error,
+      };
+    if (!response.ok || !validateUploadResult(envelope))
+      throw new HttpProtocolError();
+    return { kind: "success", data: envelope };
   }
 
   private isCurrent(key: string, generation: number, signal: AbortSignal) {

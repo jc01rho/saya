@@ -1,0 +1,118 @@
+/* A picked file: one filled row above the box, the composer's own field colour. */
+.staged {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-8) var(--space-12);
+  width: 100%;
+  padding: 10px var(--space-12);
+  border-radius: var(--radius-row);
+  background: var(--fill-wall);
+  color: var(--ink);
+}
+
+.thumb,
+.icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.thumb {
+  object-fit: cover;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  background: var(--field-input);
+  color: var(--ink-muted);
+}
+
+.icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.about {
+  display: grid;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.size {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: var(--leading-meta);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.quiet,
+.go {
+  min-height: var(--space-32);
+  padding: var(--space-4) 14px;
+  border: 0;
+  border-radius: var(--radius-badge);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.quiet {
+  background: var(--field-input);
+  color: var(--ink);
+}
+
+.go {
+  border: var(--rule-width) solid var(--accent-send-inset);
+  background: var(--accent-send);
+  color: var(--door-ink);
+}
+
+.quiet:focus-visible,
+.go:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.go:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.note {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  line-height: var(--leading-meta);
+}
+
+@media (max-width: 767.98px) {
+  .staged {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .quiet,
+  .go {
+    min-height: var(--touch-min);
+  }
+}

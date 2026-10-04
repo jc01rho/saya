@@ -63,7 +63,7 @@ export const contracts: readonly ContractSpec[] = [
   {
     // The KakaoTalk contract, byte-identical to kanao's and kamado's openapi.json.
     source: "contracts/kakao.openapi.json",
-    hash: "5f6ce4e9994388449c0739fbf21a5ba952964b7c060ac565cb8ebc74b5709949",
+    hash: "bee36dc5d1d8afbd53721067fca06836fcc5f52e32b429ef39fa8ebd5c4ef7e3",
     directory: contractDirectory,
     sse: true,
     widen(document, decoded) {
@@ -86,7 +86,7 @@ export const contracts: readonly ContractSpec[] = [
   {
     // The tsuba adapter contract, byte-identical to tsuba's contract/openapi.json.
     source: "contracts/tsuba.openapi.json",
-    hash: "420cbb7fb731b6c6cd924aef7ccd8965361d5099cce4c29c6aed8a9d31a69968",
+    hash: "4a4450aa185fa0f839684a40df9fa0ffc339a4f735f4f2f9516bfef587d7f386",
     directory: new URL("../src/contract/tsuba/", import.meta.url),
     sse: true,
     widen(_document, decoded) {
@@ -196,6 +196,8 @@ export async function generateContract(
   });
   // `uri` arrives with Photo: a picture's address carries format: uri.
   addFormats(ajv, { formats: ["date-time", "uri"], mode: "full" });
+  // `binary` marks a file part of a multipart upload; it constrains no JSON value.
+  ajv.addFormat("binary", true);
   // Register each schema separately so refs still point at the canonical names,
   // without admitting arbitrary OpenAPI keywords into Ajv's JSON Schema dialect.
   for (const [name, schema] of Object.entries(schemas)) {

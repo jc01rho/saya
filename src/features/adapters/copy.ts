@@ -1,5 +1,5 @@
 import { CONTRACT_VERSION } from "../../contract/tsuba/version";
-import type { AdapterProblem } from "../../transport/adapters";
+import { type AdapterProblem, PROXY_TOO_LARGE } from "../../transport/adapters";
 
 /** One sentence per way an adapter request can fail; codes, never messages, drive it. */
 export function problemSentence(
@@ -23,6 +23,8 @@ export function problemSentence(
           return "메신저가 이 계정에 그 일을 허락하지 않습니다. 읽기 전용이거나 제한된 방일 수 있습니다.";
         case "REAUTH_REQUIRED":
           return "메신저 로그인이 풀렸습니다. 어댑터가 도는 기계에서 다시 로그인하세요.";
+        case PROXY_TOO_LARGE:
+          return "프록시가 받는 크기를 넘는 파일입니다. 보낸 것은 없습니다.";
         default:
           return `어댑터가 오류를 돌려주었습니다. 상태 코드: ${problem.code}`;
       }

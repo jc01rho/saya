@@ -28,12 +28,25 @@ export interface paths {
                     content: {
                         /**
                          * @example {
-                         *       "ok": true
+                         *       "ok": true,
+                         *       "features": {
+                         *         "upload": {
+                         *           "maxBytes": 52428800
+                         *         }
+                         *       }
                          *     }
                          */
                         "application/json": {
                             /** @constant */
                             ok: true;
+                            /** @description The optional routes this build answers, each with its limits. A route not named here is not answered, and a client must not draw a control for it. */
+                            features?: {
+                                /** @description `POST /upload` is answered. */
+                                upload?: {
+                                    /** @description Largest file it takes, in bytes. A larger one is refused with `400` before it is read. */
+                                    maxBytes: number;
+                                };
+                            };
                         };
                     };
                 };
@@ -114,6 +127,8 @@ export interface paths {
                     roomId: components["parameters"]["RoomId"];
                     /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
                     open?: components["parameters"]["OpenRoom"];
+                    /** @description Show the text of messages an open chat's SafeBot covered, the way `--show-covered` does on the command line. Off by default, as the client shows them: a covered message carries `covered` and an empty `text`. Asked for, the same messages carry their text and still say `covered`. It applies to this request only. `true` or `false`; anything else is a 400. A message deleted for everyone stays deleted either way. */
+                    showCovered?: components["parameters"]["ShowCovered"];
                     /** @description How many of the newest messages to return. Bounded because `limit` reaches SQLite, where a negative number means *no limit at all* and one observed room holds 445,714 messages. */
                     limit?: number;
                 };
@@ -169,7 +184,9 @@ export interface paths {
                     roomId: components["parameters"]["RoomId"];
                     /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
                     open?: components["parameters"]["OpenRoom"];
-                    /** @description How long a slice covers, as a duration such as `30m`, `2h` or `1d`. A span the slicer cannot take is a 400. */
+                    /** @description Show the text of messages an open chat's SafeBot covered, the way `--show-covered` does on the command line. Off by default, as the client shows them: a covered message carries `covered` and an empty `text`. Asked for, the same messages carry their text and still say `covered`. It applies to this request only. `true` or `false`; anything else is a 400. A message deleted for everyone stays deleted either way. */
+                    showCovered?: components["parameters"]["ShowCovered"];
+                    /** @description How long a slice covers, in minutes or hours such as `30m` or `2h`, at most `12h`. Until 0.21.1 this offered `1d`, which both builds refuse. A span the slicer cannot take is a 400. */
                     span?: string;
                     /** @description How many of the newest messages to consider before slicing. */
                     limit?: number;
@@ -498,6 +515,79 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send one file through the room's own file button
+         * @description Drives the desktop client the way a person sends a file: the room's file button, the Windows open-file dialog it shows, and the client's own "파일 전송" confirmation. Nothing is injected; the client uploads the file itself and shows a picture or video the way it shows one a person sent. The room resolves exactly as `POST /send`'s does, and `openRoom` lets the server open its window.
+         *
+         *     **Files wait in the same line as texts**: one lock, the same minimum interval, and the same `429 RATE_LIMITED` when the line is full.
+         *
+         *     **`submitted: true` means the confirmation closed after its send button was pressed**, which is the client taking the file, not delivery: read the room back for a new `fromMe` message. A failure before that button is pressed sends nothing and says so. A confirmation that stays open is closed and answered `500 SEND_FAILED` with an unknown outcome; never retry it without reading the room back.
+         *
+         *     The open-file dialog is a real window and holds the keyboard while it is up; the keyboard is handed back afterwards. A file larger than `features.upload.maxBytes` in `GET /health` is refused with `400` before it is read.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": components["schemas"]["UploadRequest"];
+                };
+            };
+            responses: {
+                /** @description The client's confirmation closed after its send button was pressed. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UploadResult"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                /** @description The caller promised a body in `Content-Length` and then went quiet, exactly as for `POST /send`. */
+                408: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+                409: components["responses"]["Ambiguous"];
+                /** @description The send queue texts and files share is full. Retry once the sends already in line have gone through. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+                500: components["responses"]["ServerFailure"];
+                503: components["responses"]["NotReady"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -881,6 +971,34 @@ export interface components {
             /** @description The dry-run form of `clearedDraft`. */
             wouldClearDraft?: boolean;
         };
+        UploadRequest: {
+            /** @description The room's title, or its id as a string, exactly as `SendRequest.room`. */
+            room: string;
+            /**
+             * Format: binary
+             * @description One file. Its part's file name is the name the room sees, reduced to one Windows file name: no folders, none of `<>:"|?*`, no device names, at most 120 characters.
+             */
+            file: string;
+            /**
+             * @description Let the server open the room's window first, as `SendRequest.openRoom`.
+             * @default false
+             * @enum {string}
+             */
+            openRoom: "true" | "false";
+        };
+        UploadResult: {
+            /** @constant */
+            ok: true;
+            /** @description The client's file-send confirmation closed after its send button was pressed. **The client taking the file, not delivery** — read the room back and look for a new `fromMe` message before claiming it arrived. */
+            submitted: boolean;
+            /** @description The window title the file was sent from. */
+            room: string;
+            roomId: string;
+            /** @description The name the room sees. */
+            name: string;
+            /** @description Bytes handed over. */
+            size: number;
+        };
         StreamReady: {
             /** @constant */
             ok: true;
@@ -936,16 +1054,21 @@ export interface components {
             /** @enum {string} */
             source: "board" | "legacy";
             /**
-             * @description Present only when `text` stopped at the 100 characters the client keeps of a board post; the rest of the post is not on this machine.
+             * @description Present only when `text` stopped at the 100 characters the client keeps of a notice: a board post's preview, or the older notice row, which both clients cut at the same 100. The rest is not in that row; `fullText` says when it was found elsewhere in the room.
              * @constant
              */
             truncated?: true;
-            /** @description Present only when `truncated` and exactly one live text or reply message in the room begins with the whole of `text`: that message's text, as the notice it was pinned from. The post records no message id, so this is **found by its words, not by an id**, and a caller should say so. Asked only of a room whose key is already in memory; `/notice` still never opens a room. */
+            /** @description Present only when `truncated` and the room holds more of the notice. One source is the post's share (`fullTextSource: share`). It is matched to a board post by the post id, and to a notice row that records no id by its words. Either way the share has to begin with the whole of `text`, so a post edited since it was shared is not answered with its old words. The other source is the one live text or reply message beginning with the whole of `text` (`message`). That message is the notice it was pinned from, and it is **found by its words, not by an id**, which a caller should say. The longer text wins, and equal lengths go to the share. Asked only of a room whose key is already in memory; `/notice` still never opens a room. */
             fullText?: string;
-            /** @description The id of the message `fullText` was read from. Present exactly when `fullText` is. */
+            /** @description The id of the message `fullText` was read from — the share or the pinned message. Present exactly when `fullText` is. */
             fullTextMessageId?: string;
             /**
-             * @description Present only beside `fullText`, when that message itself stopped at the 3,999 characters the client keeps of a long message. The rest is a file the client did not save and its CDN refuses without the client's own protocol, so `fullText` is all a core can read.
+             * @description Where `fullText` was read from: the board post's share, or the message the notice was pinned from. Present exactly when `fullText` is.
+             * @enum {string}
+             */
+            fullTextSource?: "share" | "message";
+            /**
+             * @description Present only beside `fullText`, when its source itself stopped: a share at the 500 characters it carries of a post, or a message at the 3,999 characters the client keeps of a long one. The rest of the post is on the server and the rest of a long message is a file the client did not save, so `fullText` is all a core can read.
              * @constant
              */
             fullTextTruncated?: true;
@@ -1149,6 +1272,8 @@ export interface components {
         RoomId: string;
         /** @description Open the room in the client first if its key is not in memory, then answer. Opening a room marks it read in the client, so it happens only when asked; without it such a room answers 503 `KEY_UNAVAILABLE`. `true` or `false` — anything else is a 400, so a typo cannot open a room. Opening is done one at a time, under the same lock as sending. On a host where every room is always readable it changes nothing. */
         OpenRoom: boolean;
+        /** @description Show the text of messages an open chat's SafeBot covered, the way `--show-covered` does on the command line. Off by default, as the client shows them: a covered message carries `covered` and an empty `text`. Asked for, the same messages carry their text and still say `covered`. It applies to this request only. `true` or `false`; anything else is a 400. A message deleted for everyone stays deleted either way. */
+        ShowCovered: boolean;
     };
     requestBodies: never;
     headers: never;
