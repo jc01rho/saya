@@ -64,6 +64,89 @@
   outline-offset: var(--focus-offset);
 }
 
+.gallery {
+  display: grid;
+  gap: var(--space-12);
+  min-width: 0;
+  padding-top: var(--space-16);
+  border-top: var(--rule-width) solid var(--seam);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-12);
+  border: var(--rule-width) solid var(--seam);
+  border-radius: var(--radius-field);
+  background: var(--fill-wall);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.card:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.card:disabled {
+  cursor: progress;
+}
+
+.card[aria-busy="true"] {
+  opacity: 0.6;
+}
+
+.chips {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.chip {
+  width: 20px;
+  height: 20px;
+  border: var(--rule-width) solid var(--seam);
+  border-radius: 50%;
+}
+
+.cardName {
+  overflow: hidden;
+  font-size: var(--text-body);
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardFan {
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.cardApplied {
+  justify-self: start;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-field);
+  background: var(--ink);
+  color: var(--field-wall);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+}
+
 .maker,
 .candidate {
   display: grid;

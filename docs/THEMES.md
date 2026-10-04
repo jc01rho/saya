@@ -2,6 +2,7 @@
 
 saya에는 기본 테마 네 가지가 있습니다. 직접 만든 테마도 붙여 넣어 쓸 수 있습니다.
 테마는 방 목록 머리의 테마 버튼(반원 아이콘)에서 고릅니다.
+바로 쓸 수 있는 테마는 별도 저장소 [saya-themes](https://github.com/Heoooooon/saya-themes)에 있고, 테마 시트의 **테마 모음**에서 고릅니다(목록 주소와 CSP는 [deployment.md](deployment.md#theme-gallery)).
 
 | 테마 | `data-theme` | 설명 |
 | --- | --- | --- |

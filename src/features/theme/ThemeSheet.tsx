@@ -1,7 +1,20 @@
-import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import reads from "../reads/reads.module.css";
 import { imageVars } from "./apply";
 import { THEME_COPY } from "./copy";
+import {
+  fetchGallery,
+  fetchGalleryTheme,
+  type GalleryCharacter,
+  type GalleryTheme,
+} from "./gallery";
 import { buildThemePrompt } from "./prompt";
 import {
   type ParseResult,
@@ -64,6 +77,121 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
         <span className={styles.previewSend}>{THEME_COPY.previewSend}</span>
       </div>
     </figure>
+  );
+}
+
+const CHIP_SLOTS = ["wall", "bubbleSelf", "accent", "text"] as const;
+
+/** Ready-made themes from the remote catalog: the list is fetched when the sheet opens, a theme file when its card is pressed. */
+function ThemeGallery({
+  choice,
+  onSave,
+  onStatus,
+}: {
+  choice: ThemeChoice;
+  onSave: (theme: ThemeDefinition) => boolean;
+  onStatus: (status: string) => void;
+}) {
+  const [list, setList] = useState<GalleryCharacter[] | "loading" | "failed">(
+    "loading",
+  );
+  const mounted = useRef(true);
+  const loadList = useCallback(() => {
+    setList("loading");
+    void fetchGallery().then((characters) => {
+      if (mounted.current) setList(characters ?? "failed");
+    });
+  }, []);
+  useEffect(() => {
+    mounted.current = true;
+    loadList();
+    return () => {
+      mounted.current = false;
+    };
+  }, [loadList]);
+  const [loading, setLoading] = useState<string | null>(null);
+  const pick = async (entry: GalleryTheme) => {
+    setLoading(entry.url);
+    onStatus(THEME_COPY.galleryLoading(entry.name));
+    const theme = await fetchGalleryTheme(entry);
+    setLoading(null);
+    if (theme) onSave(theme);
+    else onStatus(THEME_COPY.galleryFailed(entry.name));
+  };
+  return (
+    <section className={styles.gallery} data-ui="theme-gallery">
+      <h3 className={styles.subhead}>{THEME_COPY.gallery}</h3>
+      {Array.isArray(list) && list.length > 0 ? (
+        <p className={reads.muted}>{THEME_COPY.galleryHelp}</p>
+      ) : null}
+      {Array.isArray(list) && list.length === 0 ? (
+        <p className={reads.muted} data-ui="theme-gallery-state">
+          {THEME_COPY.galleryEmpty}
+        </p>
+      ) : null}
+      {list === "loading" ? (
+        <p className={reads.muted} data-ui="theme-gallery-state">
+          {THEME_COPY.galleryListLoading}
+        </p>
+      ) : null}
+      {list === "failed" ? (
+        <p className={reads.muted} data-ui="theme-gallery-state">
+          {THEME_COPY.galleryListFailed}{" "}
+          <button
+            type="button"
+            className={reads.action}
+            onClick={loadList}
+            data-ui="theme-gallery-retry"
+          >
+            {THEME_COPY.galleryRetry}
+          </button>
+        </p>
+      ) : null}
+      <ul className={styles.cards}>
+        {(Array.isArray(list) ? list : []).flatMap((character) =>
+          character.themes.map((entry) => (
+            <li key={entry.url}>
+              <button
+                type="button"
+                className={styles.card}
+                aria-label={THEME_COPY.galleryApply(entry.name)}
+                aria-current={
+                  choice === `custom:${entry.name}` ? "true" : undefined
+                }
+                aria-pressed={choice === `custom:${entry.name}`}
+                aria-busy={loading === entry.url}
+                disabled={loading !== null}
+                onClick={() => void pick(entry)}
+                data-ui="theme-gallery-card"
+                data-id={`${character.id}-${entry.mode}`}
+              >
+                <span className={styles.chips} aria-hidden="true">
+                  {CHIP_SLOTS.map((slot, index) => (
+                    <span
+                      key={slot}
+                      className={styles.chip}
+                      style={{ background: entry.colors[index] }}
+                    />
+                  ))}
+                </span>
+                <span className={styles.cardName}>{entry.name}</span>
+                <span className={styles.cardFan}>
+                  {THEME_COPY.galleryMode[entry.mode]} · {THEME_COPY.galleryFan}
+                </span>
+                {choice === `custom:${entry.name}` ? (
+                  <span
+                    className={styles.cardApplied}
+                    data-ui="theme-gallery-applied"
+                  >
+                    {THEME_COPY.galleryApplied}
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          )),
+        )}
+      </ul>
+    </section>
   );
 }
 
@@ -322,6 +450,7 @@ export default function ThemeSheet({
         <p role="status" className={reads.muted} data-ui="theme-status">
           {status}
         </p>
+        <ThemeGallery choice={choice} onSave={save} onStatus={setStatus} />
         <ThemeMaker onSave={save} />
       </div>
     </dialog>

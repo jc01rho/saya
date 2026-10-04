@@ -22,8 +22,10 @@ http://127.0.0.1:8080 {
     header ?Cache-Control "no-cache"
     # img-src allows https: because a photo on a message is an address on the
     # client's own CDN, which the contract says the browser may use directly.
+    # connect-src adds the theme gallery's catalog (saya-themes on GitHub Pages,
+    # VITE_THEME_GALLERY_URL at build time); drop it to turn the gallery off.
     # Scripts and styles stay 'self'; nothing else is widened.
-    header Content-Security-Policy "default-src 'self'; img-src 'self' https: data:; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'; style-src 'self'"
+    header Content-Security-Policy "default-src 'self'; connect-src 'self' https://heoooooon.github.io; img-src 'self' https: data:; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'; style-src 'self'"
 
     @api path /api/*
     header @api >Cache-Control "no-store"

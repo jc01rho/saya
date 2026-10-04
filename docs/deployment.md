@@ -199,13 +199,39 @@ The proxy contract is:
 - `/api/*`: `Cache-Control: no-store`.
 - Vite hashed files under `/assets/`: `Cache-Control: public, max-age=31536000, immutable`.
 - `index.html` and SPA fallbacks: `Cache-Control: no-cache`.
-- CSP: `default-src 'self'; worker-src 'self'; object-src 'none'; frame-ancestors 'none'`.
+- CSP: `default-src 'self'; connect-src 'self' https://heoooooon.github.io; worker-src 'self'; object-src 'none'; frame-ancestors 'none'`.
+  `connect-src` names the theme gallery's origin; see [Theme gallery](#theme-gallery).
   The example also restricts scripts and styles to `'self'`; it permits neither
   inline code nor eval.
 - Do not enable access or error logging that records credential headers,
   request bodies, or message text. The example discards Caddy logs by default.
   If operational logs are required, use a reviewed redaction policy that omits
   those fields rather than logging raw requests or upstream errors.
+
+## Theme gallery
+
+The theme sheet's 테마 모음 reads a catalog that lives outside this repository:
+[saya-themes](https://github.com/Heoooooon/saya-themes), served from GitHub
+Pages. When the sheet opens, the browser fetches
+`https://heoooooon.github.io/saya-themes/gallery.json`; when a card is pressed,
+it fetches that theme's JSON from the same origin (the client drops any list
+entry that points at another origin) and runs it through `parseTheme` like a
+pasted theme. GitHub Pages answers with `Access-Control-Allow-Origin: *`, and
+no credentials or app data are sent.
+
+- **CSP:** the origin must be in `connect-src`. With `default-src 'self'` and no
+  `connect-src`, the browser blocks the fetch and the sheet shows its "could not
+  load" line. The Caddyfile example allows `https://heoooooon.github.io`.
+- **Another catalog:** build with `VITE_THEME_GALLERY_URL=<url of gallery.json>`
+  and put that origin in `connect-src` instead. It is a public address, not a
+  secret; never put a token in a `VITE_*` variable.
+- **Seasonal entries:** a character in `gallery.json` may set `from` and/or
+  `until` to a real `yyyy-MM-dd` date. Both dates are inclusive on the Korean
+  calendar (UTC+09:00), regardless of the device's time zone. Missing bounds
+  are open; outside-period entries, malformed dates and reversed ranges are
+  hidden. This only hides catalog cards, not a theme already saved or applied.
+- **No gallery:** leave the origin out of `connect-src`. Nothing else changes;
+  pasted and built-in themes keep working.
 
 ## Development is not production
 
