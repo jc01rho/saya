@@ -1,3 +1,4 @@
+import { IMAGE_MAX_CHARS, IMAGES_MAX_CHARS, WALL_OPACITY_MAX } from "./apply";
 import { BUILTIN_THEMES } from "./builtin";
 import {
   type ContrastWarning,
@@ -36,8 +37,10 @@ export const THEME_COPY = {
   saved: (name: string) => `"${name}" 테마를 저장하고 적용했습니다.`,
   issues: "테마를 읽지 못했습니다",
   warnings: "대비가 부족한 조합이 있습니다. 그래도 저장할 수는 있습니다.",
-  warning: ({ text, background, ratio }: ContrastWarning) =>
-    `${tokenLabel(text)} / ${tokenLabel(background)}: ${ratio.toFixed(2)}:1 (4.5:1 이상 권장)`,
+  warning: ({ text, background, ratio, image }: ContrastWarning) =>
+    `${tokenLabel(text)} / ${tokenLabel(background)}${image ? " + 배경 그림" : ""}: ${ratio.toFixed(2)}:1 (4.5:1 이상 권장)`,
+  imageWarnings:
+    "배경 그림이 있는 쌍은 그림의 가장 어둡거나 밝은 점을 기준으로 쟀습니다. 대화방은 images.wall, 목록은 images.list의 opacity를 낮추면 올라갑니다.",
   ignored: (keys: string[]) =>
     `알 수 없는 토큰은 무시했습니다: ${keys.join(", ")}`,
   preview: "미리보기",
@@ -67,6 +70,20 @@ export const THEME_COPY = {
         return `필수 토큰 "${issue.token}"(${tokenLabel(issue.token)})이 없습니다.`;
       case "colour":
         return `"${issue.token}"의 값 "${issue.value}"는 #RRGGBB 형식의 색이 아닙니다.`;
+      case "image": {
+        if (issue.slot === "images" && issue.problem === "size")
+          return `"images"의 그림을 모두 합쳐 ${IMAGES_MAX_CHARS.toLocaleString("ko-KR")}자 이하여야 합니다. 그림 크기를 줄이세요.`;
+        const where =
+          issue.slot === "images" ? '"images"' : `"images.${issue.slot}"`;
+        return {
+          shape: `${where}는 { ... } 모양의 객체여야 합니다.`,
+          src: `${where}.src는 data:image/png·webp·jpeg·gif;base64,... 형식이어야 합니다. 인터넷 주소(https://)는 받지 않습니다.`,
+          size: `${where}.src가 너무 큽니다. 그림 하나는 ${IMAGE_MAX_CHARS.toLocaleString("ko-KR")}자(약 73KB) 이하여야 합니다.`,
+          fit: `${where}.fit은 "cover" 또는 "tile"이어야 합니다.`,
+          opacity: `${where}.opacity는 0~${WALL_OPACITY_MAX} 사이 숫자여야 합니다.`,
+          motion: `${where}.motion은 "dance" 또는 "none"이어야 합니다.`,
+        }[issue.problem];
+      }
     }
   },
 } as const;

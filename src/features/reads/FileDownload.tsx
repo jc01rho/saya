@@ -107,11 +107,16 @@ export function FileDownload({
         aria-disabled={phase.kind === "loading" || undefined}
         onClick={phase.kind === "loading" ? undefined : start}
       >
-        {phase.kind === "loading"
-          ? FILE_COPY.getting
-          : phase.kind === "idle"
-            ? FILE_COPY.get
-            : FILE_COPY.again}
+        {phase.kind === "loading" ? (
+          <>
+            <span data-ui="theme-loader" aria-hidden="true" />
+            {FILE_COPY.getting}
+          </>
+        ) : phase.kind === "idle" ? (
+          FILE_COPY.get
+        ) : (
+          FILE_COPY.again
+        )}
       </button>
       <span className={styles.status} role="status">
         {phase.kind === "saved"

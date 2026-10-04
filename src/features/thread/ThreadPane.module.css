@@ -18,7 +18,15 @@
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
   padding: 22px 26px 10px;
-  background: var(--field-wall);
+  /* A custom theme's wallpaper under its wall colour (src/features/theme/apply.ts imageVars). */
+  background:
+    linear-gradient(
+      var(--theme-wall-wash, transparent),
+      var(--theme-wall-wash, transparent)
+    ),
+    var(--theme-wall-image, none) center / var(--theme-wall-size, cover)
+    var(--theme-wall-repeat, no-repeat),
+    var(--field-wall);
   color: var(--ink);
 }
 

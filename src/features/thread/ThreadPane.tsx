@@ -442,11 +442,13 @@ export function ThreadPane({
         />
       ) : view.loading !== null ? (
         <p className={styles.status} data-ui="thread-status">
+          <span data-ui="theme-loader" aria-hidden="true" />
           {THREAD_COPY.loading}
         </p>
       ) : null}
       {view.stale ? (
         <p className={styles.status} data-ui="thread-status">
+          <span data-ui="theme-loader" aria-hidden="true" />
           {THREAD_COPY.refreshing}
         </p>
       ) : null}
@@ -461,7 +463,14 @@ export function ThreadPane({
           aria-disabled={view.edge === "widening" || undefined}
           onClick={widen}
         >
-          {view.edge === "widening" ? THREAD_COPY.widening : THREAD_COPY.widen}
+          {view.edge === "widening" ? (
+            <>
+              <span data-ui="theme-loader" aria-hidden="true" />
+              {THREAD_COPY.widening}
+            </>
+          ) : (
+            THREAD_COPY.widen
+          )}
         </button>
       ) : null}
       {view.edge === "ceiling" ? <CoverageLine kind="ceiling" /> : null}

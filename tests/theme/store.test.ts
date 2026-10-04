@@ -12,7 +12,7 @@ import {
   saveChoice,
   saveCustomTheme,
 } from "../../src/features/theme/store";
-import { fakeRoot, memoryStorage } from "./fakes";
+import { DOT, fakeRoot, memoryStorage } from "./fakes";
 
 const night: ThemeDefinition = {
   ...structuredClone(KAKAO),
@@ -129,6 +129,42 @@ describe("applying a theme to the document root", () => {
     expect(root.dataset.theme).toBe("custom");
     expect(root.props.get("--field-wall")).toBe(night.tokens.wall as string);
     expect(root.props.get("color-scheme")).toBe("dark");
+    applyTheme(root, { choice: "light" }, false);
+    expect(root.props.size).toBe(0);
+  });
+
+  test("a theme's pictures are cached with it and cleared on switching away", () => {
+    const pictured: ThemeDefinition = {
+      ...night,
+      images: {
+        wall: { src: DOT, fit: "cover", opacity: 0.1 },
+        list: { src: DOT, fit: "tile", opacity: 0.1 },
+        mascot: { src: DOT },
+        badge: { src: DOT },
+        loader: { src: DOT, motion: "none" },
+      },
+    };
+    const storage = memoryStorage();
+    const stored = saveChoice(storage, customChoice(pictured), [pictured]);
+    expect(stored.images).toEqual(pictured.images);
+    const root = fakeRoot();
+    applyTheme(root, stored, false);
+    expect(root.props.get("--theme-wall-wash")).toBe(
+      "color-mix(in srgb, var(--field-wall) 90%, transparent)",
+    );
+    expect(root.dataset.themeMascot).toBe("");
+    expect(root.dataset.themeList).toBe("");
+    expect(root.dataset.themeBadge).toBe("");
+    expect(root.dataset.themeLoader).toBe("none");
+    applyTheme(root, saveChoice(storage, customChoice(night), [night]), false);
+    expect(root.props.has("--theme-wall-image")).toBe(false);
+    expect(root.props.has("--theme-list-image")).toBe(false);
+    expect(root.props.has("--theme-badge")).toBe(false);
+    expect(root.dataset.themeMascot).toBeUndefined();
+    expect(root.dataset.themeList).toBeUndefined();
+    expect(root.dataset.themeBadge).toBeUndefined();
+    expect(root.dataset.themeLoader).toBeUndefined();
+    expect(root.props.has("--theme-loader")).toBe(false);
     applyTheme(root, { choice: "light" }, false);
     expect(root.props.size).toBe(0);
   });

@@ -425,6 +425,7 @@ export function DigestView({
         ) : null}
         {snapshot.loading ? (
           <p className={styles.status} data-ui="digest-status">
+            <span data-ui="theme-loader" aria-hidden="true" />
             {digest ? DIGEST_COPY.refreshing : DIGEST_COPY.loading}
           </p>
         ) : null}

@@ -192,6 +192,21 @@
 }
 
 /* No room chosen: the cat and one line, centred in the conversation pane. */
+.mascot {
+  display: none;
+  width: 160px;
+  height: 160px;
+  background: var(--theme-mascot, none) center / contain no-repeat;
+}
+
+:global(html[data-theme-mascot]) .empty > .mascot {
+  display: block;
+}
+
+:global(html[data-theme-mascot]) .empty > [data-ui="cat"] {
+  display: none;
+}
+
 .empty {
   display: grid;
   grid-row: 1 / -1;

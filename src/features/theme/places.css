@@ -1,0 +1,133 @@
+/*
+ * Where a custom theme's pictures sit outside the conversation, in both lists
+ * (the KakaoTalk list and the merged inbox), and its loader beside every
+ * loading line. ThemeControl loads this only when
+ * the stored theme carries one, so the entry stylesheet keeps its budget. The
+ * root flags and variables come from applyTheme() in apply.ts and from
+ * public/theme-boot.js. Every picture is decoration: none takes a pointer or
+ * covers text the contrast check did not measure.
+ */
+
+/* The list's pattern lies under the rows, which give up their own fill for it. */
+html[data-theme-list] [data-ui="room-scroller"],
+html[data-theme-list] [data-ui="inbox-scroller"] {
+  background:
+    linear-gradient(var(--theme-list-wash), var(--theme-list-wash)),
+    var(--theme-list-image) center / var(--theme-list-size)
+    var(--theme-list-repeat),
+    var(--field-list);
+}
+
+html[data-theme-list] [data-ui="room-scroller"] > *,
+html[data-theme-list] [data-ui="room-row"] {
+  background-color: transparent;
+}
+
+/* A small sticker beside the list heading, in the head's flow so it never covers a control. */
+html[data-theme-badge] [data-ui="theme-badge"] {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  background: var(--theme-badge) center / contain no-repeat;
+}
+
+/* The mascot rests below the last row, past the end of the virtual list, at the pane's foot when the list is short. */
+html[data-theme-mascot] [data-ui="inbox-scroller"] {
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-theme-mascot] [data-ui="room-filler"],
+html[data-theme-mascot] [data-ui="inbox-end"] {
+  flex: 1 0 auto;
+  min-height: 136px;
+  background-image: var(--theme-mascot);
+  background-position: center bottom 20px;
+  background-size: auto 96px;
+  background-repeat: no-repeat;
+}
+
+/*
+ * The loader sits beside a loading line, about as tall as the line itself: its
+ * negative block margins keep the line box as it was, so nothing shifts when
+ * loading starts or ends. It is shown for `dance` always (the sway stops under
+ * reduced motion) and for `none` only when motion is welcome, because a picture
+ * that moves by itself cannot be stopped from CSS; the default indicator then
+ * returns. In the list's footer it takes the walking cat's place, and in the
+ * agent's activity line the pulsing dot's.
+ */
+html[data-theme-loader] [data-ui="theme-loader"] {
+  display: none;
+  width: 2em;
+  height: 2em;
+  margin-block: -0.5em;
+  margin-inline-end: 0.375em;
+  vertical-align: middle;
+  background: var(--theme-loader) center / contain no-repeat;
+  transform-origin: 50% 100%;
+}
+
+html[data-theme-loader="dance"] [data-ui="theme-loader"] {
+  display: inline-block;
+}
+
+html[data-theme-loader="dance"]
+  :is(
+    [data-ui="rooms-pane"] [data-ui="cat"][data-motion="walk"],
+    [data-ui="agent-dot"]
+  ) {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-loader="none"] [data-ui="theme-loader"] {
+    display: inline-block;
+  }
+
+  html[data-theme-loader="none"]
+    :is(
+      [data-ui="rooms-pane"] [data-ui="cat"][data-motion="walk"],
+      [data-ui="agent-dot"]
+    ) {
+    display: none;
+  }
+
+  html[data-theme-loader="dance"] [data-ui="theme-loader"] {
+    animation: theme-loader-dance 1s ease-in-out infinite;
+  }
+}
+
+/* In the list's footer it stands where the walking cat would. */
+html[data-theme-loader]
+  [data-ui="rooms-pane"]
+  [data-ui="cat"]
+  + [data-ui="theme-loader"] {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+}
+
+/* While the list itself loads it dances beside that line, so the footer stays empty. */
+html[data-theme-loader]
+  [data-ui="rooms-pane"][aria-busy="true"]
+  [data-ui="cat"]
+  + [data-ui="theme-loader"] {
+  display: none;
+}
+
+/* Sway side to side, hop at each end, tilt into the step. Transform only. */
+@keyframes theme-loader-dance {
+  0%,
+  50%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(-12%, -18%) rotate(-10deg);
+  }
+
+  75% {
+    transform: translate(12%, -18%) rotate(10deg);
+  }
+}

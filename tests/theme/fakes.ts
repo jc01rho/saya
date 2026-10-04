@@ -35,3 +35,7 @@ export function fakeRoot() {
   };
   return root;
 }
+
+/** A 1x1 transparent PNG: a made-up picture, nothing anyone drew. */
+export const DOT =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";

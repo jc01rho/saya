@@ -163,6 +163,12 @@ function EmptyOutlet() {
   return (
     <div className={styles.empty}>
       <Cat height={48} />
+      {/* A custom theme's mascot takes the cat's place (src/features/theme/apply.ts). */}
+      <span
+        className={styles.mascot}
+        data-ui="theme-mascot"
+        aria-hidden="true"
+      />
       <p>{APP_COPY.pick}</p>
     </div>
   );

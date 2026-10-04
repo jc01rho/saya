@@ -367,6 +367,8 @@ export function RoomsPane({
                 {ROOMS_COPY.brandLatin}
               </span>
             </Brand>
+            {/* A custom theme's badge (src/features/theme/places.css); empty and unsized otherwise. */}
+            <span data-ui="theme-badge" aria-hidden="true" />
             {actions}
           </div>
           <div className={styles.search}>
@@ -419,7 +421,12 @@ export function RoomsPane({
         ) : null}
       </div>
       <div className={styles.scroller} data-ui="room-scroller">
-        {loading ? <p className={styles.status}>{ROOMS_COPY.loading}</p> : null}
+        {loading ? (
+          <p className={styles.status}>
+            <span data-ui="theme-loader" aria-hidden="true" />
+            {ROOMS_COPY.loading}
+          </p>
+        ) : null}
         {showHidden ? (
           <p className={styles.status}>{ROOMS_COPY.hiddenNote}</p>
         ) : null}
@@ -485,7 +492,8 @@ export function RoomsPane({
                 />
               ))}
         </ul>
-        <div className={styles.filler} />
+        {/* Outside the virtual list, so a theme's mascot can sit below the last row. */}
+        <div className={styles.filler} data-ui="room-filler" />
       </div>
       {sheet ? (
         <Suspense fallback={null}>
@@ -502,6 +510,7 @@ export function RoomsPane({
         <div className={styles.foot}>
           <div className={styles.footInner}>
             <Cat motion="walk" />
+            <span data-ui="theme-loader" aria-hidden="true" />
           </div>
         </div>
       ) : null}
