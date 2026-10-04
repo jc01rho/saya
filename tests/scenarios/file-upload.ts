@@ -159,13 +159,11 @@ export const scenario: Scenario = {
         path: `${evidence}/core-too-large-${width}.png`,
       });
       await composer.locator('[data-ui="attach-cancel"]').click();
-      await composer
-        .locator('[data-ui="attach-input"]')
-        .setInputFiles({
-          name: "synthetic.png",
-          mimeType: "image/png",
-          buffer: png,
-        });
+      await composer.locator('[data-ui="attach-input"]').setInputFiles({
+        name: "synthetic.png",
+        mimeType: "image/png",
+        buffer: png,
+      });
       await composer
         .locator('[data-ui="attach-staged"] img')
         .waitFor({ timeout: 10_000 });
@@ -191,13 +189,11 @@ export const scenario: Scenario = {
       const adapter = page.locator('[data-ui="adapter-composer"]');
       await adapter.locator('[data-ui="attach"]').waitFor({ timeout: 10_000 });
       await adapter.locator("textarea").fill(CAPTION);
-      await adapter
-        .locator('[data-ui="attach-input"]')
-        .setInputFiles({
-          name: "synthetic.png",
-          mimeType: "image/png",
-          buffer: png,
-        });
+      await adapter.locator('[data-ui="attach-input"]').setInputFiles({
+        name: "synthetic.png",
+        mimeType: "image/png",
+        buffer: png,
+      });
       await adapter
         .locator('[data-ui="attach-note"]')
         .waitFor({ timeout: 10_000 });
