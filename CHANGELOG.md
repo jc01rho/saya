@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### 바뀜
+
+- 개발 서버(`bun run dev`)도 운영 Caddyfile과 같은 본문 규칙으로 쓰기를 거릅니다(`server/writes.ts`).
+  `/api`·`/adapters` 로의 쓰기는 JSON이거나, 두 업로드 경로의 multipart(60MiB 이하)여야 하고,
+  그 밖은 프록시하기 전에 `403`, 길이가 상한을 넘으면 `413` 입니다.
+
 ## [0.6.0] — 2026-10-04
 
 ### 추가
