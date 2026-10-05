@@ -105,6 +105,7 @@ export const Composer = memo(function Composer({
   const activeRoomId = useRef(roomId);
   const previewAbort = useRef<AbortController | null>(null);
   const postAbort = useRef<AbortController | null>(null);
+  const activeOperation = useRef<AbortController | null>(null);
   const [_revision, setRevision] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -117,10 +118,11 @@ export const Composer = memo(function Composer({
   activeRoomId.current = roomId;
   const previousRoomId = useRef(roomId);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousRoomId.current === roomId) return;
     // A consent belongs to the active composition, never a room left behind.
     previousRoomId.current = roomId;
+    activeOperation.current = null;
     state.revokeConsent();
     setConfirmation(null);
     setStaged(null);
@@ -129,6 +131,7 @@ export const Composer = memo(function Composer({
 
   useEffect(
     () => () => {
+      activeOperation.current = null;
       previewAbort.current?.abort();
       postAbort.current?.abort();
     },
@@ -146,6 +149,7 @@ export const Composer = memo(function Composer({
     selectionStart: number,
     selectionEnd: number,
   ) => {
+    activeOperation.current = null;
     state.setText(roomId, text);
     state.setSelection(roomId, selectionStart, selectionEnd);
     setConfirmation(null);
@@ -162,6 +166,7 @@ export const Composer = memo(function Composer({
     previewAbort.current?.abort();
     const controller = new AbortController();
     previewAbort.current = controller;
+    activeOperation.current = controller;
     setConfirmation(null);
     setStatus({ kind: "previewing" });
     try {
@@ -171,7 +176,11 @@ export const Composer = memo(function Composer({
         generationKey: `composer-preview:${roomId}`,
         body: sendBody(fingerprint, true),
       });
-      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
+      if (
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller ||
+        outcome.kind === "discarded"
+      )
         return;
       if (outcome.kind === "failure") {
         setStatus({ kind: "error", message: COPY.refused(outcome.error.code) });
@@ -198,7 +207,12 @@ export const Composer = memo(function Composer({
       });
       setStatus({ kind: "idle" });
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (
+        controller.signal.aborted ||
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller
+      )
+        return;
       setStatus({
         kind: "error",
         message:
@@ -228,6 +242,7 @@ export const Composer = memo(function Composer({
     }
     const controller = new AbortController();
     postAbort.current = controller;
+    activeOperation.current = controller;
     setStatus({ kind: "posting" });
     try {
       const outcome = await http.request({
@@ -237,10 +252,14 @@ export const Composer = memo(function Composer({
         body: sendBody(fingerprint, false),
       });
       const draftStillMatches = state.hasConsent(fingerprint);
+      if (
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller ||
+        outcome.kind === "discarded"
+      )
+        return;
       state.revokeConsent();
       setConfirmation(null);
-      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
-        return;
       if (outcome.kind === "failure") {
         setStatus({ kind: "error", message: COPY.refused(outcome.error.code) });
         return;
@@ -253,9 +272,14 @@ export const Composer = memo(function Composer({
       setRevision((value) => value + 1);
       setStatus({ kind: "submitted" });
     } catch (error) {
+      if (
+        controller.signal.aborted ||
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller
+      )
+        return;
       state.revokeConsent();
       setConfirmation(null);
-      if (controller.signal.aborted) return;
       setStatus({
         kind: "error",
         message:
@@ -278,6 +302,7 @@ export const Composer = memo(function Composer({
       return;
     const controller = new AbortController();
     postAbort.current = controller;
+    activeOperation.current = controller;
     setStatus({ kind: "posting" });
     try {
       const outcome = await http.upload({
@@ -285,7 +310,11 @@ export const Composer = memo(function Composer({
         file,
         signal: controller.signal,
       });
-      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
+      if (
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller ||
+        outcome.kind === "discarded"
+      )
         return;
       if (outcome.kind === "failure") {
         if (UNCERTAIN_UPLOAD.has(outcome.error.code)) {
@@ -305,7 +334,12 @@ export const Composer = memo(function Composer({
           : { kind: "error", message: COPY.protocol },
       );
     } catch {
-      if (controller.signal.aborted) return;
+      if (
+        controller.signal.aborted ||
+        activeRoomId.current !== roomId ||
+        activeOperation.current !== controller
+      )
+        return;
       // A broken or missing answer leaves the outcome unknown: the file is
       // put down so a second press is the person's decision, not a reflex.
       setStaged(null);
