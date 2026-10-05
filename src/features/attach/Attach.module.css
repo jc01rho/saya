@@ -18,7 +18,7 @@
   height: 20px;
 }
 
-.clip:hover {
+.clip:hover:not(:disabled) {
   background: color-mix(in srgb, var(--field-input) 88%, var(--ink));
   color: var(--ink);
 }
@@ -29,6 +29,7 @@
 }
 
 .clip:disabled {
+  opacity: 0.45;
   cursor: progress;
 }
 

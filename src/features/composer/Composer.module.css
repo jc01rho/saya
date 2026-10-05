@@ -61,11 +61,11 @@
   box-shadow: var(--elevation-door);
 }
 
-.quiet:hover {
+.quiet:hover:not(:disabled) {
   background: color-mix(in srgb, var(--field-wall) 94%, var(--ink));
 }
 
-.confirm:hover {
+.confirm:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent-send) 90%, var(--ink));
 }
 
@@ -162,7 +162,7 @@
   height: 18px;
 }
 
-.door:hover {
+.door:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent-send) 92%, var(--door-ink));
 }
 
@@ -174,6 +174,7 @@
 .door:disabled,
 .quiet:disabled,
 .confirm:disabled {
+  opacity: 0.45;
   cursor: progress;
 }
 
