@@ -153,7 +153,11 @@ export const Composer = memo(function Composer({
     state.setText(roomId, text);
     state.setSelection(roomId, selectionStart, selectionEnd);
     setConfirmation(null);
-    setStatus({ kind: "idle" });
+    // A write already on its way is not called off by typing: it still holds
+    // the composer until its outcome is drawn, so no second send overlaps it.
+    setStatus((current) =>
+      current.kind === "posting" ? current : { kind: "idle" },
+    );
     setRevision((value) => value + 1);
   };
 
@@ -233,6 +237,10 @@ export const Composer = memo(function Composer({
     await post(visibleConfirmation.fingerprint);
   };
 
+  /** Another operation started after this one; an edit alone supersedes nothing. */
+  const superseded = (controller: AbortController) =>
+    activeOperation.current !== null && activeOperation.current !== controller;
+
   /** The real send, for a fingerprint the dry run just granted consent to. */
   async function post(fingerprint: ConsentFingerprint) {
     if (!state.hasConsent(fingerprint)) {
@@ -252,14 +260,14 @@ export const Composer = memo(function Composer({
         body: sendBody(fingerprint, false),
       });
       const draftStillMatches = state.hasConsent(fingerprint);
-      if (
-        activeRoomId.current !== roomId ||
-        activeOperation.current !== controller ||
-        outcome.kind === "discarded"
-      )
+      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
         return;
-      state.revokeConsent();
-      setConfirmation(null);
+      // A write's outcome is always drawn in its room; only a newer
+      // composition's consent is left alone.
+      if (!superseded(controller)) {
+        state.revokeConsent();
+        setConfirmation(null);
+      }
       if (outcome.kind === "failure") {
         setStatus({ kind: "error", message: COPY.refused(outcome.error.code) });
         return;
@@ -272,14 +280,11 @@ export const Composer = memo(function Composer({
       setRevision((value) => value + 1);
       setStatus({ kind: "submitted" });
     } catch (error) {
-      if (
-        controller.signal.aborted ||
-        activeRoomId.current !== roomId ||
-        activeOperation.current !== controller
-      )
-        return;
-      state.revokeConsent();
-      setConfirmation(null);
+      if (controller.signal.aborted || activeRoomId.current !== roomId) return;
+      if (!superseded(controller)) {
+        state.revokeConsent();
+        setConfirmation(null);
+      }
       setStatus({
         kind: "error",
         message:
@@ -310,11 +315,7 @@ export const Composer = memo(function Composer({
         file,
         signal: controller.signal,
       });
-      if (
-        activeRoomId.current !== roomId ||
-        activeOperation.current !== controller ||
-        outcome.kind === "discarded"
-      )
+      if (activeRoomId.current !== roomId || outcome.kind === "discarded")
         return;
       if (outcome.kind === "failure") {
         if (UNCERTAIN_UPLOAD.has(outcome.error.code)) {
@@ -334,12 +335,7 @@ export const Composer = memo(function Composer({
           : { kind: "error", message: COPY.protocol },
       );
     } catch {
-      if (
-        controller.signal.aborted ||
-        activeRoomId.current !== roomId ||
-        activeOperation.current !== controller
-      )
-        return;
+      if (controller.signal.aborted || activeRoomId.current !== roomId) return;
       // A broken or missing answer leaves the outcome unknown: the file is
       // put down so a second press is the person's decision, not a reflex.
       setStaged(null);
