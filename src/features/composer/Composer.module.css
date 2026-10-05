@@ -172,6 +172,7 @@
 }
 
 .door:disabled,
+.quiet:disabled,
 .confirm:disabled {
   cursor: progress;
 }

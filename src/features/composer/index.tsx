@@ -386,6 +386,9 @@ export const Composer = memo(function Composer({
             <button
               type="button"
               className={styles.quiet}
+              data-ui="composer-cancel"
+              // A write already on its way cannot be called back.
+              disabled={status.kind === "posting"}
               onClick={() => {
                 state.revokeConsent();
                 setConfirmation(null);
