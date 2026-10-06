@@ -1,6 +1,6 @@
 # The same-origin proxy (Caddy) in front of dist/, as a service. Adjust the
-# user, paths and env file; the env file holds the core and adapter tokens and
-# must be readable by this user only (chmod 600). See docs/deployment.md.
+# user and paths. It holds no token: /api and /adapters go to saya's server
+# (saya-server.service). See docs/deployment.md.
 [Unit]
 Description=saya same-origin proxy (Caddy)
 After=network-online.target tailscaled.service
@@ -10,10 +10,7 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/saya
-# Adapter routes come from SAYA_ADAPTERS in the env file: add an adapter there
-# and restart. The Caddyfile imports /var/lib/saya-proxy/adapters.caddy.
-ExecStartPre=/home/ubuntu/.bun/bin/bun --env-file=/home/ubuntu/saya-deploy/saya.env scripts/caddy-adapters.ts /var/lib/saya-proxy/adapters.caddy
-ExecStart=/home/ubuntu/.local/bin/caddy run --config /home/ubuntu/saya-deploy/Caddyfile --adapter caddyfile --envfile /home/ubuntu/saya-deploy/saya.env
+ExecStart=/home/ubuntu/.local/bin/caddy run --config /home/ubuntu/saya-deploy/Caddyfile --adapter caddyfile
 Environment=XDG_CONFIG_HOME=/var/lib/saya-proxy XDG_DATA_HOME=/var/lib/saya-proxy
 StateDirectory=saya-proxy
 Restart=on-failure

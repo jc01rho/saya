@@ -66,26 +66,29 @@ describe("same-origin proxy boundary", () => {
       caddyfile.indexOf("respond @blocked_write 403"),
     );
     expect(caddyfile).toContain("max_size 60MiB");
-    expect(caddyfile.indexOf("request_body @upload_body")).toBeLessThan(
-      caddyfile.indexOf("reverse_proxy {env.SAYA_CORE_URL}"),
-    );
-    expect(caddyfile).toContain("respond @blocked_write 403");
-    expect(caddyfile.indexOf("respond @blocked_write 403")).toBeLessThan(
-      caddyfile.indexOf("reverse_proxy {env.SAYA_CORE_URL}"),
-    );
+    // /api and /adapters go to saya's server (tests/server/registry.test.ts
+    // checks its tokens and sandbox), only after the write filter and body bound.
+    const api = caddyfile.indexOf("handle @api {");
+    const adapters = caddyfile.indexOf("handle @adapters {");
+    for (const handle of [api, adapters]) {
+      expect(handle).toBeGreaterThan(
+        caddyfile.indexOf("respond @blocked_write 403"),
+      );
+      expect(handle).toBeGreaterThan(
+        caddyfile.indexOf("request_body @upload_body"),
+      );
+      expect(handle).toBeLessThan(
+        caddyfile.indexOf("try_files {path} /index.html"),
+      );
+    }
+    expect(caddyfile).toContain("@adapters path /adapters /adapters/*");
+    // The proxy holds no token at all now; registrations carry them.
+    expect(caddyfile).not.toContain("{env.");
+    expect(caddyfile).not.toContain("header_up Authorization");
     expect(caddyfile).toContain(
-      'header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"',
+      `>Content-Security-Policy "default-src 'none'; sandbox"`,
     );
-    expect(caddyfile).toContain("uri strip_prefix /api");
-    // Adapters are generated (tests/server/adapters.test.ts checks their token
-    // and sandbox) and imported after the write filter, before the SPA fallback.
-    const adapters = caddyfile.indexOf("\n    import adapters.caddy\n");
-    expect(adapters).toBeGreaterThan(
-      caddyfile.indexOf("respond @blocked_write 403"),
-    );
-    expect(adapters).toBeLessThan(
-      caddyfile.indexOf("try_files {path} /index.html"),
-    );
+    expect(caddyfile).toContain('>X-Content-Type-Options "nosniff"');
     expect(caddyfile).toContain("flush_interval -1");
     expect(caddyfile).toContain('Cache-Control "no-store"');
     expect(caddyfile).toContain("output discard");

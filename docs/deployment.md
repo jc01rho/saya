@@ -1,37 +1,49 @@
 # Deployment: static client behind a same-origin proxy
 
-The production artifact is **only** `dist/`. This repository does not ship a
-server or run a core process. Serve `dist/` through an existing Caddy or nginx
-instance that owns the bearer token and proxies the browser's same-origin
-`/api/*` requests to `kanao serve` or `kamado serve`.
+The production artifact is `dist/` plus saya's server (`server/serve.ts`).
+Serve `dist/` through Caddy or nginx; the proxy forwards the browser's
+same-origin `/api/*`, `/adapters*` and `/unfurl*` to saya's server, which
+forwards `/api` and `/adapters` to whichever KakaoTalk core and messenger
+adapters registered with it ([docs/register.md](register.md)).
 
-The browser must never receive `SAYA_CORE_TOKEN`. Do not add a `VITE_` prefix,
-put the token in HTML, or use a build-time replacement. `SAYA_CORE_URL` and
-`SAYA_CORE_TOKEN` are process environment variables for the development proxy
-or external reverse proxy only; production `dist/` does not read them.
+saya holds one secret, `SAYA_REGISTER_TOKEN`. Cores and adapters hold saya's
+register address, that token, and their own token, which they hand to saya
+when they register. No core or adapter address or token is configured on
+saya's side, and the browser never receives any of them: do not add a
+`VITE_` prefix, put a token in HTML, or use a build-time replacement.
+
+The development server (`bun run dev`) still reads `SAYA_CORE_URL`,
+`SAYA_CORE_TOKEN`, `SAYA_ADAPTERS` and `SAYA_ADAPTER_<ID>_URL`/`_TOKEN`
+from `.env` (`server/adapters.ts`); that is a development convenience, not
+how production is configured.
 
 ## Caddy
 
 1. Build the static artifact with `bun run build`.
-2. Copy `.env.example` to a private `.env` file, set the core URL and a real
-   token, and keep that file out of source control.
+2. Start saya's server with a register token of at least 32 characters, kept
+   out of source control:
+
+   ```sh
+   SAYA_REGISTER_TOKEN=... SAYA_SERVER_PORT=8791 bun server/serve.ts
+   ```
+
 3. Run Caddy from the repository root so `root * dist` resolves to the built
    artifact:
 
    ```sh
-   bun --env-file=.env scripts/caddy-adapters.ts deploy/adapters.caddy
-   caddy run --envfile .env --config deploy/Caddyfile.example
+   caddy run --config deploy/Caddyfile.example
    ```
 
-   The first line writes the adapter routes the example imports (see
-   [Messenger adapters](#messenger-adapters-tsuba)); with no `SAYA_ADAPTERS`
-   it writes an empty index.
+4. Point each core and adapter at saya: `SAYA_REGISTER_URL`,
+   `SAYA_REGISTER_TOKEN`, and `SAYA_ADVERTISE_URL` when saya does not reach
+   it on `http://127.0.0.1:<its port>`. It appears in the lists within one
+   heartbeat, and disappears 90 seconds after it stops.
 
-`deploy/Caddyfile.example` binds `http://127.0.0.1:8080` by default. It strips
-`/api`, injects `Authorization: Bearer` at the upstream hop, and streams SSE
-with `flush_interval -1`. It deliberately sets no stream or idle timeout: the
-core contract does not promise any ping cadence, so a short timeout would
-silently sever a healthy stream.
+`deploy/Caddyfile.example` binds `http://127.0.0.1:8080` by default and holds
+no token. It streams SSE with `flush_interval -1` and deliberately sets no
+stream or idle timeout: neither contract promises a ping cadence, so a short
+timeout would silently sever a healthy stream. saya's server lifts Bun's idle
+limit for the requests it forwards for the same reason.
 
 The proxy returns `403` for `POST`, `PUT`, `PATCH`, and `DELETE` unless all of
 the following are true:
@@ -52,8 +64,8 @@ and without the size bound a body is limited only by the core or adapter
 behind it.
 
 This is a fail-closed browser-write boundary, not a substitute for user access
-control. The core bearer credential remains hidden from JavaScript, but anyone
-who can use the proxy's origin can otherwise act with it.
+control. The registered credentials remain hidden from JavaScript, but anyone
+who can use the proxy's origin can otherwise act with them.
 
 ## Remote exposure
 
@@ -65,128 +77,99 @@ remote binding unless both conditions are in place:
 
 For a remote Caddy deployment, replace the site address and the `Origin`
 matcher in the example with the same HTTPS public origin, and add the
-organization's authentication handler before the `/api` handler. Keep the core
-itself bound to a private or loopback interface. If either TLS or separate user
-authentication is unavailable, leave the proxy loopback-only.
+organization's authentication handler before the `/api` handler. Keep saya's
+server, and every core and adapter, bound to loopback. If either TLS or
+separate user authentication is unavailable, leave the proxy loopback-only.
 
-nginx deployments must implement the same contract: `proxy_pass` after
-removing `/api`, an upstream-only `Authorization: Bearer` header sourced from
-its environment or secret store, `proxy_buffering off` for SSE, no short
-read/idle timeout, and the same fail-closed Origin, Fetch-Metadata, and JSON
-write checks before proxying.
+nginx deployments must implement the same contract: `proxy_pass` of `/api`,
+`/adapters` and `/unfurl` to saya's server unchanged, `proxy_buffering off`
+for SSE, no short read/idle timeout, the sandbox headers on `/adapters`, and
+the same fail-closed Origin, Fetch-Metadata, and JSON write checks before
+proxying.
 
-## Messenger adapters (tsuba)
+## Registration
 
-Each tsuba adapter is its own upstream with its own bearer token, answering the
-adapter contract (`contracts/tsuba.openapi.json`). The proxy serves two things
-for them, and the browser learns nothing but their ids:
+Cores and adapters register themselves; [docs/register.md](register.md) is
+the contract. In short:
 
-- `GET /adapters` — the index, `{"adapters":[{"id":"telegram"}]}`. It is a
-  facility of the proxy, like `/unfurl`, not part of either contract.
-- `/adapters/<id>/*` — stripped of that prefix and forwarded to the adapter,
-  with `Authorization: Bearer <its token>` added by the proxy.
+- `POST /register` on saya's register listener (`SAYA_REGISTER_PORT`,
+  default `8798`, loopback) with saya's token and
+  `{kind, id, url, token}`, repeated every 30 seconds; a registration ends 90
+  seconds after the last one, or at once on `DELETE /register`.
+- The register listener is never served on the site's origin. Registrants on
+  the same machine use `http://127.0.0.1:8798`; others reach it over the
+  tailnet only (`tailscale serve --bg --https=8798 http://127.0.0.1:8798`).
+- Only loopback and tailnet addresses are accepted (`127.0.0.0/8`, `::1`,
+  `100.64.0.0/10`, `fd7a:115c:a1e0::/48`, `*.ts.net`), so a leaked register
+  token cannot point the proxy at an arbitrary host. Never put a core or an
+  adapter on a public address to make it reachable.
 
-Both proxies read the same variables: `SAYA_ADAPTERS=telegram,slack` and, per
-id, `SAYA_ADAPTER_<ID>_URL` and `SAYA_ADAPTER_<ID>_TOKEN` (upper case, `-` as
-`_`; `server/adapters.ts`). A listed id missing either refuses to start.
-Adding an adapter that answers the tsuba contract is three lines in the env
-file and a restart; nothing in saya or the Caddyfile changes.
+What the browser sees is unchanged:
 
-In production, `scripts/caddy-adapters.ts` turns those variables into the
-index and one handle per adapter, and the Caddyfile imports the result
-(`import adapters.caddy`). `deploy/saya-proxy.service` runs it as
-`ExecStartPre`, so a restart regenerates it, and a bad entry stops the start
-instead of silently dropping an adapter. The file holds addresses but no
-token: each handle says `{env.SAYA_ADAPTER_<ID>_TOKEN}` and Caddy expands it
-from its own env file. An `https` adapter (`tailscale serve`, tailnet only)
-gets `header_up Host {upstream_hostport}`, because it routes on its own host
-name. Never put an adapter on a public address to make it reachable; the
-tailnet or an SSH forward is the path.
-
-Several adapters on one machine can share one tailnet address, split by path
-(`tailscale serve --https=443 --set-path /slack http://127.0.0.1:8793`), so an
-adapter URL may carry a path, e.g. `https://oci.example.ts.net/slack`. The
-development proxy keeps that path in front of every route. Caddy's
-`reverse_proxy` takes only scheme, host and port, so the generator moves the
-path into `rewrite * /slack{uri}` after `uri strip_prefix`.
+- `GET /adapters`: the index, `{"adapters":[{"id":"telegram"}]}`, live
+  adapters sorted by id. It is a facility of saya's server, not part of either
+  messenger contract.
+- `/adapters/<id>/*`: stripped of that prefix and forwarded to the adapter's
+  registered address, with its registered token. An address with a path
+  (`tailscale serve --set-path /slack`) keeps it in front of every route.
+- `/api/*`: forwarded to the KakaoTalk core that registered most recently, or
+  `503` when none is live, which the client draws as KakaoTalk being away.
 
 `/adapters/<id>/media` answers the bytes of a file somebody else sent, opened
-at this origin. The adapter already answers it sandboxed, but the proxy does
-not rely on that: both the development proxy (`ADAPTER_RESPONSE_HEADERS`) and
-the generated Caddy handles set `Content-Security-Policy: default-src 'none';
-sandbox` and `X-Content-Type-Options: nosniff` on every adapter answer, after
-the upstream's own headers (`>` defers them). Both are written from the same
-`ADAPTER_RESPONSE_HEADERS`. Cache-Control is a default only (`?`), so `/media`
-keeps its `private, max-age=86400` while everything else is `no-store`.
+at this origin. The adapter already answers it sandboxed, but saya does not
+rely on that: saya's server and the Caddyfile example both set
+`Content-Security-Policy: default-src 'none'; sandbox` and
+`X-Content-Type-Options: nosniff` on every adapter answer, over the upstream's
+own headers. Cache-Control is a default only, so `/media` keeps its
+`private, max-age=86400` while everything else is `no-store`.
 
 ## Running it as a service on a tailnet
 
-One way that keeps every listener on loopback: the proxy and the unfurl service
-run under systemd on a server, and Tailscale is both the TLS terminator and the
+One way that keeps every listener on loopback: the proxy and saya's server run
+under systemd on a server, and Tailscale is both the TLS terminator and the
 user boundary (only the owner's tailnet devices reach it).
 
-1. On the machine running the KakaoTalk core, expose it to the tailnet only:
-   `tailscale serve --bg --https=8765 http://127.0.0.1:8765`. The core keeps its
-   loopback binding and still demands its bearer token.
-2. On the server: clone this repository, `bun install --frozen-lockfile`,
+1. On the server: clone this repository, `bun install --frozen-lockfile`,
    `bun run build`. Copy `deploy/Caddyfile.example` outside the repository and
    set: a loopback listener (`http://:8796` with `bind 127.0.0.1` accepts the
    host name tailscale forwards), `root` to the built `dist`, the Origin matcher
-   to the tailnet origin (`https://<server>.<tailnet>.ts.net`), the core upstream
-   to `https://<pc>.<tailnet>.ts.net:8765` written literally (a runtime
-   placeholder cannot carry the `https` scheme), the /unfurl port, and
-   `import /var/lib/saya-proxy/adapters.caddy` where the example imports
-   `adapters.caddy`.
-3. Write an env file readable only by the service user (`chmod 600`):
-   `SAYA_CORE_TOKEN`, `SAYA_ADAPTERS`, and per adapter its `_URL` and
-   `_TOKEN`. Adapters on the same server are reached on loopback
-   (`http://127.0.0.1:8790`). Never print the tokens.
-4. Install `deploy/saya-proxy.service` and `deploy/saya-unfurl.service` (adjust
-   user and paths), then `systemctl enable --now saya-proxy saya-unfurl`.
-5. `tailscale serve --bg --https=443 --set-path / http://127.0.0.1:8796`. Paths
-   other services already hold on that address keep working.
+   to the tailnet origin (`https://<server>.<tailnet>.ts.net`), and saya's
+   server port on the `/unfurl`, `/api` and `/adapters` handles.
+2. Write an env file readable only by the service user (`chmod 600`) with
+   `SAYA_REGISTER_TOKEN` alone. Never print it.
+3. Install `deploy/saya-proxy.service` and `deploy/saya-server.service`
+   (adjust user and paths), then `systemctl enable --now saya-proxy saya-server`.
+4. `tailscale serve --bg --https=443 --set-path / http://127.0.0.1:8796` for
+   the site, and `tailscale serve --bg --https=8798 http://127.0.0.1:8798` for
+   registration. Paths other services already hold on that address keep
+   working.
+5. On each core and adapter, set `SAYA_REGISTER_URL` (`http://127.0.0.1:8798`
+   on this server, `https://<server>.<tailnet>.ts.net:8798` elsewhere),
+   `SAYA_REGISTER_TOKEN`, and, when it is on another machine behind
+   `tailscale serve`, `SAYA_ADVERTISE_URL` (`https://<pc>.<tailnet>.ts.net:8765`).
 
-Check, from a tailnet device: `/` is the client, `/adapters` is JSON, `/api/health`
-answers, and a `POST` without this site's `Origin` is `403`. To update, pull
-and `bun run build`; the proxy serves the new `dist/` without a restart. To
-add or remove an adapter, edit the env file and
-`sudo systemctl restart saya-proxy`. While
-the core's machine is off, KakaoTalk is simply absent from the lists.
+Check, from a tailnet device: `/` is the client, `/adapters` lists what
+registered, `/api/health` answers, and a `POST` without this site's `Origin`
+is `403`. To update, pull and `bun run build`; the proxy serves the new
+`dist/` without a restart (restart `saya-server` when `server/` changed;
+registrations return within one heartbeat). Adding an adapter changes nothing
+on this server. While a core's machine is off, KakaoTalk is simply absent from
+the lists.
 
-### Following whichever core is up
+### Moving between cores
 
 When one account is served by `kanao serve` on a PC some days and by
-`kamado serve` on a Mac on others, and only one of them runs at a time, list
-both as upstreams and let the proxy follow the live one instead of editing the
-Caddyfile to switch:
+`kamado serve` on a Mac on others, both register as `kind: "kakao"` and
+`/api` follows the one that registered last; nothing on saya changes.
 
-```caddyfile
-reverse_proxy https://<pc>.<tailnet>.ts.net:8765 https://<mac>.<tailnet>.ts.net:8765 {
-    lb_policy first
-    health_uri /health
-    health_interval 5s
-    health_timeout 3s
-    lb_try_duration 3s
-    header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
-    header_up Host {upstream_hostport}
-    flush_interval -1
-}
-```
-
-- Both cores answer `GET /health` without a token, so the active check needs
-  no secret. A stopped core behind `tailscale serve` answers `502`, and a
-  machine that is off does not answer; either way it is skipped.
-- Give both the **same token**; the proxy injects one `SAYA_CORE_TOKEN`.
-- The client sees one core either way. The two builds share the contract, so
-  nothing in saya changes; keys one build adds (`typeCode`) are ignored by
-  the other's readers.
-- A switch takes up to one `health_interval`. Requests in that window may fail
-  once. Caddy retries a `POST` only when the connection to a core never
-  opened, so a send that reached a core is never sent again elsewhere. An open stream ends
-  when its core stops, and the client reconnects with its cursor; log ids are
-  the account's, so the cursor means the same thing on the other machine.
-- If both run at once, `lb_policy first` uses the first listed. Keep one
-  stopped.
+- Keep only one running. A stopped core sends `DELETE /register` and leaves
+  the list at once; one that vanished is forgotten after 90 seconds.
+- Requests in a switch may fail once. saya's server never retries a request,
+  so a send that reached a core is never sent again elsewhere. An open stream
+  ends when its core stops, and the client reconnects with its cursor; log ids
+  are the account's, so the cursor means the same thing on the other machine.
+- The two builds share the contract, so nothing in saya changes; keys one build
+  adds (`typeCode`) are ignored by the other's readers.
 
 ## The link-preview endpoint
 

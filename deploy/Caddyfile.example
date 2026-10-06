@@ -30,11 +30,10 @@ http://127.0.0.1:8080 {
     @api path /api/*
     header @api >Cache-Control "no-store"
 
-    # The link-preview endpoint. It is NOT the cores' contract, which is why it
-    # lives outside /api, holds no token and never reaches a core. Run it with
-    # `SAYA_UNFURL_PORT=8791 bun server/serve.ts`, bound to loopback: it has no
-    # authentication of its own and this listener is what fronts it. Omit this
-    # block entirely and the client simply draws plain links.
+    # saya's server (server/serve.ts, deploy/saya-server.service) answers
+    # /unfurl, /api and /adapters on loopback 8791. It has no authentication
+    # on this side; this listener is what fronts it, after the write rules
+    # below. /unfurl is the link-preview endpoint, not the cores' contract.
     @unfurl path /unfurl /unfurl/*
     handle @unfurl {
         reverse_proxy 127.0.0.1:8791
@@ -69,46 +68,32 @@ http://127.0.0.1:8080 {
         max_size 60MiB
     }
 
+    # The KakaoTalk core and the messenger adapters are whoever registered
+    # with saya's server (docs/register.md); it strips /api or
+    # /adapters/<id>, adds the token each one registered, and answers the
+    # /adapters index with ids only. No address or token is written here.
+    # Send each SSE chunk immediately, and add no stream/idle timeout: neither
+    # contract specifies a ping cadence.
     handle @api {
-        uri strip_prefix /api
-        reverse_proxy {env.SAYA_CORE_URL} {
-            # This process expands the secret; the static files and browser do not.
-            header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
-            # Send each SSE chunk immediately. Do not add a stream/idle timeout:
-            # the upstream contract does not specify a ping cadence.
+        reverse_proxy 127.0.0.1:8791 {
             flush_interval -1
         }
     }
 
-    # Two cores, one at a time (kanao on a PC, kamado on a Mac): list both and
-    # let the proxy follow whichever answers /health, which needs no token.
-    # Both must be given the same token. Write the URLs literally; see
-    # docs/deployment.md, "Following whichever core is up".
-    #
-    # handle @api {
-    #     uri strip_prefix /api
-    #     reverse_proxy https://pc.example.ts.net:8765 https://mac.example.ts.net:8765 {
-    #         lb_policy first
-    #         health_uri /health
-    #         health_interval 5s
-    #         health_timeout 3s
-    #         lb_try_duration 3s
-    #         header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"
-    #         header_up Host {upstream_hostport}
-    #         flush_interval -1
-    #     }
-    # }
-
-    # Messenger adapters (tsuba): the /adapters index (ids only) and one
-    # handle per id, generated from SAYA_ADAPTERS and each
-    # SAYA_ADAPTER_<ID>_URL / _TOKEN in the env file. Do not write them here;
-    # regenerate before Caddy starts (deploy/saya-proxy.service does it):
-    #   bun --env-file=.env scripts/caddy-adapters.ts deploy/adapters.caddy
-    # Every adapter answer is sandboxed and never sniffed (`/media` is bytes
-    # somebody else sent); tokens stay {env.*} placeholders. Writes are still
-    # filtered by @blocked_write above. A relative path resolves next to this
-    # file; the service writes /var/lib/saya-proxy/adapters.caddy.
-    import adapters.caddy
+    # Adapter answers include bytes somebody else sent (`/media`): sandboxed
+    # and never sniffed after the upstream's own headers, here as well as in
+    # saya's server. `/media` keeps its own private cache header.
+    @adapters path /adapters /adapters/*
+    header @adapters {
+        ?Cache-Control "no-store"
+        >Content-Security-Policy "default-src 'none'; sandbox"
+        >X-Content-Type-Options "nosniff"
+    }
+    handle @adapters {
+        reverse_proxy 127.0.0.1:8791 {
+            flush_interval -1
+        }
+    }
 
     @hashed_assets path_regexp hashed ^/assets/.+\.[a-zA-Z0-9_-]{8,}\.(?:css|js|mjs|woff2?|svg|png|jpe?g|webp|gif)$
     header @hashed_assets Cache-Control "public, max-age=31536000, immutable"
