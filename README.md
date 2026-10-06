@@ -14,16 +14,22 @@
 그것을 감싸 손에 쥐게 하는 화면뿐입니다. 이전 이름은 hinokami-kagura 였고, `design/` 아래의
 작업 기록과 옛 커밋에는 그 이름이 그대로 남아 있습니다.
 
-## 서버는 만들지 않습니다
+> [!IMPORTANT]
+> **업그레이드 안내 (2026-10-06): saya 연결 방식이 바뀌었습니다.** saya 에는 이제 등록 토큰 하나만 두고, 카카오 코어와 어댑터가 saya 를 가리켜 스스로 등록합니다.
+> 기존 배포는 [업그레이드 가이드](https://github.com/sanguneo/saya/blob/main/docs/upgrade-registration.md)를 따라 옮기세요. 에이전트에게 그 문서를 주고 "이대로 옮겨 줘"라고
+> 하면 됩니다.
+
+## 코어는 만들지 않습니다
 
 ```
 브라우저 ──HTTP + SSE──> kanao serve / kamado serve ──> 카카오톡 로컬 DB
 (이 저장소)                    (이미 있는 것)
 ```
 
-읽기도 전송도 코어가 이미 합니다. 여기서 만드는 것은 **화면**과, 링크 미리보기
-하나를 위한 선택적 부속(`server/`, `/unfurl`)뿐입니다. 그 부속은 계약이 아니고,
-코어에 닿지 않으며, 없어도 클라이언트는 그대로 동작합니다. 복호화 키도,
+읽기도 전송도 코어가 이미 합니다. 여기서 만드는 것은 **화면**과, 그 화면을 위한 작은
+부속(`server/`)뿐입니다. 부속은 링크 미리보기(`/unfurl`)와, 스스로 등록한 코어·어댑터로
+`/api`·`/adapters` 요청을 넘겨 주는 일([`docs/register.md`](docs/register.md))만 합니다. 두 메신저
+계약 어느 쪽에도 답하지 않고, 중계할 뿐입니다. 복호화 키도,
 카카오톡 데이터베이스도, 접근성·전체 디스크 접근 권한도 이 저장소의 코드가 만지지 않습니다.
 그래서 이 저장소는 카카오톡이 깔리지 않은 기계에서도 개발하고 시험할 수 있습니다.
 
@@ -71,8 +77,15 @@ bun run dev              # http://127.0.0.1:5173
 `Authorization` 헤더를 서버 쪽에서 주입하기 때문에, 토큰은 브라우저 번들에 들어가지 않습니다.
 `.env` 는 커밋하지 마세요.
 
-배포는 정적 `dist/` 하나이고, 같은 origin 리버스 프록시가 토큰을 쥡니다 —
-[`docs/deployment.md`](docs/deployment.md) 와 [`deploy/Caddyfile.example`](deploy/Caddyfile.example).
+배포는 정적 `dist/` 와 saya 서버(`bun server/serve.ts`)입니다. saya는 등록 토큰 하나만 들고,
+코어와 어댑터가 saya를 가리켜 스스로 등록합니다 — [`docs/deployment.md`](docs/deployment.md),
+[`docs/register.md`](docs/register.md), [`deploy/Caddyfile.example`](deploy/Caddyfile.example).
+
+### 이전 배포에서 옮기기 (0.8.x → 등록 방식)
+
+0.8.x 까지는 saya 의 env 와 Caddyfile 에 코어·어댑터마다 주소와 토큰을 적었습니다. 이제는 반대로
+코어·어댑터가 saya 를 가리킵니다. 코드만 올리고 옮기지 않으면 카카오톡과 어댑터가 목록에서 사라집니다.
+단계, 확인, 되돌리기는 [`docs/upgrade-registration.md`](docs/upgrade-registration.md) 에 있습니다.
 
 ## 계약은 코어와 어댑터가 갖고, 여기 있는 것은 사본입니다
 

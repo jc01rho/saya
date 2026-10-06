@@ -6,6 +6,23 @@
 
 ## [Unreleased]
 
+### 바뀜 — 배포하는 분은 설정을 옮겨야 합니다
+
+- **코어와 어댑터가 saya에 스스로 등록합니다(#22).** 지금까지는 saya 쪽(env와 Caddyfile)에 카카오 코어와
+  어댑터마다 주소와 토큰을 적었습니다. 이제 saya는 등록 토큰 `SAYA_REGISTER_TOKEN` 하나만 들고, `kanao serve`·
+  `kamado serve`·tsuba 어댑터·chatplus-core가 시작할 때 saya에 자기 주소와 토큰을 알립니다. 30초마다
+  다시 알리고, 멈추면 목록에서 빠집니다(정상 종료는 즉시, 아니면 90초 뒤). 어댑터를 하나 더 붙이는 일에
+  saya 쪽 설정은 없습니다. 규칙은 [`docs/register.md`](docs/register.md)(saya 자체 계약), 옮기는 절차는
+  [`docs/upgrade-registration.md`](docs/upgrade-registration.md)(에이전트에게 그대로 맡길 수 있는 단계·확인·되돌리기)입니다.
+- **`server/`가 `/api`와 `/adapters`를 중계합니다.** `bun server/serve.ts`(서비스 이름 `saya-server`, 예전
+  `saya-unfurl`)가 등록된 코어·어댑터로 요청을 넘기고 각자의 토큰을 붙입니다. Caddyfile에는 토큰이
+  하나도 남지 않습니다. 등록 창구는 사이트와 다른 포트(기본 8798)이고 tailnet에만 엽니다.
+- **PC와 Mac 코어 전환에 Caddy 설정이 필요 없습니다.** 가장 나중에 등록한 코어가 답합니다.
+  `lb_policy first`와 health 검사 블록은 지워도 됩니다.
+- 등록하려면 코어·어댑터도 새 버전이어야 합니다: nichirin kanao 0.31.0 / kamado 0.29.0 이상, tsuba
+  main(#3 이후), chatplus-core master(#2 이후). 예전 버전은 등록하지 않아 목록에 나타나지 않습니다.
+- 개발 서버(`bun run dev`)는 그대로 `.env`의 `SAYA_CORE_*`·`SAYA_ADAPTER_*`를 읽습니다.
+
 ## [0.8.3] — 2026-10-06
 
 ### 바뀜
