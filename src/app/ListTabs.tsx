@@ -3,7 +3,6 @@ import { KAKAO_ICON, ProviderMark } from "../ui/ProviderMark";
 import type { AdapterTab } from "./adapterTabs";
 import styles from "./ListTabs.module.css";
 import {
-  ADAPTERS_HASH,
   ALL_HASH,
   adapterListHash,
   type ListMode,
@@ -15,7 +14,6 @@ const COPY = {
   group: "메신저",
   all: "전체",
   kakao: "카카오",
-  adapters: "연결",
   settings: "설정",
 } as const;
 
@@ -80,14 +78,15 @@ export function ListTabs({
           {item.label}
         </a>
       ))}
-      <a className={styles.tab} href={ADAPTERS_HASH}>
-        {COPY.adapters}
-      </a>
       <a
-        className={styles.tab}
+        className={cx(styles.tab, styles.settings)}
         href={SETTINGS_HASH}
         data-ui="list-tabs-settings"
       >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
         {COPY.settings}
       </a>
     </nav>

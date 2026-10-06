@@ -126,6 +126,7 @@ export const scenario: Scenario = {
 
     // 1. Nothing is registered before anybody says yes.
     await page.locator('[data-ui="rail-settings"]').click();
+    await page.locator('[data-ui="settings-tab-agent"]').click();
     await page.locator('[data-ui="agent-card"]').waitFor();
     const atRest = await registered(page);
     log("default", { registered: atRest });
@@ -215,6 +216,8 @@ export const scenario: Scenario = {
     if (opened.length !== 0) fail(`a tool opened a room: ${opened}`);
 
     await page.locator('[data-ui="rail-settings"]').click();
+
+    await page.locator('[data-ui="settings-tab-agent"]').click();
     await page.locator('[data-ui="agent-card"]').waitFor();
     const logged = await page.evaluate(() =>
       [...document.querySelectorAll('[data-ui="agent-log"] li')].map(
@@ -234,6 +237,7 @@ export const scenario: Scenario = {
 
     // 7. Withdrawing it takes every tool away.
     await page.locator('[data-ui="rail-settings"]').click();
+    await page.locator('[data-ui="settings-tab-agent"]').click();
     await page.locator('[data-ui="agent-card"]').waitFor();
     const withdrawn = awaitTools(page, 0);
     await page.locator('[data-ui="agent-toggle"]').click();
@@ -279,6 +283,7 @@ export const scenario: Scenario = {
       await bare.goto(`${url}/#/rooms`, { waitUntil: "load" });
       await bareRooms;
       await bare.locator('[data-ui="rail-settings"]').click();
+      await bare.locator('[data-ui="settings-tab-agent"]').click();
       await bare.locator('[data-ui="agent-card"]').waitFor();
       const unsupported = await bare.evaluate(() => ({
         api: "modelContext" in document,

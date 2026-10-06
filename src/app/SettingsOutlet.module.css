@@ -1,0 +1,58 @@
+/* 설정's tabs: one row of pills under the header, scrolling sideways on a phone. */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: var(--space-12) 18px;
+  border-bottom: var(--rule-width) solid var(--seam);
+  background: var(--field-head, var(--field-wall));
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: color-mix(in srgb, var(--fill-wall) 84%, var(--ink));
+}
+
+/* The current tab: inverted, never colour alone. */
+.current,
+.current:hover {
+  background: var(--ink);
+  color: var(--field-wall);
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.fact dt {
+  color: var(--ink-muted);
+}
+
+.fact dd {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}

@@ -48,7 +48,8 @@ test("rail and mobile tabs link only connected adapters and a usable core", () =
           connections[i]?.kind === "connected",
         );
       expect(html).toContain('href="#/all"');
-      expect(html).toContain('href="#/adapters"');
+      expect(html).toContain('href="#/settings"');
+      expect(html).not.toContain('href="#/adapters"');
       expect(html.indexOf('href="#/all"')).toBeLessThan(
         html.indexOf('href="#/list/'),
       );

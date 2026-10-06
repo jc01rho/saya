@@ -304,7 +304,7 @@ function kakaoStatusOf(
 function modeFor(route: Route, last: ListMode): ListMode | null {
   const named = listModeOf(route);
   if (named) return named;
-  if (route.kind === "adapters" || route.kind === "settings") return null;
+  if (route.kind === "settings") return null;
   if (last.kind === "all") return last;
   if (route.kind === "adapter-room")
     return { kind: "adapter", adapterId: route.adapterId };
@@ -358,35 +358,27 @@ export function App({ session }: { session?: Session }) {
 
   if (mode === null)
     return (
-      <div
-        className={styles.shell}
-        data-ui="app"
-        data-route={route.kind === "settings" ? "settings" : "adapters"}
-      >
+      <div className={styles.shell} data-ui="app" data-route="settings">
         <Rail
           className={styles.rail}
           stores={own.stores}
           mode={null}
-          page={route.kind === "settings" ? "settings" : "adapters"}
+          page="settings"
           kakaoVisible={kakaoVisible}
           adapters={adapters}
         />
-        <main
-          className={cx(styles.thread, styles.wide)}
-          data-ui={route.kind === "settings" ? "settings" : "adapters"}
-        >
+        <main className={cx(styles.thread, styles.wide)} data-ui="settings">
           <Suspense fallback={null}>
-            {route.kind === "settings" ? (
-              <SettingsOutlet agent={agent} onTheme={onTheme} />
-            ) : (
-              <AdapterOutlet
-                kakao={kakaoStatusOf(
-                  phase,
-                  own.stores.getSnapshot("rooms.order").length,
-                )}
-                onKakaoRetry={reload}
-              />
-            )}
+            <SettingsOutlet
+              tab={route.kind === "settings" ? route.tab : "theme"}
+              agent={agent}
+              onTheme={onTheme}
+              kakao={kakaoStatusOf(
+                phase,
+                own.stores.getSnapshot("rooms.order").length,
+              )}
+              onKakaoRetry={reload}
+            />
           </Suspense>
         </main>
       </div>

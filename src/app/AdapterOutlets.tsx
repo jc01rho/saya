@@ -1,43 +1,15 @@
-import {
-  AdapterRoomBody,
-  AdaptersPane,
-  type KakaoStatus,
-  useAdapterRoom,
-} from "../features/adapters";
+import { AdapterRoomBody, useAdapterRoom } from "../features/adapters";
 import { RoomAvatar } from "../ui";
 import styles from "./App.module.css";
 import { Back } from "./Back";
-import { ADAPTERS_HASH, ROOMS_HASH } from "./routes";
+import { ADAPTERS_HASH } from "./routes";
 
 const COPY = {
-  adapters: "연결",
   adaptersSubtitle: "메신저 연결",
   back: "목록으로",
   toAdapterList: "연결로",
   untitled: "대화",
 } as const;
-
-/** The connections view: a header like a room's, over the KakaoTalk core and every adapter. */
-function AdaptersOutlet({
-  kakao,
-  onKakaoRetry,
-}: {
-  kakao: KakaoStatus;
-  onKakaoRetry: () => void;
-}) {
-  return (
-    <>
-      <header className={styles.threadHead}>
-        <Back href={ROOMS_HASH} label={COPY.back} />
-        <div className={styles.identity}>
-          <h1 className={styles.title}>{COPY.adapters}</h1>
-          <p className={styles.subtitle}>{COPY.adaptersSubtitle}</p>
-        </div>
-      </header>
-      <AdaptersPane kakao={kakao} onKakaoRetry={onKakaoRetry} />
-    </>
-  );
-}
 
 /** An adapter room: a header like a KakaoTalk room's, over the adapter's own thread. */
 function AdapterRoomOutlet({
@@ -84,24 +56,17 @@ export default function AdapterOutlet({
   adapterId,
   roomId,
   backHref,
-  kakao = { kind: "checking" },
-  onKakaoRetry = () => {},
 }: {
-  adapterId?: string;
-  roomId?: string;
-  /** The KakaoTalk core's state, for its card in 연결. */
-  kakao?: KakaoStatus;
-  onKakaoRetry?: () => void;
+  adapterId: string;
+  roomId: string;
   /** The list beside this room, if any; without it the way back is 연결. */
   backHref?: string;
 }) {
-  return adapterId !== undefined && roomId !== undefined ? (
+  return (
     <AdapterRoomOutlet
       adapterId={adapterId}
       roomId={roomId}
       backHref={backHref}
     />
-  ) : (
-    <AdaptersOutlet kakao={kakao} onKakaoRetry={onKakaoRetry} />
   );
 }

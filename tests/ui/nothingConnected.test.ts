@@ -96,3 +96,14 @@ test("default, unknown and malformed hashes land on all; Kakao stays explicit", 
     roomId: "18491246151592761",
   });
 });
+
+test("설정 tabs are routes, and the old 연결 address opens its tab", () => {
+  expect(parseHash("#/settings")).toEqual({ kind: "settings", tab: "theme" });
+  for (const tab of ["agent", "connection", "about"] as const)
+    expect(parseHash(`#/settings/${tab}`)).toEqual({ kind: "settings", tab });
+  expect(parseHash("#/adapters")).toEqual({
+    kind: "settings",
+    tab: "connection",
+  });
+  expect(parseHash("#/settings/unknown")).toEqual({ kind: "all" });
+});
