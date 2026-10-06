@@ -7,11 +7,19 @@
   scrollbar-color: var(--rule) transparent;
 }
 
+/* Cards fill the width as a grid: as many 320px-or-wider columns as fit,
+   one on a phone. Each card keeps its own height. */
 .column {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  align-items: start;
   gap: var(--space-12);
-  max-width: var(--measure);
   padding: var(--space-24) 18px;
+}
+
+/* A sentence about the whole list (checking, unreachable) spans every column. */
+.column > .line {
+  grid-column: 1 / -1;
 }
 
 /* A filled field, as a room row is: no rule, hierarchy by weight. */
