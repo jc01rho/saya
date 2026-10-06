@@ -5,7 +5,6 @@ import { KAKAO_ICON, ProviderMark } from "../ui/ProviderMark";
 import type { AdapterTab } from "./adapterTabs";
 import styles from "./Rail.module.css";
 import {
-  ADAPTERS_HASH,
   ALL_HASH,
   adapterListHash,
   type ListMode,
@@ -18,7 +17,6 @@ const RAIL_COPY = {
   brand: "さや (saya)",
   all: "전체",
   kakao: "카카오",
-  adapters: "연결",
   settings: "설정",
   unread: (count: number) =>
     `데스크톱 기준 안 읽음 ${count.toLocaleString("ko-KR")}개`,
@@ -67,7 +65,8 @@ function useTotalUnread(stores: ClientStores): number {
 /**
  * The left rail of the messenger arrangement: the mark, then 전체 (every
  * messenger, newest first), 카카오 (the KakaoTalk core), one item per adapter
- * connected to the proxy, then 연결 and 설정. Unusable sources have no navigation item.
+ * connected to the proxy, and 설정 (which holds 연결) apart at the foot. Unusable
+ * sources have no navigation item.
  */
 export function Rail({
   stores,
@@ -78,10 +77,10 @@ export function Rail({
   kakaoVisible = true,
 }: {
   stores: ClientStores;
-  /** The list on screen, or null on 연결 or 설정. */
+  /** The list on screen, or null on 설정. */
   mode: ListMode | null;
   /** Which wide view is on screen, when no list is. */
-  page?: "adapters" | "settings" | undefined;
+  page?: "settings" | undefined;
   adapters: AdapterTab[];
   className?: string | undefined;
   kakaoVisible?: boolean;
@@ -157,26 +156,14 @@ export function Rail({
           </a>
         ))}
       <a
-        className={styles.item}
-        href={ADAPTERS_HASH}
-        aria-current={page === "adapters" || undefined}
-        data-ui="rail-adapters"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6" />
-          <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6" />
-        </svg>
-        <span className={styles.label}>{RAIL_COPY.adapters}</span>
-      </a>
-      <a
-        className={styles.item}
+        className={cx(styles.item, styles.foot)}
         href={SETTINGS_HASH}
         aria-current={page === "settings" || undefined}
         data-ui="rail-settings"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="3.2" />
-          <path d="M12 3.6v2.1M12 18.3v2.1M4.7 12H6.8M17.2 12h2.1M6.8 6.8l1.5 1.5M15.7 15.7l1.5 1.5M17.2 6.8l-1.5 1.5M8.3 15.7l-1.5 1.5" />
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
         <span className={styles.label}>{RAIL_COPY.settings}</span>
       </a>

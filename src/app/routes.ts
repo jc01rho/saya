@@ -9,8 +9,7 @@ export type Route =
   | { kind: "room"; roomId: string }
   | { kind: "all" }
   | { kind: "adapter-list"; adapterId: string }
-  | { kind: "adapters" }
-  | { kind: "settings" }
+  | { kind: "settings"; tab: SettingsTab }
   | { kind: "adapter-room"; adapterId: string; roomId: string };
 
 /** Which list the list column shows: everything, KakaoTalk, or one adapter. */
@@ -19,10 +18,18 @@ export type ListMode =
   | { kind: "kakao" }
   | { kind: "adapter"; adapterId: string };
 
+/** 설정's tabs, in the order they are drawn; 연결 is one of them. */
+export const SETTINGS_TABS = ["theme", "agent", "connection", "about"] as const;
+export type SettingsTab = (typeof SETTINGS_TABS)[number];
+
 export const ROOMS_HASH = "#/rooms";
 export const ALL_HASH = "#/all";
-export const ADAPTERS_HASH = "#/adapters";
 export const SETTINGS_HASH = "#/settings";
+export const ADAPTERS_HASH = "#/settings/connection";
+
+export function settingsHash(tab: SettingsTab): string {
+  return tab === "theme" ? SETTINGS_HASH : `${SETTINGS_HASH}/${tab}`;
+}
 
 export function roomHash(roomId: string): string {
   return `#/room/${encodeURIComponent(roomId)}`;
@@ -42,7 +49,7 @@ export function listHash(mode: ListMode): string {
   return adapterListHash(mode.adapterId);
 }
 
-/** The list a route names, or null for a room, 연결 or 설정. */
+/** The list a route names, or null for a room or 설정. */
 export function listModeOf(route: Route): ListMode | null {
   if (route.kind === "all") return { kind: "all" };
   if (route.kind === "rooms") return { kind: "kakao" };
@@ -68,8 +75,11 @@ const ADAPTER_LIST = /^\/list\/([^/]+)$/;
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "").replace(/\?.*$/, "");
-  if (path === "/adapters") return { kind: "adapters" };
-  if (path === "/settings") return { kind: "settings" };
+  // `#/adapters` was 연결 before it moved into 설정; old links still land there.
+  if (path === "/adapters") return { kind: "settings", tab: "connection" };
+  if (path === "/settings") return { kind: "settings", tab: "theme" };
+  const tab = SETTINGS_TABS.find((name) => path === `/settings/${name}`);
+  if (tab) return { kind: "settings", tab };
   if (path === "/all") return { kind: "all" };
   if (path === "/rooms") return { kind: "rooms" };
   try {

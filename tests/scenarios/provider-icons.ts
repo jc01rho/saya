@@ -192,7 +192,8 @@ export const scenario: Scenario = {
         false,
       );
       await page.screenshot({ path: `${evidence}/all-${width}.png` });
-      await nav.locator('a[href="#/adapters"]').click();
+      await nav.locator('a[href="#/settings"]').click();
+      await page.locator('[data-ui="settings-tab-connection"]').click();
       const cards = page.locator('[data-ui="adapter-card"]');
       for (const provider of providers.filter(
         ({ id }) => id !== "incompatible",
