@@ -121,8 +121,9 @@ line above deliberately, and only this far:
 
 ## The contracts are copied, never edited
 
-The originals live where they are answered: KakaoTalk's in `kanao` and
-`kamado` (`openapi.json`, byte-identical in both), the adapter contract in
+The originals live where they are answered: KakaoTalk's in `nichirin`
+(the root `openapi.json`, one file that both `kanao` and `kamado` answer;
+the two cores share that repository since 2026-10-06), the adapter contract in
 `tsuba` (`contract/openapi.json`). saya keeps copies under `contracts/`
 (`kakao.openapi.json`, `tsuba.openapi.json`). Updating means copying the
 original across byte for byte and re-pinning the hash; editing it here forks the contract

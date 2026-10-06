@@ -8,13 +8,13 @@
 
 ## 1. 계약
 
-`contracts/kakao.openapi.json` 은 두 코어 저장소의 `openapi.json` 과 **바이트 단위로 동일**합니다.
-원본은 코어에 있고 여기 있는 것은 사본입니다(tsuba 계약의 사본 `contracts/tsuba.openapi.json` 과 같은 방식).
-직접 고치지 마세요. 갱신은 코어 저장소에서 복사해 오는 것이고, 세 파일이 갈라지면
-그것이 곧 결함입니다.
+`contracts/kakao.openapi.json` 은 두 코어(kanao, kamado)가 함께 있는 `nichirin` 저장소 루트의
+`openapi.json` 과 **바이트 단위로 동일**합니다. 원본은 코어에 있고 여기 있는 것은
+사본입니다(tsuba 계약의 사본 `contracts/tsuba.openapi.json` 과 같은 방식). 직접 고치지
+마세요. 갱신은 nichirin에서 복사해 오는 것이고, 두 파일이 갈라지면 그것이 곧 결함입니다.
 
 ```bash
-shasum -a 256 contracts/kakao.openapi.json ../kakaoread/openapi.json ../kamado-cli/openapi.json
+shasum -a 256 contracts/kakao.openapi.json ../nichirin/openapi.json
 ```
 
 문서의 `info.version` 은 코어의 릴리즈 번호와 같지 않습니다. 맞추려 들지 말고,
