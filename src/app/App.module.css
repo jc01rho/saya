@@ -273,12 +273,3 @@
   font-weight: 700;
   line-height: var(--leading-meta);
 }
-
-/* The app's own controls at the end of a list head: theme, then agent tools. */
-.headActions {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 2px;
-  margin-inline-start: auto;
-}

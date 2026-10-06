@@ -10,6 +10,7 @@ export type Route =
   | { kind: "all" }
   | { kind: "adapter-list"; adapterId: string }
   | { kind: "adapters" }
+  | { kind: "settings" }
   | { kind: "adapter-room"; adapterId: string; roomId: string };
 
 /** Which list the list column shows: everything, KakaoTalk, or one adapter. */
@@ -21,6 +22,7 @@ export type ListMode =
 export const ROOMS_HASH = "#/rooms";
 export const ALL_HASH = "#/all";
 export const ADAPTERS_HASH = "#/adapters";
+export const SETTINGS_HASH = "#/settings";
 
 export function roomHash(roomId: string): string {
   return `#/room/${encodeURIComponent(roomId)}`;
@@ -40,7 +42,7 @@ export function listHash(mode: ListMode): string {
   return adapterListHash(mode.adapterId);
 }
 
-/** The list a route names, or null for a room or the connections view. */
+/** The list a route names, or null for a room, 연결 or 설정. */
 export function listModeOf(route: Route): ListMode | null {
   if (route.kind === "all") return { kind: "all" };
   if (route.kind === "rooms") return { kind: "kakao" };
@@ -67,6 +69,7 @@ const ADAPTER_LIST = /^\/list\/([^/]+)$/;
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "").replace(/\?.*$/, "");
   if (path === "/adapters") return { kind: "adapters" };
+  if (path === "/settings") return { kind: "settings" };
   if (path === "/all") return { kind: "all" };
   if (path === "/rooms") return { kind: "rooms" };
   try {

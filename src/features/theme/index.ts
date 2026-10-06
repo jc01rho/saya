@@ -1,1 +1,1 @@
-export { ThemeControl } from "./ThemeControl";
+export { themeStorage, useAppliedTheme } from "./ThemeControl";

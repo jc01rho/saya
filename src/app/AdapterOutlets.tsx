@@ -4,8 +4,9 @@ import {
   type KakaoStatus,
   useAdapterRoom,
 } from "../features/adapters";
-import { cx, RoomAvatar } from "../ui";
+import { RoomAvatar } from "../ui";
 import styles from "./App.module.css";
+import { Back } from "./Back";
 import { ADAPTERS_HASH, ROOMS_HASH } from "./routes";
 
 const COPY = {
@@ -15,32 +16,6 @@ const COPY = {
   toAdapterList: "연결로",
   untitled: "대화",
 } as const;
-
-function Back({
-  href,
-  label,
-  always,
-}: {
-  href: string;
-  label: string;
-  always?: boolean;
-}) {
-  return (
-    <a className={cx(styles.back, always && styles.always)} href={href}>
-      <span className="sr-only">{label}</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M15 5l-7 7 7 7"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </a>
-  );
-}
 
 /** The connections view: a header like a room's, over the KakaoTalk core and every adapter. */
 function AdaptersOutlet({

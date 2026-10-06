@@ -1,8 +1,6 @@
 /** Words the experiment uses. Nothing here claims a model, a summary or a send. */
 export const AGENT_COPY = {
-  open: "설정",
-  title: "설정",
-  close: "닫기",
+  title: "에이전트 도구",
   label: "에이전트 도구(실험)",
   hint: "이 탭에 연결된 AI 에이전트가 읽기 전용 도구 4개를 쓸 수 있습니다. 보내기·읽음 처리·삭제 도구는 없습니다.",
   unsupported: "이 브라우저는 아직 에이전트 도구를 제공하지 않습니다",

@@ -4,6 +4,7 @@ export {
   RoomAvatar,
   type RoomAvatarProps,
 } from "./Avatar";
+export { Card, CardGrid } from "./Card";
 export { Cat, type CatProps } from "./Cat";
 export { CoverageLine, type CoverageLineProps } from "./CoverageLine";
 export { COPY, kindLabel, unreadName } from "./copy";

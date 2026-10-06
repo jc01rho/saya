@@ -1,74 +1,9 @@
-/* The settings entry sits with the list's heading, as a quiet icon. */
-.open {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--space-32);
-  height: var(--space-32);
-  margin-inline-start: auto;
-  border: 0;
-  border-radius: var(--radius-badge);
-  background: transparent;
-  color: var(--ink-muted);
-  cursor: pointer;
-}
-
-@media (max-width: 767.98px) {
-  .open {
-    width: var(--touch-min);
-    height: var(--touch-min);
-  }
-}
-
-.open:hover {
-  background: var(--hover-list);
-  color: var(--ink);
-}
-
 .open:focus-visible,
 .toggle:focus-visible,
 .action:focus-visible,
 .quiet:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-offset);
-}
-
-.open svg {
-  width: 19px;
-  height: 19px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.sheet {
-  width: min(420px, calc(100vw - var(--space-32)));
-  max-height: min(560px, calc(100dvh - var(--space-48)));
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-box);
-  background: var(--field-list);
-  color: var(--ink);
-}
-
-.sheet::backdrop {
-  background: color-mix(in srgb, var(--ink) 36%, transparent);
-}
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-16) var(--space-16) var(--space-12);
-}
-
-.heading {
-  font-size: var(--text-heading);
-  font-weight: 800;
-  letter-spacing: -0.02em;
 }
 
 .quiet {
@@ -82,12 +17,6 @@
   font-size: var(--text-meta);
   font-weight: 700;
   cursor: pointer;
-}
-
-.body {
-  display: grid;
-  gap: var(--space-12);
-  padding: 0 var(--space-16) var(--space-16);
 }
 
 .row {

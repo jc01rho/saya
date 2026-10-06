@@ -1,12 +1,11 @@
 import {
   type ReactNode,
-  useCallback,
   useEffect,
   useId,
-  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
+import { Card } from "../../ui";
 import styles from "./Agent.module.css";
 import { AGENT_COPY } from "./copy";
 import { modelContextOf, registerAgentTools } from "./registry";
@@ -82,125 +81,74 @@ function CallLog({ snapshot }: { snapshot: AgentSnapshot }) {
 }
 
 /**
- * The settings sheet: one experimental switch, off until somebody reads the
+ * 설정's agent card: one experimental switch, off until somebody reads the
  * warning and says yes, and the record of what has been read since.
  */
-export function AgentToolsEntry({ state }: { state: AgentToolsState }) {
+export function AgentToolsCard({ state }: { state: AgentToolsState }) {
   const snapshot = useAgentSnapshot(state);
-  const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const headingId = useId();
   const switchId = useId();
-  const close = useCallback(() => dialog.current?.close(), []);
-  useEffect(() => {
-    const element = dialog.current;
-    if (open && element && !element.open) element.showModal();
-  }, [open]);
   return (
-    <>
-      <button
-        type="button"
-        className={styles.open}
-        data-ui="agent-open"
-        aria-label={AGENT_COPY.open}
-        aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="3.2" />
-          <path d="M12 3.6v2.1M12 18.3v2.1M4.7 12H6.8M17.2 12h2.1M6.8 6.8l1.5 1.5M15.7 15.7l1.5 1.5M17.2 6.8l-1.5 1.5M8.3 15.7l-1.5 1.5" />
-        </svg>
-      </button>
-      {open ? (
-        <dialog
-          ref={dialog}
-          className={styles.sheet}
-          data-ui="agent-dialog"
-          aria-labelledby={headingId}
-          onClose={() => {
-            setOpen(false);
-            setConfirming(false);
+    <Card title={AGENT_COPY.title} ui="agent-card">
+      <div className={styles.row}>
+        <span className={styles.rowText}>
+          <label className={styles.name} htmlFor={switchId}>
+            {AGENT_COPY.label}
+          </label>
+          <span className={styles.hint}>
+            {snapshot.supported ? AGENT_COPY.hint : AGENT_COPY.unsupported}
+          </span>
+        </span>
+        <input
+          id={switchId}
+          className={styles.toggle}
+          data-ui="agent-toggle"
+          type="checkbox"
+          role="switch"
+          aria-checked={snapshot.enabled}
+          checked={snapshot.enabled}
+          disabled={!snapshot.supported}
+          onChange={(event) => {
+            if (event.currentTarget.checked) setConfirming(true);
+            else {
+              setConfirming(false);
+              state.setEnabled(false);
+            }
           }}
-        >
-          <div className={styles.head}>
-            <h2 className={styles.heading} id={headingId}>
-              {AGENT_COPY.title}
-            </h2>
+        />
+      </div>
+      {confirming && !snapshot.enabled ? (
+        <div className={styles.warning} data-ui="agent-warning">
+          <p className={styles.warningTitle}>{AGENT_COPY.warning}</p>
+          <p className={styles.hint}>{AGENT_COPY.warningBody}</p>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.action}
+              data-ui="agent-confirm"
+              onClick={() => {
+                state.setEnabled(true);
+                setConfirming(false);
+              }}
+            >
+              {AGENT_COPY.confirm}
+            </button>
             <button
               type="button"
               className={styles.quiet}
-              data-ui="agent-close"
-              onClick={close}
+              data-ui="agent-cancel"
+              onClick={() => setConfirming(false)}
             >
-              {AGENT_COPY.close}
+              {AGENT_COPY.cancel}
             </button>
           </div>
-          <div className={styles.body}>
-            <div className={styles.row}>
-              <span className={styles.rowText}>
-                <label className={styles.name} htmlFor={switchId}>
-                  {AGENT_COPY.label}
-                </label>
-                <span className={styles.hint}>
-                  {snapshot.supported
-                    ? AGENT_COPY.hint
-                    : AGENT_COPY.unsupported}
-                </span>
-              </span>
-              <input
-                id={switchId}
-                className={styles.toggle}
-                data-ui="agent-toggle"
-                type="checkbox"
-                role="switch"
-                aria-checked={snapshot.enabled}
-                checked={snapshot.enabled}
-                disabled={!snapshot.supported}
-                onChange={(event) => {
-                  if (event.currentTarget.checked) setConfirming(true);
-                  else {
-                    setConfirming(false);
-                    state.setEnabled(false);
-                  }
-                }}
-              />
-            </div>
-            {confirming && !snapshot.enabled ? (
-              <div className={styles.warning} data-ui="agent-warning">
-                <p className={styles.warningTitle}>{AGENT_COPY.warning}</p>
-                <p className={styles.hint}>{AGENT_COPY.warningBody}</p>
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={styles.action}
-                    data-ui="agent-confirm"
-                    onClick={() => {
-                      state.setEnabled(true);
-                      setConfirming(false);
-                    }}
-                  >
-                    {AGENT_COPY.confirm}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.quiet}
-                    data-ui="agent-cancel"
-                    onClick={() => setConfirming(false)}
-                  >
-                    {AGENT_COPY.cancel}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            <section aria-label={AGENT_COPY.logTitle}>
-              <p className={styles.name}>{AGENT_COPY.logTitle}</p>
-              <CallLog snapshot={snapshot} />
-            </section>
-          </div>
-        </dialog>
+        </div>
       ) : null}
-    </>
+      <section aria-label={AGENT_COPY.logTitle}>
+        <p className={styles.name}>{AGENT_COPY.logTitle}</p>
+        <CallLog snapshot={snapshot} />
+      </section>
+    </Card>
   );
 }
 

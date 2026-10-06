@@ -8,6 +8,7 @@ import {
   adapterListHash,
   type ListMode,
   ROOMS_HASH,
+  SETTINGS_HASH,
 } from "./routes";
 
 const COPY = {
@@ -15,6 +16,7 @@ const COPY = {
   all: "전체",
   kakao: "카카오",
   adapters: "연결",
+  settings: "설정",
 } as const;
 
 /** The rail's sections as a row of pills, for the width where the rail is not drawn. */
@@ -80,6 +82,13 @@ export function ListTabs({
       ))}
       <a className={styles.tab} href={ADAPTERS_HASH}>
         {COPY.adapters}
+      </a>
+      <a
+        className={styles.tab}
+        href={SETTINGS_HASH}
+        data-ui="list-tabs-settings"
+      >
+        {COPY.settings}
       </a>
     </nav>
   );

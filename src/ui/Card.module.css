@@ -1,0 +1,39 @@
+/* A wide view's own scroll owner on the wall, and the grid of cards in it. */
+.pane {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+/* As many 320px-or-wider columns as fit, one on a phone; each card keeps its own height. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  align-items: start;
+  gap: var(--space-12);
+  padding: var(--space-24) 18px;
+}
+
+/* A filled field, as a room row is: no rule, hierarchy by weight. */
+.card {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: var(--space-16) 18px;
+  border-radius: var(--radius-row);
+  background: var(--field-list);
+}
+
+/* A card whose content is itself a list of things spans every column. */
+.wide {
+  grid-column: 1 / -1;
+}
+
+.title {
+  font-size: var(--text-room);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: var(--leading-title);
+}
