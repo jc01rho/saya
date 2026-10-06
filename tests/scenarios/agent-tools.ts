@@ -125,12 +125,8 @@ export const scenario: Scenario = {
     await rooms;
 
     // 1. Nothing is registered before anybody says yes.
-    const dialog = await domBarrier(
-      page,
-      'dialog[data-ui="agent-dialog"][open]',
-    );
-    await page.locator('[data-ui="agent-open"]').click();
-    await dialog.wait();
+    await page.locator('[data-ui="rail-settings"]').click();
+    await page.locator('[data-ui="agent-card"]').waitFor();
     const atRest = await registered(page);
     log("default", { registered: atRest });
     if (atRest.length !== 0) fail(`registered while off: ${atRest}`);
@@ -182,10 +178,8 @@ export const scenario: Scenario = {
     if (stored !== "on") fail(`stored consent: ${stored}`);
 
     // 4. A call is marked on the screen while it runs and recorded afterwards.
-    await page.locator('[data-ui="agent-close"]').click();
-    await page
-      .locator('dialog[data-ui="agent-dialog"]')
-      .waitFor({ state: "detached" });
+    await page.locator('[data-ui="rail-kakao"]').click();
+    await page.locator('[data-ui="agent-card"]').waitFor({ state: "detached" });
     const release = bridge.pauseNext("/context");
     const activity = await domBarrier(page, '[data-ui="agent-activity"]');
     const reading = callTool(page, "get_room_messages", {
@@ -220,12 +214,8 @@ export const scenario: Scenario = {
     log("requests", { api: asked.length, opened: opened.length });
     if (opened.length !== 0) fail(`a tool opened a room: ${opened}`);
 
-    const openAgain = await domBarrier(
-      page,
-      'dialog[data-ui="agent-dialog"][open]',
-    );
-    await page.locator('[data-ui="agent-open"]').click();
-    await openAgain.wait();
+    await page.locator('[data-ui="rail-settings"]').click();
+    await page.locator('[data-ui="agent-card"]').waitFor();
     const logged = await page.evaluate(() =>
       [...document.querySelectorAll('[data-ui="agent-log"] li')].map(
         (item) => item.getAttribute("data-tool") ?? "",
@@ -243,12 +233,8 @@ export const scenario: Scenario = {
     log("after-reload", { registered: back });
 
     // 7. Withdrawing it takes every tool away.
-    const reopened = await domBarrier(
-      page,
-      'dialog[data-ui="agent-dialog"][open]',
-    );
-    await page.locator('[data-ui="agent-open"]').click();
-    await reopened.wait();
+    await page.locator('[data-ui="rail-settings"]').click();
+    await page.locator('[data-ui="agent-card"]').waitFor();
     const withdrawn = awaitTools(page, 0);
     await page.locator('[data-ui="agent-toggle"]').click();
     await withdrawn;
@@ -262,12 +248,12 @@ export const scenario: Scenario = {
     }
     if (afterOff.stored !== "off") fail(`stored: ${afterOff.stored}`);
 
-    // 8. The sheet at 390, where the list is the whole screen.
+    // 8. The card at 390, where 설정 is the whole screen.
     await page.setViewportSize({ width: 390, height: 844 });
     await screenshot("agent-settings-390");
     const fit = await page.evaluate(() => {
-      const sheet = document.querySelector('dialog[data-ui="agent-dialog"]');
-      const box = sheet?.getBoundingClientRect();
+      const card = document.querySelector('[data-ui="agent-card"]');
+      const box = card?.getBoundingClientRect();
       return {
         inside:
           !!box &&
@@ -279,7 +265,7 @@ export const scenario: Scenario = {
           document.documentElement.clientWidth,
       };
     });
-    log("sheet-390", fit);
+    log("card-390", fit);
     if (!fit.inside || fit.overflow) fail(`390: ${JSON.stringify(fit)}`);
 
     // 9. A browser that does not offer the API is left completely alone.
@@ -292,12 +278,8 @@ export const scenario: Scenario = {
       const bareRooms = responseBarrier(bare, "/api/rooms");
       await bare.goto(`${url}/#/rooms`, { waitUntil: "load" });
       await bareRooms;
-      const bareDialog = await domBarrier(
-        bare,
-        'dialog[data-ui="agent-dialog"][open]',
-      );
-      await bare.locator('[data-ui="agent-open"]').click();
-      await bareDialog.wait();
+      await bare.locator('[data-ui="rail-settings"]').click();
+      await bare.locator('[data-ui="agent-card"]').waitFor();
       const unsupported = await bare.evaluate(() => ({
         api: "modelContext" in document,
         disabled:

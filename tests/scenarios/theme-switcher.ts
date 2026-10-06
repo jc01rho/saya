@@ -43,7 +43,7 @@ async function overflow(page: Page) {
     const root = document.documentElement;
     const clipped = [
       ...document.querySelectorAll<HTMLElement>(
-        '[data-ui="rooms-pane"], [data-ui="theme-dialog"], [data-ui="thread-outlet"]',
+        '[data-ui="rooms-pane"], [data-ui="settings-pane"], [data-ui="thread-outlet"]',
       ),
     ].filter(
       (el) => el.offsetParent !== null && el.scrollWidth > el.clientWidth + 1,
@@ -56,10 +56,10 @@ const theme = (page: Page) =>
   page.evaluate(() => document.documentElement.dataset.theme ?? null);
 
 /**
- * The theme sheet in real Chrome over the synthetic bridge: each built-in
+ * 설정's theme cards in real Chrome over the synthetic bridge: each built-in
  * theme lands on the root, survives a reload, and clips nothing at 1440 and
  * 390; a pasted theme is refused when broken, previewed, saved, restored after
- * a reload and deleted. The sheet is keyboard-closable and returns focus.
+ * a reload and deleted.
  */
 export const scenario: Scenario = {
   id: "theme-switcher",
@@ -73,13 +73,15 @@ export const scenario: Scenario = {
     await page.emulateMedia({ colorScheme: "dark" });
 
     const openSheet = async () => {
-      await page.locator('[data-ui="theme-open"]').click();
-      await page.locator('[data-ui="theme-dialog"][open]').waitFor();
+      await page.evaluate(() => {
+        location.hash = "#/settings";
+      });
+      await page.locator('[data-ui="theme-choices"]').waitFor();
     };
     const closeSheet = async () => {
-      await page.keyboard.press("Escape");
+      await page.goBack();
       await page
-        .locator('[data-ui="theme-dialog"]')
+        .locator('[data-ui="settings-pane"]')
         .waitFor({ state: "detached" });
     };
     const loadRooms = async (hash: string) => {
@@ -121,13 +123,6 @@ export const scenario: Scenario = {
           await screenshot(`theme-${label}-sheet`);
         }
         await closeSheet();
-        const focused = await page.evaluate(
-          () => (document.activeElement as HTMLElement | null)?.dataset.ui,
-        );
-        expect(
-          focused === "theme-open",
-          `${label}/${id}: focus went to ${focused}`,
-        );
         await loadRooms(hash);
         expect(
           (await theme(page)) === expected,
@@ -258,7 +253,6 @@ export const scenario: Scenario = {
               : false;
           };
           const badge = at('[data-ui="theme-badge"]')?.getBoundingClientRect();
-          const open = at('[data-ui="theme-open"]')?.getBoundingClientRect();
           const filler = at(end)?.getBoundingClientRect();
           const row = at(line);
           return {
@@ -272,13 +266,6 @@ export const scenario: Scenario = {
               ).backgroundImage.includes("data:image/png")
                 ? badge?.width
                 : null,
-            overlap:
-              badge && open
-                ? badge.right > open.left &&
-                  open.right > badge.left &&
-                  badge.bottom > open.top &&
-                  open.bottom > badge.top
-                : null,
             filler: drawn(end) ? filler?.height : null,
           };
         },
@@ -289,7 +276,6 @@ export const scenario: Scenario = {
       found.list &&
       found.row === "rgba(0, 0, 0, 0)" &&
       (found.badge ?? 0) >= 44 &&
-      found.overlap === false &&
       (found.filler ?? 0) >= 136;
     const wallImage = () =>
       page.evaluate(

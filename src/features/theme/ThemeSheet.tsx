@@ -1,11 +1,13 @@
 import {
   type CSSProperties,
+  type ReactNode,
   useCallback,
   useEffect,
   useId,
   useRef,
   useState,
 } from "react";
+import { Card } from "../../ui";
 import reads from "../reads/reads.module.css";
 import { imageVars } from "./apply";
 import { THEME_COPY } from "./copy";
@@ -120,7 +122,6 @@ function ThemeGallery({
   };
   return (
     <section className={styles.gallery} data-ui="theme-gallery">
-      <h3 className={styles.subhead}>{THEME_COPY.gallery}</h3>
       {Array.isArray(list) && list.length > 0 ? (
         <p className={reads.muted}>{THEME_COPY.galleryHelp}</p>
       ) : null}
@@ -222,7 +223,6 @@ function ThemeMaker({
   };
   return (
     <section className={styles.maker} data-ui="theme-maker">
-      <h3 className={styles.subhead}>{THEME_COPY.make}</h3>
       <p className={reads.muted}>{THEME_COPY.makeHelp}</p>
       <div className={styles.row}>
         <button
@@ -332,19 +332,18 @@ function ThemeMaker({
 }
 
 /**
- * The theme button in the list head and the sheet it opens: the built-in
- * themes, saved themes, and the maker. The choice lives in localStorage and
+ * 설정's theme cards: the built-in and saved themes, the maker, and the gallery
+ * across every column. The choice lives in localStorage and
  * `public/theme-boot.js` draws it again before the next first paint.
  */
-
-/** The sheet itself: built-in and saved themes, then the maker. */
-export default function ThemeSheet({
+export function ThemeCards({
   onChange,
-  onClose,
+  beforeGallery,
 }: {
-  /** Called with what was stored, so the button's owner draws it. */
+  /** Called with what was stored, so the app draws it now. */
   onChange: (stored: StoredTheme) => void;
-  onClose: () => void;
+  /** Other 설정 cards, placed before the gallery's full-width row. */
+  beforeGallery?: ReactNode;
 }) {
   const [customs, setCustoms] = useState(() =>
     loadCustomThemes(themeStorage()),
@@ -353,13 +352,7 @@ export default function ThemeSheet({
     loadChoice(themeStorage(), customs),
   );
   const [status, setStatus] = useState<string | null>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const headingId = useId();
   const group = useId();
-  useEffect(() => {
-    const element = dialog.current;
-    if (element && !element.open) element.showModal();
-  }, []);
   const choose = (
     next: ThemeChoice,
     themes: readonly ThemeDefinition[] = customs,
@@ -397,28 +390,8 @@ export default function ThemeSheet({
     })),
   ];
   return (
-    <dialog
-      ref={dialog}
-      className={`${reads.sheet} ${styles.sheet}`}
-      aria-labelledby={headingId}
-      data-ui="theme-dialog"
-      onClose={onClose}
-    >
-      <header className={reads.head}>
-        <div className={reads.heading}>
-          <h2 id={headingId} className={reads.title}>
-            {THEME_COPY.title}
-          </h2>
-        </div>
-        <button
-          type="button"
-          className={`${reads.action} ${reads.close}`}
-          onClick={() => dialog.current?.close()}
-        >
-          {THEME_COPY.close}
-        </button>
-      </header>
-      <div className={reads.body}>
+    <>
+      <Card title={THEME_COPY.title} ui="theme-choices">
         <fieldset className={styles.choices}>
           <legend className="sr-only">{THEME_COPY.choices}</legend>
           {options.map(({ value, label }) => (
@@ -450,9 +423,14 @@ export default function ThemeSheet({
         <p role="status" className={reads.muted} data-ui="theme-status">
           {status}
         </p>
-        <ThemeGallery choice={choice} onSave={save} onStatus={setStatus} />
+      </Card>
+      <Card title={THEME_COPY.make} ui="theme-make">
         <ThemeMaker onSave={save} />
-      </div>
-    </dialog>
+      </Card>
+      {beforeGallery}
+      <Card title={THEME_COPY.gallery} ui="theme-gallery-section" wide>
+        <ThemeGallery choice={choice} onSave={save} onStatus={setStatus} />
+      </Card>
+    </>
   );
 }

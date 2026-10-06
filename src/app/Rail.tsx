@@ -10,6 +10,7 @@ import {
   adapterListHash,
   type ListMode,
   ROOMS_HASH,
+  SETTINGS_HASH,
 } from "./routes";
 
 const RAIL_COPY = {
@@ -18,6 +19,7 @@ const RAIL_COPY = {
   all: "전체",
   kakao: "카카오",
   adapters: "연결",
+  settings: "설정",
   unread: (count: number) =>
     `데스크톱 기준 안 읽음 ${count.toLocaleString("ko-KR")}개`,
   adapterUnread: (name: string, count: number) =>
@@ -65,18 +67,21 @@ function useTotalUnread(stores: ClientStores): number {
 /**
  * The left rail of the messenger arrangement: the mark, then 전체 (every
  * messenger, newest first), 카카오 (the KakaoTalk core), one item per adapter
- * connected to the proxy, and 연결. Unusable sources have no navigation item.
+ * connected to the proxy, then 연결 and 설정. Unusable sources have no navigation item.
  */
 export function Rail({
   stores,
   mode,
+  page,
   adapters,
   className,
   kakaoVisible = true,
 }: {
   stores: ClientStores;
-  /** The list on screen, or null on the connections view. */
+  /** The list on screen, or null on 연결 or 설정. */
   mode: ListMode | null;
+  /** Which wide view is on screen, when no list is. */
+  page?: "adapters" | "settings" | undefined;
   adapters: AdapterTab[];
   className?: string | undefined;
   kakaoVisible?: boolean;
@@ -154,7 +159,7 @@ export function Rail({
       <a
         className={styles.item}
         href={ADAPTERS_HASH}
-        aria-current={mode === null || undefined}
+        aria-current={page === "adapters" || undefined}
         data-ui="rail-adapters"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -162,6 +167,18 @@ export function Rail({
           <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6" />
         </svg>
         <span className={styles.label}>{RAIL_COPY.adapters}</span>
+      </a>
+      <a
+        className={styles.item}
+        href={SETTINGS_HASH}
+        aria-current={page === "settings" || undefined}
+        data-ui="rail-settings"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.2" />
+          <path d="M12 3.6v2.1M12 18.3v2.1M4.7 12H6.8M17.2 12h2.1M6.8 6.8l1.5 1.5M15.7 15.7l1.5 1.5M17.2 6.8l-1.5 1.5M8.3 15.7l-1.5 1.5" />
+        </svg>
+        <span className={styles.label}>{RAIL_COPY.settings}</span>
       </a>
     </nav>
   );

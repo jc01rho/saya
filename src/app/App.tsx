@@ -18,7 +18,6 @@ import { Reconciler } from "../core/reconcile";
 import type { ClientStores, Immutable } from "../core/stores";
 import {
   AgentActivity,
-  AgentToolsEntry,
   AgentToolsState,
   agentSourceOf,
   createAgentTools,
@@ -31,7 +30,7 @@ import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
 import { NoticeBar } from "../features/notice";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
-import { ThemeControl } from "../features/theme";
+import { useAppliedTheme } from "../features/theme";
 import { ThreadPane } from "../features/thread";
 import { HttpClient } from "../transport/http";
 import { Cat, COPY, cx, RoomAvatar } from "../ui";
@@ -39,6 +38,7 @@ import styles from "./App.module.css";
 
 // The adapter views and the adapter contract's validators load only when opened.
 const AdapterOutlet = lazy(() => import("./AdapterOutlets"));
+const SettingsOutlet = lazy(() => import("./SettingsOutlet"));
 const Inbox = lazy(() => import("../features/inbox"));
 
 import type { KakaoStatus } from "../features/adapters";
@@ -304,7 +304,7 @@ function kakaoStatusOf(
 function modeFor(route: Route, last: ListMode): ListMode | null {
   const named = listModeOf(route);
   if (named) return named;
-  if (route.kind === "adapters") return null;
+  if (route.kind === "adapters" || route.kind === "settings") return null;
   if (last.kind === "all") return last;
   if (route.kind === "adapter-room")
     return { kind: "adapter", adapterId: route.adapterId };
@@ -326,6 +326,7 @@ export function App({ session }: { session?: Session }) {
     [own],
   );
   useAgentTools(agent, tools);
+  const onTheme = useAppliedTheme();
   const route = useRoute();
   const { phase, reload } = useCatalog(own.http, own.cache);
   const adapterState = useAdapterTabs();
@@ -357,23 +358,35 @@ export function App({ session }: { session?: Session }) {
 
   if (mode === null)
     return (
-      <div className={styles.shell} data-ui="app" data-route="adapters">
+      <div
+        className={styles.shell}
+        data-ui="app"
+        data-route={route.kind === "settings" ? "settings" : "adapters"}
+      >
         <Rail
           className={styles.rail}
           stores={own.stores}
           mode={null}
+          page={route.kind === "settings" ? "settings" : "adapters"}
           kakaoVisible={kakaoVisible}
           adapters={adapters}
         />
-        <main className={cx(styles.thread, styles.wide)} data-ui="adapters">
+        <main
+          className={cx(styles.thread, styles.wide)}
+          data-ui={route.kind === "settings" ? "settings" : "adapters"}
+        >
           <Suspense fallback={null}>
-            <AdapterOutlet
-              kakao={kakaoStatusOf(
-                phase,
-                own.stores.getSnapshot("rooms.order").length,
-              )}
-              onKakaoRetry={reload}
-            />
+            {route.kind === "settings" ? (
+              <SettingsOutlet agent={agent} onTheme={onTheme} />
+            ) : (
+              <AdapterOutlet
+                kakao={kakaoStatusOf(
+                  phase,
+                  own.stores.getSnapshot("rooms.order").length,
+                )}
+                onKakaoRetry={reload}
+              />
+            )}
           </Suspense>
         </main>
       </div>
@@ -493,13 +506,6 @@ export function App({ session }: { session?: Session }) {
     <ListTabs mode={mode} adapters={adapters} kakaoVisible={kakaoVisible} />
   );
   const thread = route.kind === "room" || route.kind === "adapter-room";
-  // Settings belong to the app, not to one list: every list head carries them.
-  const headActions = (
-    <span className={styles.headActions}>
-      <ThemeControl />
-      <AgentToolsEntry state={agent} />
-    </span>
-  );
   const list =
     mode.kind === "kakao" ? (
       <RoomsPane
@@ -507,7 +513,6 @@ export function App({ session }: { session?: Session }) {
         stores={own.stores}
         activeRoomId={roomId}
         loading={phase.kind === "loading"}
-        actions={headActions}
       />
     ) : (
       <Suspense fallback={null}>
@@ -538,7 +543,6 @@ export function App({ session }: { session?: Session }) {
               : (adapters.find((tab) => tab.id === mode.adapterId)?.name ??
                 mode.adapterId)
           }
-          actions={headActions}
         />
       </Suspense>
     );
