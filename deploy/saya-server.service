@@ -1,0 +1,27 @@
+# saya's server (server/serve.ts): /unfurl, and /api and /adapters for whoever
+# registered. Both listeners stay on loopback; the proxy's /unfurl, /api and
+# /adapters handles point at SAYA_SERVER_PORT, and the register port is
+# exposed to the tailnet only (tailscale serve --https=8798). The env file
+# holds SAYA_REGISTER_TOKEN and must be readable by this user only (chmod 600).
+[Unit]
+Description=saya server (unfurl, registry, /api and /adapters)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/saya
+Environment=SAYA_SERVER_PORT=8797 SAYA_SERVER_HOST=127.0.0.1 SAYA_REGISTER_PORT=8798 SAYA_REGISTER_HOST=127.0.0.1
+EnvironmentFile=/home/ubuntu/saya-deploy/saya.env
+ExecStart=/home/ubuntu/.bun/bin/bun server/serve.ts
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

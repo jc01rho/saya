@@ -9,9 +9,6 @@ coverage/
 .env.*
 !.env.example
 
-# Generated from the env file by scripts/caddy-adapters.ts
-deploy/adapters.caddy
-
 .idea/
 .vscode/
 .DS_Store

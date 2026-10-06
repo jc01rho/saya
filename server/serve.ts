@@ -1,23 +1,62 @@
 import { handleUnfurl } from "./handler";
+import { handleHub } from "./hub";
+import {
+  MIN_REGISTER_TOKEN_LENGTH,
+  Registry,
+  registerHandler,
+} from "./registry";
 
 /**
- * The unfurl service for production, to be reached only through the site's own
- * reverse proxy. It binds loopback by default and must stay that way: it has no
- * authentication of its own, and the proxy in front of it is what enforces
- * origin. It holds no token, opens no database and never contacts a core.
+ * saya's server for production, reached only through the site's own reverse
+ * proxy, which enforces origin and the write rules in front of it. It answers
+ * /unfurl, and, when SAYA_REGISTER_TOKEN is set, /api and /adapters from what
+ * cores and adapters registered on the separate register listener. Both
+ * listeners bind loopback by default; expose the register port to the tailnet
+ * only (tailscale serve), never on the site's origin.
  *
- *   SAYA_UNFURL_PORT=8791 bun server/serve.ts
+ *   SAYA_REGISTER_TOKEN=... bun server/serve.ts
  */
-const port = Number.parseInt(process.env.SAYA_UNFURL_PORT ?? "8791", 10);
-const hostname = process.env.SAYA_UNFURL_HOST ?? "127.0.0.1";
+const env = process.env;
+const hostname = env.SAYA_SERVER_HOST ?? env.SAYA_UNFURL_HOST ?? "127.0.0.1";
+const port = Number.parseInt(
+  env.SAYA_SERVER_PORT ?? env.SAYA_UNFURL_PORT ?? "8791",
+  10,
+);
+const token = env.SAYA_REGISTER_TOKEN;
+if (token !== undefined && token.length < MIN_REGISTER_TOKEN_LENGTH) {
+  console.error(
+    `SAYA_REGISTER_TOKEN must be at least ${MIN_REGISTER_TOKEN_LENGTH} characters`,
+  );
+  process.exit(1);
+}
+const registry = token ? new Registry() : null;
 
 Bun.serve({
   port,
   hostname,
   idleTimeout: 30,
-  async fetch(request) {
-    return (await handleUnfurl(request)) ?? new Response(null, { status: 404 });
+  async fetch(request, server) {
+    const unfurled = await handleUnfurl(request);
+    if (unfurled) return unfurled;
+    if (registry) {
+      // A stream or a large upload is quiet for longer than any idle limit;
+      // the upstream, or the browser leaving, is what ends it.
+      server.timeout(request, 0);
+      const proxied = await handleHub(request, registry);
+      if (proxied) return proxied;
+    }
+    return new Response(null, { status: 404 });
   },
 });
+console.log(`saya server listening on ${hostname}:${port}`);
 
-console.log(`saya unfurl listening on ${hostname}:${port}`);
+if (registry && token) {
+  const registerHost = env.SAYA_REGISTER_HOST ?? "127.0.0.1";
+  const registerPort = Number.parseInt(env.SAYA_REGISTER_PORT ?? "8798", 10);
+  Bun.serve({
+    port: registerPort,
+    hostname: registerHost,
+    fetch: registerHandler(registry, token),
+  });
+  console.log(`saya register listening on ${registerHost}:${registerPort}`);
+}

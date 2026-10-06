@@ -47,7 +47,9 @@ bun test tests/contract/generation.test.ts
   in client code or treat this development proxy as production deployment.
   Messenger adapters are `SAYA_ADAPTERS=<id,...>` with `SAYA_ADAPTER_<ID>_URL`
   and `SAYA_ADAPTER_<ID>_TOKEN` each; the proxy serves `/adapters/<id>/*` and an
-  ids-only `/adapters` index (`server/adapters.ts`).
+  ids-only `/adapters` index (`server/adapters.ts`). These are development
+  only: production is configured by registration (`docs/register.md`), and
+  saya's server holds `SAYA_REGISTER_TOKEN` alone.
 - All direct package versions are exact. `ajv-formats` supplies date validation;
   extra Redocly declaration dependencies are explicit so full type checking does
   not need suppression. No Ajv schema compiler is included in generated browser
@@ -65,6 +67,8 @@ link-preview facility (`/unfurl`). It is optional, it is not in `openapi.json`,
 it never contacts a core, holds no token and reads no KakaoTalk data, and the
 client works without it. It is not a second contract and must never grow into
 one — a feature the cores should expose is still an issue on the core repos.
+Since 2026-10-06 the same server also holds the registry described below; it
+forwards, it does not answer either messenger contract.
 Because it fetches an address chosen by whoever wrote a message, `server/guard.ts`
 is security-critical: read `docs/deployment.md` and `tests/server/guard.test.ts`
 before touching it.
@@ -118,6 +122,29 @@ line above deliberately, and only this far:
   text. The proxy forces `content-security-policy: default-src 'none'; sandbox`
   and `nosniff` on every adapter answer (`server/adapters.ts`, the Caddyfile's
   deferred headers) whatever the adapter sends. Do not remove that.
+
+### The registration contract (owner, 2026-10-06)
+
+The owner moved configuration from saya to the things saya draws. saya holds
+one token; KakaoTalk cores and tsuba adapters register themselves with it
+(`docs/register.md`, `server/registry.ts`), and saya's server forwards `/api`
+and `/adapters` to whoever registered, with the token each one registered.
+
+- **This is saya's own contract, and its only one.** It says who to reach and
+  with what; it never says what they answer. KakaoTalk's `openapi.json` and
+  tsuba's adapter contract are still copied, never written here, and nothing
+  either of them should expose moves into registration.
+- **A registrant holds saya's address and token; saya holds nobody's.** No
+  core or adapter address or token is configured on saya's side in
+  production, and none reaches the browser.
+- **Only loopback and tailnet addresses register.** A leaked register token
+  must not be able to point the proxy, and the user's browser, at an arbitrary
+  host. Do not widen `allowedUpstream` to make something reachable; put it on
+  the tailnet.
+- **The register listener is never on the site's origin.** It is its own
+  loopback port, exposed to the tailnet only.
+- **Absence is silence.** A registration that lapses leaves the lists the way
+  an unreachable adapter always has; diagnosis stays in 연결.
 
 ## The contracts are copied, never edited
 
@@ -180,8 +207,8 @@ request says plainly whether it was.
 
 ## Deliberately absent
 
-A contract of saya's own (the adapter contract belongs to `tsuba`), an in-process
-plugin API, any messenger SDK in the client, and any path that reaches KakaoTalk
+A messenger contract of saya's own (the adapter contract belongs to `tsuba`;
+registration, above, is the one contract saya owns), an in-process plugin API, any messenger SDK in the client, and any path that reaches KakaoTalk
 without going through a core. Login automation, protocol reimplementation and
 history harvesting are absent here for the same reasons they are absent there.
 `server/` is the single, optional exception described above; it answers two
