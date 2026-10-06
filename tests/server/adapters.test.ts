@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import {
   ADAPTER_RESPONSE_HEADERS,
   AdapterConfigError,
+  adapterCaddyfile,
   adapterIndex,
   adapterProxies,
   adapterUpstreams,
@@ -82,6 +83,71 @@ describe("what leaves the proxy", () => {
     expect(options?.rewrite?.("/adapters/telegram/capabilities?x=1")).toBe(
       "/capabilities?x=1",
     );
+  });
+});
+
+describe("the production proxy's adapter routes", () => {
+  const env = {
+    SAYA_ADAPTERS: "telegram,chat-two",
+    SAYA_ADAPTER_TELEGRAM_URL: "http://127.0.0.1:8790",
+    SAYA_ADAPTER_TELEGRAM_TOKEN: TOKEN,
+    SAYA_ADAPTER_CHAT_TWO_URL: "https://adapter.example.invalid/chat-two/",
+    SAYA_ADAPTER_CHAT_TWO_TOKEN: `${TOKEN}-2`,
+  };
+  const caddy = adapterCaddyfile(adapterUpstreams(env));
+  const block = (id: string) =>
+    caddy.slice(caddy.indexOf(`@adapter_${id} path`)).split("\n\n")[0] ?? "";
+
+  test("the index names every listed id and the file holds no token", () => {
+    expect(caddy).toContain(
+      'respond `{"adapters":[{"id":"telegram"},{"id":"chat-two"}]}` 200',
+    );
+    expect(caddy).not.toContain(TOKEN);
+    expect(adapterCaddyfile([])).toContain('respond `{"adapters":[]}` 200');
+  });
+
+  test("each adapter is stripped, sandboxed and given its own token placeholder", () => {
+    expect(block("telegram")).toBe(
+      [
+        "@adapter_telegram path /adapters/telegram/*",
+        "header @adapter_telegram {",
+        '    ?Cache-Control "no-store"',
+        `    >content-security-policy "default-src 'none'; sandbox"`,
+        '    >x-content-type-options "nosniff"',
+        "}",
+        "handle @adapter_telegram {",
+        "    uri strip_prefix /adapters/telegram",
+        "    reverse_proxy http://127.0.0.1:8790 {",
+        '        header_up Authorization "Bearer {env.SAYA_ADAPTER_TELEGRAM_TOKEN}"',
+        "        flush_interval -1",
+        "    }",
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  test("an https address under a path keeps its path as a rewrite and routes on its host name", () => {
+    const chat = block("chat_two");
+    expect(chat).toContain(
+      "    uri strip_prefix /adapters/chat-two\n    rewrite * /chat-two{uri}\n",
+    );
+    expect(chat).toContain("reverse_proxy https://adapter.example.invalid {");
+    expect(chat).toContain("header_up Host {upstream_hostport}");
+    expect(chat).toContain("{env.SAYA_ADAPTER_CHAT_TWO_TOKEN}");
+  });
+
+  test("an address Caddy cannot take as an upstream is refused", () => {
+    for (const url of [
+      "not a url",
+      "ftp://adapter.example.invalid",
+      "https://user:pw@adapter.example.invalid",
+      "https://adapter.example.invalid/?x=1",
+    ])
+      expect(() =>
+        adapterCaddyfile(
+          adapterUpstreams({ ...env, SAYA_ADAPTER_TELEGRAM_URL: url }),
+        ),
+      ).toThrow(AdapterConfigError);
   });
 });
 

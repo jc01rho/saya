@@ -19,8 +19,13 @@ or external reverse proxy only; production `dist/` does not read them.
    artifact:
 
    ```sh
+   bun --env-file=.env scripts/caddy-adapters.ts deploy/adapters.caddy
    caddy run --envfile .env --config deploy/Caddyfile.example
    ```
+
+   The first line writes the adapter routes the example imports (see
+   [Messenger adapters](#messenger-adapters-tsuba)); with no `SAYA_ADAPTERS`
+   it writes an empty index.
 
 `deploy/Caddyfile.example` binds `http://127.0.0.1:8080` by default. It strips
 `/api`, injects `Authorization: Bearer` at the upstream hop, and streams SSE
@@ -81,30 +86,38 @@ for them, and the browser learns nothing but their ids:
 - `/adapters/<id>/*` — stripped of that prefix and forwarded to the adapter,
   with `Authorization: Bearer <its token>` added by the proxy.
 
-Development reads `SAYA_ADAPTERS=telegram` and, per id,
-`SAYA_ADAPTER_TELEGRAM_URL` and `SAYA_ADAPTER_TELEGRAM_TOKEN` (`server/adapters.ts`;
-a listed id missing either refuses to start). In production the Caddyfile
-example carries the index and one handle per adapter; add a handle for each id
-you list. An adapter reached over Tailscale (`tailscale serve`, tailnet only) is
-an HTTPS upstream that routes on its own host name, which is why the handle sets
-`header_up Host {upstream_hostport}`. Never put an adapter on a public address
-to make it reachable; the tailnet or an SSH forward is the path.
+Both proxies read the same variables: `SAYA_ADAPTERS=telegram,slack` and, per
+id, `SAYA_ADAPTER_<ID>_URL` and `SAYA_ADAPTER_<ID>_TOKEN` (upper case, `-` as
+`_`; `server/adapters.ts`). A listed id missing either refuses to start.
+Adding an adapter that answers the tsuba contract is three lines in the env
+file and a restart; nothing in saya or the Caddyfile changes.
+
+In production, `scripts/caddy-adapters.ts` turns those variables into the
+index and one handle per adapter, and the Caddyfile imports the result
+(`import adapters.caddy`). `deploy/saya-proxy.service` runs it as
+`ExecStartPre`, so a restart regenerates it, and a bad entry stops the start
+instead of silently dropping an adapter. The file holds addresses but no
+token: each handle says `{env.SAYA_ADAPTER_<ID>_TOKEN}` and Caddy expands it
+from its own env file. An `https` adapter (`tailscale serve`, tailnet only)
+gets `header_up Host {upstream_hostport}`, because it routes on its own host
+name. Never put an adapter on a public address to make it reachable; the
+tailnet or an SSH forward is the path.
 
 Several adapters on one machine can share one tailnet address, split by path
 (`tailscale serve --https=443 --set-path /slack http://127.0.0.1:8793`), so an
 adapter URL may carry a path, e.g. `https://oci.example.ts.net/slack`. The
 development proxy keeps that path in front of every route. Caddy's
-`reverse_proxy` takes only scheme, host and port, so keep the path out of the
-URL and add it back with `rewrite * /slack{uri}` after `uri strip_prefix`.
+`reverse_proxy` takes only scheme, host and port, so the generator moves the
+path into `rewrite * /slack{uri}` after `uri strip_prefix`.
 
 `/adapters/<id>/media` answers the bytes of a file somebody else sent, opened
 at this origin. The adapter already answers it sandboxed, but the proxy does
 not rely on that: both the development proxy (`ADAPTER_RESPONSE_HEADERS`) and
-the Caddyfile example set `Content-Security-Policy: default-src 'none';
+the generated Caddy handles set `Content-Security-Policy: default-src 'none';
 sandbox` and `X-Content-Type-Options: nosniff` on every adapter answer, after
-the upstream's own headers (`>` defers them). Cache-Control is a default only
-(`?`), so `/media` keeps its `private, max-age=86400` while everything else is
-`no-store`. Keep both when adding a handle for another adapter.
+the upstream's own headers (`>` defers them). Both are written from the same
+`ADAPTER_RESPONSE_HEADERS`. Cache-Control is a default only (`?`), so `/media`
+keeps its `private, max-age=86400` while everything else is `no-store`.
 
 ## Running it as a service on a tailnet
 
@@ -121,11 +134,13 @@ user boundary (only the owner's tailnet devices reach it).
    host name tailscale forwards), `root` to the built `dist`, the Origin matcher
    to the tailnet origin (`https://<server>.<tailnet>.ts.net`), the core upstream
    to `https://<pc>.<tailnet>.ts.net:8765` written literally (a runtime
-   placeholder cannot carry the `https` scheme), the /unfurl port, and one
-   handle per adapter. Adapters on the same server are reached on loopback.
-3. Write the tokens to an env file readable only by the service user
-   (`chmod 600`): `SAYA_CORE_TOKEN` and one `SAYA_ADAPTER_<ID>_TOKEN` per
-   adapter. Never print them.
+   placeholder cannot carry the `https` scheme), the /unfurl port, and
+   `import /var/lib/saya-proxy/adapters.caddy` where the example imports
+   `adapters.caddy`.
+3. Write an env file readable only by the service user (`chmod 600`):
+   `SAYA_CORE_TOKEN`, `SAYA_ADAPTERS`, and per adapter its `_URL` and
+   `_TOKEN`. Adapters on the same server are reached on loopback
+   (`http://127.0.0.1:8790`). Never print the tokens.
 4. Install `deploy/saya-proxy.service` and `deploy/saya-unfurl.service` (adjust
    user and paths), then `systemctl enable --now saya-proxy saya-unfurl`.
 5. `tailscale serve --bg --https=443 --set-path / http://127.0.0.1:8796`. Paths
@@ -133,7 +148,9 @@ user boundary (only the owner's tailnet devices reach it).
 
 Check, from a tailnet device: `/` is the client, `/adapters` is JSON, `/api/health`
 answers, and a `POST` without this site's `Origin` is `403`. To update, pull
-and `bun run build`; the proxy serves the new `dist/` without a restart. While
+and `bun run build`; the proxy serves the new `dist/` without a restart. To
+add or remove an adapter, edit the env file and
+`sudo systemctl restart saya-proxy`. While
 the core's machine is off, KakaoTalk is simply absent from the lists.
 
 ### Following whichever core is up

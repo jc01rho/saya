@@ -77,19 +77,15 @@ describe("same-origin proxy boundary", () => {
       'header_up Authorization "Bearer {env.SAYA_CORE_TOKEN}"',
     );
     expect(caddyfile).toContain("uri strip_prefix /api");
-    // Adapters: the token is expanded by the proxy, after the write filter.
-    expect(caddyfile).toContain(
-      'header_up Authorization "Bearer {env.SAYA_ADAPTER_TELEGRAM_TOKEN}"',
+    // Adapters are generated (tests/server/adapters.test.ts checks their token
+    // and sandbox) and imported after the write filter, before the SPA fallback.
+    const adapters = caddyfile.indexOf("\n    import adapters.caddy\n");
+    expect(adapters).toBeGreaterThan(
+      caddyfile.indexOf("respond @blocked_write 403"),
     );
-    expect(caddyfile.indexOf("respond @blocked_write 403")).toBeLessThan(
-      caddyfile.indexOf("reverse_proxy {env.SAYA_ADAPTER_TELEGRAM_URL}"),
+    expect(adapters).toBeLessThan(
+      caddyfile.indexOf("try_files {path} /index.html"),
     );
-    expect(caddyfile).toContain("uri strip_prefix /adapters/telegram");
-    // Adapter answers include bytes somebody else sent: sandboxed after the upstream.
-    expect(caddyfile).toContain(
-      `>Content-Security-Policy "default-src 'none'; sandbox"`,
-    );
-    expect(caddyfile).toContain('>X-Content-Type-Options "nosniff"');
     expect(caddyfile).toContain("flush_interval -1");
     expect(caddyfile).toContain('Cache-Control "no-store"');
     expect(caddyfile).toContain("output discard");
