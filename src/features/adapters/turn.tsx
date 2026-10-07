@@ -11,7 +11,7 @@ import { Photo } from "../../ui/Photo";
 import { Video } from "../../ui/Video";
 import { formatSize } from "../attachments/pages";
 import { LinkCard } from "../linkcard";
-import { sameRun } from "../thread/grouping";
+import { sameDiscordRun, sameRun } from "../thread/grouping";
 import styles from "./Thread.module.css";
 
 export const COPY = {
@@ -482,6 +482,7 @@ export function Turn({
   next,
   members = [message],
   controlsFor,
+  layout = "bubbles",
 }: {
   adapterId: string;
   /** Whether the adapter declares `attachments.read`, so `/media` answers. */
@@ -503,6 +504,11 @@ export function Turn({
   onAction: (action: ToolAction) => void;
   members?: AdapterMessage[];
   controlsFor?: (member: AdapterMessage) => MemberControls;
+  /**
+   * `bubbles`: the KakaoTalk wall. `lines`: Discord's own reading, every
+   * message left-aligned under one picture, name and time per run.
+   */
+  layout?: "bubbles" | "lines";
 }) {
   if (message.kind === "service")
     return (
@@ -510,17 +516,20 @@ export function Turn({
         {message.text || COPY.service}
       </li>
     );
-  // KakaoTalk's run rule (../thread/grouping): one speaker, one local minute.
+  const lines = layout === "lines";
+  // KakaoTalk's run rule (../thread/grouping): one speaker, one local minute;
+  // Discord's: one speaker within seven minutes, a reply opening its own.
+  const joins = lines ? sameDiscordRun : sameRun;
   const continued =
     previous !== undefined &&
     previous.kind !== "service" &&
-    sameRun(previous, message);
+    joins(previous, message);
   const avatar =
     files && avatars && message.senderAvatar
       ? mediaUrl(adapterId, message.senderAvatar)
       : undefined;
   const last = members.at(-1) ?? message;
-  const lastOfRun = next?.kind === "service" || !sameRun(last, next);
+  const lastOfRun = next?.kind === "service" || !joins(last, next);
   // An album's other members keep their own doors, but only once this turn's
   // menu (or one of theirs) is open: a closed album reads as one picture post.
   const others = members.filter((member) => member.id !== message.id);
@@ -533,6 +542,8 @@ export function Turn({
   const memberReactions = others.some((member) => member.reactions?.length);
   // The wall's day pills carry the date; the stamp is the clock, as on KakaoTalk.
   const time = clockTime(last.sentAt);
+  const quote =
+    message.replyTo !== undefined ? <Quote quoted={quoted} /> : null;
   const attachments = members.flatMap((member) => member.attachments ?? []);
   const photo = photoData(adapterId, attachments);
   const caption = members
@@ -565,20 +576,41 @@ export function Turn({
     <li
       className={cx(
         styles.turn,
-        message.fromMe && styles.mine,
+        lines && styles.lineTurn,
+        !lines && message.fromMe && styles.mine,
         continued && styles.continued,
       )}
       data-ui="adapter-turn"
+      data-layout={layout}
       data-message-id={message.id}
     >
+      {lines ? quote : null}
       <div className={styles.row}>
-        {message.fromMe ? null : continued ? (
+        {lines ? (
+          continued ? (
+            // Discord shows a joined line's clock in the gutter, on hover.
+            <span className={styles.gap}>
+              <time className={styles.gutterTime} dateTime={message.sentAt}>
+                {clockTime(message.sentAt).label}
+              </time>
+            </span>
+          ) : (
+            <Avatar name={message.sender || "?"} size={40} src={avatar} />
+          )
+        ) : message.fromMe ? null : continued ? (
           <span className={styles.gap} aria-hidden="true" />
         ) : (
           <Avatar name={message.sender || "?"} size={34} src={avatar} />
         )}
         <div className={styles.column}>
-          {!message.fromMe && !continued ? (
+          {lines && !continued ? (
+            <span className={styles.head} data-ui="adapter-head">
+              <span className={styles.sender}>{message.sender}</span>
+              <time dateTime={message.sentAt}>
+                {clockTime(message.sentAt).label}
+              </time>
+            </span>
+          ) : !lines && !message.fromMe && !continued ? (
             <span className={styles.sender}>{message.sender}</span>
           ) : null}
           <div className={styles.line}>
@@ -589,7 +621,11 @@ export function Turn({
                 media && styles.mediaBubble,
               )}
             >
-              {message.replyTo !== undefined ? <Quote quoted={quoted} /> : null}
+              {lines ? null : quote}
+              {/* Discord writes the words first and hangs the files below them. */}
+              {lines && caption ? (
+                <span className={styles.text}>{linkify(caption)}</span>
+              ) : null}
               {files && photo.images.length ? (
                 <Photo photo={photo} now={now} />
               ) : null}
@@ -607,21 +643,27 @@ export function Turn({
               ) : message.kind === "media" ? (
                 <span className={styles.media}>{COPY.media}</span>
               ) : null}
-              {caption ? (
+              {!lines && caption ? (
                 <span className={styles.text}>{linkify(caption)}</span>
               ) : null}
               {linked ? <LinkCard url={linked} /> : null}
             </div>
-            <span className={styles.time}>
-              {message.editedAt ? <span>{COPY.edited}</span> : null}
-              {/* Only the run's last turn shows the time; the others keep it for screen readers. */}
-              <time
-                className={lastOfRun ? undefined : "sr-only"}
-                dateTime={last.sentAt}
-              >
-                {time.label}
-              </time>
-            </span>
+            {lines ? (
+              message.editedAt ? (
+                <span className={styles.time}>{COPY.edited}</span>
+              ) : null
+            ) : (
+              <span className={styles.time}>
+                {message.editedAt ? <span>{COPY.edited}</span> : null}
+                {/* Only the run's last turn shows the time; the others keep it for screen readers. */}
+                <time
+                  className={lastOfRun ? undefined : "sr-only"}
+                  dateTime={last.sentAt}
+                >
+                  {time.label}
+                </time>
+              </span>
+            )}
             {actionable ? (
               <button
                 type="button"
