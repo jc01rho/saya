@@ -42,6 +42,21 @@ export function formatTime(
   return { label, dateTime: iso };
 }
 
+/**
+ * The clock alone (HH:mm), for a wall whose day pills already say the date,
+ * as a KakaoTalk wall stamps its bubbles.
+ */
+export function clockTime(iso: string | null | undefined): FormattedTime {
+  if (!iso) return { label: COPY.unknownTime, dateTime: null };
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime()))
+    return { label: COPY.unknownTime, dateTime: null };
+  return {
+    label: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+    dateTime: iso,
+  };
+}
+
 /** Exact 1..99, then 99+; zero draws nothing. */
 export function badgeLabel(count: number): string | null {
   if (!Number.isFinite(count) || count <= 0) return null;

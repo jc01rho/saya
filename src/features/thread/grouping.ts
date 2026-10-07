@@ -12,6 +12,19 @@ export interface RunMember {
   kind?: string | null | undefined;
 }
 
+/** The local calendar day of a timestamp, or null when the wire gave none. */
+export function dayOf(sentAt: string | null | undefined): string | null {
+  if (!sentAt) return null;
+  const date = new Date(sentAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+/** The day pill's words: 2026년 10월 7일 수요일. */
+export const DAY_FORMAT = new Intl.DateTimeFormat("ko-KR", {
+  dateStyle: "full",
+});
+
 /** Rows the desktop draws centred, not as anybody's bubble: they never join a run. */
 const SYSTEM_KINDS = new Set(["feed"]);
 

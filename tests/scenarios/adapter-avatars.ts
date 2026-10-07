@@ -193,10 +193,15 @@ export const scenario: Scenario = {
           await page.locator('[data-message-id="1"] img').count(),
           0,
         );
+        // No picture declared: the monogram, as the KakaoTalk wall draws it.
         assert.equal(
           await page
             .locator('[data-message-id="2"] [data-ui="avatar"]')
-            .count(),
+            .textContent(),
+          "S",
+        );
+        assert.equal(
+          await page.locator('[data-message-id="2"] img').count(),
           0,
         );
         assert.deepEqual(media.sort(), ["broken", "good:a&b=c#d"]);

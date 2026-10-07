@@ -29,7 +29,7 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
   margin-top: auto;
   list-style: none;
 }
@@ -61,29 +61,81 @@
   background: var(--hover-wall);
 }
 
+/*
+ * The KakaoTalk wall's arrangement (src/ui/MessageBubble.module.css): a run by
+ * one speaker in one minute sits tight, a new run opens 10px above, and the
+ * picture and name show once, at the run's first turn.
+ */
 .turn {
   display: grid;
   justify-items: start;
   gap: 3px;
+  margin-top: 10px;
+}
+
+.continued {
+  margin-top: var(--space-4);
 }
 
 .mine {
   justify-items: end;
 }
 
+/* Picture beside the column, both on the same top edge. */
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  max-width: 78%;
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  .row {
+    max-width: 88%;
+  }
+}
+
+/* Keeps a continued turn's bubble on the same edge as the run's first. */
+.gap {
+  flex: none;
+  width: 34px;
+}
+
+.column {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mine .column {
+  justify-items: end;
+}
+
 /* The speaker's name sits above the bubble, once per run. */
 .sender {
-  margin-top: var(--space-8);
-  padding-inline: 4px;
-  color: var(--ink-muted);
-  font-size: 12.5px;
+  margin: 0 0 2px 4px;
+  color: var(--ink);
+  font-size: 11.5px;
   font-weight: 700;
 }
 
-.senderWithAvatar {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* A new day: a quiet centred pill, as on the KakaoTalk wall. */
+.day {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-12) 0 var(--space-8);
+}
+
+.day > span {
+  padding: 6px 14px;
+  border-radius: var(--radius-badge);
+  background: var(--fill-wall);
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .line {
@@ -101,9 +153,11 @@
   display: grid;
   gap: 2px;
   max-width: min(62ch, 82vw);
-  padding: 11px 15px;
-  border-radius: 18px 18px 18px 4px;
+  padding: 9px 13px;
+  border-radius: var(--radius-talk) var(--radius-talk) var(--radius-talk)
+    var(--radius-tail);
   background: var(--bubble-other);
+  color: var(--bubble-other-ink, var(--ink));
   font-size: var(--text-body);
   line-height: var(--leading-body);
   white-space: pre-wrap;
@@ -111,8 +165,15 @@
 }
 
 .mine .bubble {
-  border-radius: 18px 18px 4px 18px;
+  border-radius: var(--radius-talk) var(--radius-talk) var(--radius-tail)
+    var(--radius-talk);
   background: var(--bubble-self);
+  color: var(--bubble-self-ink, var(--ink));
+}
+
+/* Only a run's first bubble carries the tail. */
+.continued .bubble {
+  border-radius: var(--radius-talk);
 }
 
 .mediaBubble {
@@ -215,11 +276,17 @@
 }
 
 .time {
+  display: inline-flex;
   flex: none;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: 2px;
   color: var(--ink-muted);
   font-size: 11px;
   font-weight: 500;
+  line-height: 1;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* A join, a title change: a quiet centred pill, not a turn. */

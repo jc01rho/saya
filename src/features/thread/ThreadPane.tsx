@@ -22,7 +22,7 @@ import { FileDownload, type FileTransport } from "../reads/FileDownload";
 import { RevisionsDialog, type RevisionsTransport } from "../revisions";
 import { useSlice } from "../rooms";
 import { THREAD_COPY } from "./copy";
-import { runPosition } from "./grouping";
+import { DAY_FORMAT, dayOf, runPosition } from "./grouping";
 import {
   countNewer,
   findReplyTarget,
@@ -78,16 +78,6 @@ function useToday(): Date {
  * One row subscribes to its own entity, so a change to another message never
  * reaches it; memo keeps a window update from rerendering unchanged rows.
  */
-/** The local calendar day of a timestamp, or null when the wire gave none. */
-function dayOf(sentAt: string | null | undefined): string | null {
-  if (!sentAt) return null;
-  const date = new Date(sentAt);
-  if (Number.isNaN(date.getTime())) return null;
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
-
-const DAY_FORMAT = new Intl.DateTimeFormat("ko-KR", { dateStyle: "full" });
-
 const MessageRow = memo(function MessageRow({
   stores,
   roomId,
@@ -154,6 +144,7 @@ const MessageRow = memo(function MessageRow({
           now={now}
           continued={!run.first}
           last={run.last}
+          clock
           onRevisions={onRevisions ? openRevisions : undefined}
           onQuote={jumpable ? jump : undefined}
           highlighted={highlighted}

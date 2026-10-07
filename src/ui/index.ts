@@ -19,7 +19,12 @@ export {
 } from "./crossing";
 export { cx } from "./cx";
 export { expiryOf, isExpired } from "./expiry";
-export { badgeLabel, type FormattedTime, formatTime } from "./format";
+export {
+  badgeLabel,
+  clockTime,
+  type FormattedTime,
+  formatTime,
+} from "./format";
 export { Mention, type MentionProps } from "./Mention";
 export {
   MessageBubble,

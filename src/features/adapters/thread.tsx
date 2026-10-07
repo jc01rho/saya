@@ -1,4 +1,5 @@
 import {
+  Fragment,
   type KeyboardEvent,
   Suspense,
   useEffect,
@@ -28,6 +29,7 @@ import {
   uploadFile,
 } from "../../transport/adapters";
 import { ATTACH_COPY, AttachButton, pickable, StagedFile } from "../attach";
+import { DAY_FORMAT, dayOf } from "../thread/grouping";
 import { problemSentence } from "./copy";
 import { actionMember, groupMessages } from "./group";
 import { adapterConnections, subscribeAdapterRooms } from "./liveRooms";
@@ -794,35 +796,59 @@ export function AdapterThread({
               <ol className={styles.list}>
                 {groups.map((members, index) => {
                   const message = actionMember(members);
+                  const first = members[0] ?? message;
+                  const day = dayOf(first.sentAt);
+                  // A day is announced when it differs from the turn above, as on a KakaoTalk wall.
+                  const newDay =
+                    day !== null &&
+                    day !== dayOf(groups[index - 1]?.at(-1)?.sentAt);
                   return (
-                    <Turn
-                      key={message.id}
-                      adapterId={adapterId}
-                      files={files}
-                      avatars={avatars}
-                      message={message}
-                      previous={groups[index - 1]?.at(-1)}
-                      members={members}
-                      controlsFor={(member) => ({
-                        open: menu === member.id,
-                        note: notes[member.id] ?? null,
-                        busy: busyId === member.id,
-                        onOpen: (open) => setMenu(open ? member.id : null),
-                        onAction: (action) => void act(member, action),
-                      })}
-                      quoted={
-                        message.replyTo === undefined
-                          ? undefined
-                          : byId.get(message.replyTo)
-                      }
-                      now={now}
-                      abilities={abilities}
-                      open={menu === message.id}
-                      note={notes[message.id] ?? null}
-                      busy={busyId === message.id}
-                      onOpen={(open) => setMenu(open ? message.id : null)}
-                      onAction={(action) => void act(message, action)}
-                    />
+                    <Fragment key={message.id}>
+                      {newDay ? (
+                        <li className={styles.day} data-ui="adapter-day">
+                          <span>
+                            <time dateTime={first.sentAt}>
+                              {DAY_FORMAT.format(new Date(first.sentAt))}
+                            </time>
+                          </span>
+                        </li>
+                      ) : null}
+                      <Turn
+                        adapterId={adapterId}
+                        files={files}
+                        avatars={avatars}
+                        message={message}
+                        previous={
+                          newDay ? undefined : groups[index - 1]?.at(-1)
+                        }
+                        next={
+                          dayOf(groups[index + 1]?.[0]?.sentAt) ===
+                          dayOf(members.at(-1)?.sentAt)
+                            ? groups[index + 1]?.[0]
+                            : undefined
+                        }
+                        members={members}
+                        controlsFor={(member) => ({
+                          open: menu === member.id,
+                          note: notes[member.id] ?? null,
+                          busy: busyId === member.id,
+                          onOpen: (open) => setMenu(open ? member.id : null),
+                          onAction: (action) => void act(member, action),
+                        })}
+                        quoted={
+                          message.replyTo === undefined
+                            ? undefined
+                            : byId.get(message.replyTo)
+                        }
+                        now={now}
+                        abilities={abilities}
+                        open={menu === message.id}
+                        note={notes[message.id] ?? null}
+                        busy={busyId === message.id}
+                        onOpen={(open) => setMenu(open ? message.id : null)}
+                        onAction={(action) => void act(message, action)}
+                      />
+                    </Fragment>
                   );
                 })}
               </ol>

@@ -4,7 +4,7 @@ import { LinkCard } from "../features/linkcard";
 import { Avatar } from "./Avatar";
 import { COPY, kindLabel } from "./copy";
 import { cx } from "./cx";
-import { formatTime } from "./format";
+import { clockTime, formatTime } from "./format";
 import { firstUrl, linkify } from "./linkify";
 import { Mention } from "./Mention";
 import styles from "./MessageBubble.module.css";
@@ -68,6 +68,8 @@ export interface MessageBubbleProps {
   continued?: boolean;
   /** The last of its run, the one that shows the time. Defaults to true. */
   last?: boolean;
+  /** On a wall with day pills: the stamp is the clock alone, the pill carries the date. */
+  clock?: boolean;
   /** Present where the quoted original can be looked for on the wall. */
   onQuote?: (() => void) | undefined;
   /** The row a reply just led to, marked for a moment so the eye finds it. */
@@ -118,10 +120,13 @@ export function MessageBubble({
   onRevisions,
   continued = false,
   last = true,
+  clock = false,
   onQuote,
   highlighted = false,
 }: MessageBubbleProps) {
-  const time = formatTime(message.sentAt, now);
+  const time = clock
+    ? clockTime(message.sentAt)
+    : formatTime(message.sentAt, now);
   const kind = kindLabel(message.kind);
   const quoted = message.kind === "reply" || message.replyTo !== undefined;
   const stateWord = state
