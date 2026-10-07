@@ -5,12 +5,13 @@ import {
   type AdapterReaction,
   mediaUrl,
 } from "../../transport/adapters";
-import { Avatar, cx, formatTime } from "../../ui";
+import { Avatar, clockTime, cx } from "../../ui";
 import { firstUrl, linkify } from "../../ui/linkify";
 import { Photo } from "../../ui/Photo";
 import { Video } from "../../ui/Video";
 import { formatSize } from "../attachments/pages";
 import { LinkCard } from "../linkcard";
+import { sameRun } from "../thread/grouping";
 import styles from "./Thread.module.css";
 
 export const COPY = {
@@ -478,6 +479,7 @@ export function Turn({
   busy,
   onOpen,
   onAction,
+  next,
   members = [message],
   controlsFor,
 }: {
@@ -488,6 +490,8 @@ export function Turn({
   avatars: boolean;
   message: AdapterMessage;
   previous: AdapterMessage | undefined;
+  /** The turn drawn below, which decides whether this one ends its run. */
+  next?: AdapterMessage | undefined;
   /** The message this one replies to, when it is in the loaded window. */
   quoted: AdapterMessage | undefined;
   now: Date;
@@ -506,17 +510,17 @@ export function Turn({
         {message.text || COPY.service}
       </li>
     );
+  // KakaoTalk's run rule (../thread/grouping): one speaker, one local minute.
   const continued =
     previous !== undefined &&
     previous.kind !== "service" &&
-    previous.fromMe === message.fromMe &&
-    (previous.senderId ?? previous.sender) ===
-      (message.senderId ?? message.sender);
+    sameRun(previous, message);
   const avatar =
     files && avatars && message.senderAvatar
       ? mediaUrl(adapterId, message.senderAvatar)
       : undefined;
   const last = members.at(-1) ?? message;
+  const lastOfRun = next?.kind === "service" || !sameRun(last, next);
   // An album's other members keep their own doors, but only once this turn's
   // menu (or one of theirs) is open: a closed album reads as one picture post.
   const others = members.filter((member) => member.id !== message.id);
@@ -527,7 +531,8 @@ export function Turn({
       return Boolean(controls?.open || controls?.note);
     });
   const memberReactions = others.some((member) => member.reactions?.length);
-  const time = formatTime(last.sentAt, now);
+  // The wall's day pills carry the date; the stamp is the clock, as on KakaoTalk.
+  const time = clockTime(last.sentAt);
   const attachments = members.flatMap((member) => member.attachments ?? []);
   const photo = photoData(adapterId, attachments);
   const caption = members
@@ -558,157 +563,171 @@ export function Turn({
     (abilities.delete !== undefined && message.fromMe);
   return (
     <li
-      className={cx(styles.turn, message.fromMe && styles.mine)}
+      className={cx(
+        styles.turn,
+        message.fromMe && styles.mine,
+        continued && styles.continued,
+      )}
       data-ui="adapter-turn"
       data-message-id={message.id}
     >
-      {!message.fromMe && !continued ? (
-        <span className={cx(styles.sender, avatar && styles.senderWithAvatar)}>
-          {avatar ? (
-            <Avatar name={message.sender} size={24} src={avatar} />
+      <div className={styles.row}>
+        {message.fromMe ? null : continued ? (
+          <span className={styles.gap} aria-hidden="true" />
+        ) : (
+          <Avatar name={message.sender || "?"} size={34} src={avatar} />
+        )}
+        <div className={styles.column}>
+          {!message.fromMe && !continued ? (
+            <span className={styles.sender}>{message.sender}</span>
           ) : null}
-          {message.sender}
-        </span>
-      ) : null}
-      <div className={styles.line}>
-        <div
-          className={cx(
-            styles.bubble,
-            bare && styles.bare,
-            media && styles.mediaBubble,
-          )}
-        >
-          {message.replyTo !== undefined ? <Quote quoted={quoted} /> : null}
-          {files && photo.images.length ? (
-            <Photo photo={photo} now={now} />
-          ) : null}
-          {files && attachments.length ? (
-            attachments
-              .filter((attachment) => !drawableImage(attachment))
-              .map((attachment) => (
-                <Attachment
-                  key={attachment.id}
-                  adapterId={adapterId}
-                  attachment={attachment}
-                  now={now}
-                />
-              ))
-          ) : message.kind === "media" ? (
-            <span className={styles.media}>{COPY.media}</span>
-          ) : null}
-          {caption ? (
-            <span className={styles.text}>{linkify(caption)}</span>
-          ) : null}
-          {linked ? <LinkCard url={linked} /> : null}
-        </div>
-        <time className={styles.time} dateTime={last.sentAt}>
-          {time.label}
-          {message.editedAt ? ` · ${COPY.edited}` : null}
-        </time>
-        {actionable ? (
-          <button
-            type="button"
-            className={styles.more}
-            aria-label={COPY.more}
-            aria-expanded={open}
-            onClick={() => onOpen(!open)}
-            data-ui="adapter-more"
-          >
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <circle cx="4.5" cy="10" r="1.6" />
-              <circle cx="10" cy="10" r="1.6" />
-              <circle cx="15.5" cy="10" r="1.6" />
-            </svg>
-          </button>
-        ) : null}
-      </div>
-      {members.length > 1 && (doors || memberReactions) ? (
-        <div className={styles.members}>
-          {members
-            .filter((member) => member.id !== message.id)
-            .map((member) => {
-              const controls = controlsFor?.(member);
-              const position = members.indexOf(member) + 1;
-              const kindName = attachmentLabel(
-                member.attachments?.[0]?.kind ?? "file",
-              );
-              const memberEditable = canEdit(
-                member,
-                abilities.edit,
-                now.getTime(),
-              );
-              return (
-                <div
-                  key={member.id}
-                  className={styles.member}
-                  data-message-id={member.id}
-                >
-                  {controls && actionable && doors ? (
-                    <button
-                      type="button"
-                      className={styles.tool}
-                      aria-label={`${COPY.more}: ${kindName} ${position}`}
-                      aria-expanded={controls.open}
-                      onClick={() => controls.onOpen(!controls.open)}
-                      data-ui="adapter-member-more"
+          <div className={styles.line}>
+            <div
+              className={cx(
+                styles.bubble,
+                bare && styles.bare,
+                media && styles.mediaBubble,
+              )}
+            >
+              {message.replyTo !== undefined ? <Quote quoted={quoted} /> : null}
+              {files && photo.images.length ? (
+                <Photo photo={photo} now={now} />
+              ) : null}
+              {files && attachments.length ? (
+                attachments
+                  .filter((attachment) => !drawableImage(attachment))
+                  .map((attachment) => (
+                    <Attachment
+                      key={attachment.id}
+                      adapterId={adapterId}
+                      attachment={attachment}
+                      now={now}
+                    />
+                  ))
+              ) : message.kind === "media" ? (
+                <span className={styles.media}>{COPY.media}</span>
+              ) : null}
+              {caption ? (
+                <span className={styles.text}>{linkify(caption)}</span>
+              ) : null}
+              {linked ? <LinkCard url={linked} /> : null}
+            </div>
+            <span className={styles.time}>
+              {message.editedAt ? <span>{COPY.edited}</span> : null}
+              {/* Only the run's last turn shows the time; the others keep it for screen readers. */}
+              <time
+                className={lastOfRun ? undefined : "sr-only"}
+                dateTime={last.sentAt}
+              >
+                {time.label}
+              </time>
+            </span>
+            {actionable ? (
+              <button
+                type="button"
+                className={styles.more}
+                aria-label={COPY.more}
+                aria-expanded={open}
+                onClick={() => onOpen(!open)}
+                data-ui="adapter-more"
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <circle cx="4.5" cy="10" r="1.6" />
+                  <circle cx="10" cy="10" r="1.6" />
+                  <circle cx="15.5" cy="10" r="1.6" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
+          {members.length > 1 && (doors || memberReactions) ? (
+            <div className={styles.members}>
+              {members
+                .filter((member) => member.id !== message.id)
+                .map((member) => {
+                  const controls = controlsFor?.(member);
+                  const position = members.indexOf(member) + 1;
+                  const kindName = attachmentLabel(
+                    member.attachments?.[0]?.kind ?? "file",
+                  );
+                  const memberEditable = canEdit(
+                    member,
+                    abilities.edit,
+                    now.getTime(),
+                  );
+                  return (
+                    <div
+                      key={member.id}
+                      className={styles.member}
+                      data-message-id={member.id}
                     >
-                      {kindName} · {position}
-                    </button>
-                  ) : null}
-                  {member.reactions?.length ? (
-                    <Reactions
-                      reactions={member.reactions}
-                      onToggle={
-                        abilities.react && controls && !controls.busy
-                          ? (emoji) =>
-                              controls.onAction({ kind: "react", emoji })
-                          : undefined
-                      }
-                    />
-                  ) : null}
-                  {controls?.open ? (
-                    <Tools
-                      message={member}
-                      abilities={abilities}
-                      editable={memberEditable}
-                      {...controls}
-                      onClose={() => controls.onOpen(false)}
-                    />
-                  ) : controls?.note ? (
-                    <p className={styles.toolsNote} role="status">
-                      {controls.note}
-                    </p>
-                  ) : null}
-                </div>
-              );
-            })}
+                      {controls && actionable && doors ? (
+                        <button
+                          type="button"
+                          className={styles.tool}
+                          aria-label={`${COPY.more}: ${kindName} ${position}`}
+                          aria-expanded={controls.open}
+                          onClick={() => controls.onOpen(!controls.open)}
+                          data-ui="adapter-member-more"
+                        >
+                          {kindName} · {position}
+                        </button>
+                      ) : null}
+                      {member.reactions?.length ? (
+                        <Reactions
+                          reactions={member.reactions}
+                          onToggle={
+                            abilities.react && controls && !controls.busy
+                              ? (emoji) =>
+                                  controls.onAction({ kind: "react", emoji })
+                              : undefined
+                          }
+                        />
+                      ) : null}
+                      {controls?.open ? (
+                        <Tools
+                          message={member}
+                          abilities={abilities}
+                          editable={memberEditable}
+                          {...controls}
+                          onClose={() => controls.onOpen(false)}
+                        />
+                      ) : controls?.note ? (
+                        <p className={styles.toolsNote} role="status">
+                          {controls.note}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
+            </div>
+          ) : null}
+          {message.reactions?.length ? (
+            <Reactions
+              reactions={message.reactions}
+              onToggle={
+                abilities.react && !busy
+                  ? (emoji) => onAction({ kind: "react", emoji })
+                  : undefined
+              }
+            />
+          ) : null}
+          {open ? (
+            <Tools
+              message={message}
+              abilities={abilities}
+              editable={editable}
+              note={note}
+              busy={busy}
+              onAction={onAction}
+              onClose={() => onOpen(false)}
+            />
+          ) : note ? (
+            <p className={styles.toolsNote} role="status">
+              {note}
+            </p>
+          ) : null}
         </div>
-      ) : null}
-      {message.reactions?.length ? (
-        <Reactions
-          reactions={message.reactions}
-          onToggle={
-            abilities.react && !busy
-              ? (emoji) => onAction({ kind: "react", emoji })
-              : undefined
-          }
-        />
-      ) : null}
-      {open ? (
-        <Tools
-          message={message}
-          abilities={abilities}
-          editable={editable}
-          note={note}
-          busy={busy}
-          onAction={onAction}
-          onClose={() => onOpen(false)}
-        />
-      ) : note ? (
-        <p className={styles.toolsNote} role="status">
-          {note}
-        </p>
-      ) : null}
+      </div>
     </li>
   );
 }
