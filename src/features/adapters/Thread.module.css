@@ -602,3 +602,157 @@ button.chipMine:hover {
     min-height: var(--touch-min);
   }
 }
+
+/*
+ * A room in a Discord server reads the way Discord draws it: no bubbles,
+ * every line on the left edge, one round picture, name and time per run, a
+ * reply's quote on a hooked line above the name, files under the words. The
+ * theme's colours, type and wall are the same tokens the bubbles use.
+ */
+.lineTurn {
+  position: relative;
+  justify-items: stretch;
+  margin: 14px -18px 0;
+  padding: 3px 18px;
+}
+
+.lineTurn.continued {
+  margin-top: 0;
+  padding-block: 1px;
+}
+
+.lineTurn:hover,
+.lineTurn:focus-within {
+  background: var(--hover-wall);
+}
+
+.lineTurn .row {
+  max-width: 100%;
+  gap: 14px;
+}
+
+.lineTurn [data-ui="avatar"] {
+  border-radius: 50%;
+}
+
+.lineTurn .gap {
+  width: 40px;
+  padding-top: 4px;
+  text-align: center;
+}
+
+/* A joined line keeps its clock in the gutter until it is pointed at. */
+.gutterTime {
+  color: var(--ink-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+}
+
+.lineTurn:hover .gutterTime,
+.lineTurn:focus-within .gutterTime {
+  opacity: 1;
+}
+
+.lineTurn .column {
+  flex: 1;
+  justify-items: stretch;
+  gap: 2px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.head .sender {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.head time {
+  color: var(--ink-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineTurn .line {
+  align-items: flex-start;
+}
+
+.lineTurn .bubble,
+.lineTurn.continued .bubble {
+  flex: 1;
+  justify-items: start;
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.lineTurn .text {
+  justify-self: stretch;
+}
+
+.lineTurn .mediaBubble {
+  width: auto;
+  max-width: none;
+}
+
+.lineTurn .picture,
+.lineTurn .file {
+  margin: 4px 0 2px;
+}
+
+.lineTurn .file {
+  min-width: min(260px, 100%);
+  max-width: 420px;
+}
+
+/* The tools float at the line's top right, as Discord's hover bar does. */
+.lineTurn .line .more {
+  position: absolute;
+  top: -10px;
+  right: 18px;
+  background: var(--field-input);
+  box-shadow: var(--elevation-door);
+}
+
+/* The reply's hook: a bent rule from the picture's centre to the quote. */
+.lineTurn > .quote {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 0 2px;
+  padding: 0 0 0 54px;
+  border-left: 0;
+}
+
+.lineTurn > .quote::before {
+  position: absolute;
+  top: 50%;
+  left: 19px;
+  width: 28px;
+  height: 9px;
+  border-top: var(--quote-rule-width) solid var(--rule);
+  border-left: var(--quote-rule-width) solid var(--rule);
+  border-top-left-radius: 6px;
+  content: "";
+}
+
+.lineTurn > .quote .quoteSender {
+  flex: none;
+}
+
+.lineTurn > .quote .quoteText {
+  min-width: 0;
+}

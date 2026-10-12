@@ -29,6 +29,7 @@ import {
   uploadFile,
 } from "../../transport/adapters";
 import { ATTACH_COPY, AttachButton, pickable, StagedFile } from "../attach";
+import { discordPlace } from "../inbox/discordPlaces";
 import { DAY_FORMAT, dayOf } from "../thread/grouping";
 import { problemSentence } from "./copy";
 import { actionMember, groupMessages } from "./group";
@@ -457,6 +458,8 @@ export function AdapterThread({
       roomFeature(features, room, "reactions.read") !== undefined,
   };
   const readMark = roomFeature(features, room, "read.mark") !== undefined;
+  // A room with a place in a Discord server reads the way Discord draws it.
+  const layout = room && discordPlace(room) ? "lines" : "bubbles";
   const openedRead = room?.unread === 0;
   const limit = Math.min(50, read?.maxLimit ?? 50);
   const canPage = read?.paging === "before-id";
@@ -828,6 +831,7 @@ export function AdapterThread({
                             : undefined
                         }
                         members={members}
+                        layout={layout}
                         controlsFor={(member) => ({
                           open: menu === member.id,
                           note: notes[member.id] ?? null,

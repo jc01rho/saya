@@ -10,6 +10,8 @@ export interface RunMember {
   sender?: string | null | undefined;
   sentAt?: string | null | undefined;
   kind?: string | null | undefined;
+  /** Present when the message answers another; only its presence is read. */
+  replyTo?: unknown;
 }
 
 /** The local calendar day of a timestamp, or null when the wire gave none. */
@@ -57,6 +59,33 @@ export function sameRun(
     prev.fromMe === next.fromMe &&
     speaker(prev) === who &&
     minuteOf(prev.sentAt) === minute
+  );
+}
+
+/** How far apart two messages by one speaker may be and still share a header on Discord. */
+const DISCORD_RUN_MS = 7 * 60_000;
+
+/**
+ * Discord's run rule: one speaker, the same local day, at most seven minutes
+ * after the message above. A reply always opens its own run, because its
+ * quote sits above a header. Undated or unattributed rows never join.
+ */
+export function sameDiscordRun(
+  prev: RunMember | undefined,
+  next: RunMember | undefined,
+): boolean {
+  if (!prev || !next || next.replyTo) return false;
+  if (SYSTEM_KINDS.has(prev.kind ?? "") || SYSTEM_KINDS.has(next.kind ?? ""))
+    return false;
+  const who = speaker(next);
+  const day = dayOf(next.sentAt);
+  if (who === null || day === null || day !== dayOf(prev.sentAt)) return false;
+  const gap = Date.parse(next.sentAt ?? "") - Date.parse(prev.sentAt ?? "");
+  return (
+    prev.fromMe === next.fromMe &&
+    speaker(prev) === who &&
+    gap >= 0 &&
+    gap < DISCORD_RUN_MS
   );
 }
 
