@@ -15,7 +15,8 @@
     "qa": "bun scripts/qa.ts",
     "perf": "bun scripts/perf.ts",
     "size:check": "bun scripts/size-check.ts",
-    "check:all": "bun scripts/check-all.ts"
+    "check:all": "bun scripts/check-all.ts",
+    "postinstall": "bun scripts/postinstall.ts"
   },
   "dependencies": {
     "@tanstack/react-virtual": "3.14.13",

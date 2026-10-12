@@ -56,3 +56,28 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
+
+.stars {
+  display: flex;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+  padding-top: var(--space-12);
+  border-top: var(--rule-width) solid var(--seam);
+}
+
+.starLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.starLink:hover {
+  background: color-mix(in srgb, var(--fill-wall) 84%, var(--ink));
+}
