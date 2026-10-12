@@ -37,6 +37,7 @@ const COPY = {
     app: "saya",
     kakao: "카카오톡 계약 (openapi.json)",
     adapter: "어댑터 계약 (tsuba)",
+    star: "⭐ GitHub Star",
   },
 } as const satisfies {
   tab: Record<SettingsTab, string>;
@@ -60,6 +61,16 @@ function AboutCard() {
           </div>
         ))}
       </dl>
+      <div className={tabs.stars}>
+        <a
+          className={tabs.starLink}
+          href="https://github.com/sanguneo/saya"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {COPY.about.star}
+        </a>
+      </div>
     </Card>
   );
 }

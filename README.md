@@ -61,6 +61,8 @@
 
 ## 시작하기
 
+> saya가 유용하셨다면 [GitHub Star ⭐](https://github.com/sanguneo/saya)를 눌러 응원해 주세요!
+
 코어가 먼저 떠 있어야 합니다. 이 저장소는 코어를 띄우지 않습니다.
 
 ```sh
