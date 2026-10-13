@@ -5,7 +5,7 @@ const asked = new WeakMap<HttpClient, Promise<number | null>>();
 
 /**
  * `POST /upload`'s limit as the core's `/health` declares it, or null where
- * the core answers no upload (the macOS build, an older Windows build) or
+ * the core answers no upload (kanao before 0.29.0, kamado before 0.27.0) or
  * could not be asked. Only a declared limit is kept; a null is asked again.
  */
 export function coreUploadLimit(http: HttpClient): Promise<number | null> {

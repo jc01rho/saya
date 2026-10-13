@@ -532,13 +532,13 @@ export interface paths {
         put?: never;
         /**
          * Send one file through the room's own file button
-         * @description Drives the desktop client the way a person sends a file: the room's file button, the Windows open-file dialog it shows, and the client's own "파일 전송" confirmation. Nothing is injected; the client uploads the file itself and shows a picture or video the way it shows one a person sent. The room resolves exactly as `POST /send`'s does, and `openRoom` lets the server open its window.
+         * @description Drives the desktop client the way a person sends a file: on Windows the room's file button, the open-file dialog it shows, and the client's own "파일 전송" confirmation; on macOS the file pasted into the room the way Finder hands one over, then the send button of the confirmation the client shows. Nothing is injected; the client uploads the file itself and shows a picture or video the way it shows one a person sent. The room resolves exactly as `POST /send`'s does, and `openRoom` lets the server open its window.
          *
          *     **Files wait in the same line as texts**: one lock, the same minimum interval, and the same `429 RATE_LIMITED` when the line is full.
          *
          *     **`submitted: true` means the confirmation closed after its send button was pressed**, which is the client taking the file, not delivery: read the room back for a new `fromMe` message. A failure before that button is pressed sends nothing and says so. A confirmation that stays open is closed and answered `500 SEND_FAILED` with an unknown outcome; never retry it without reading the room back.
          *
-         *     The open-file dialog is a real window and holds the keyboard while it is up; the keyboard is handed back afterwards. A file larger than `features.upload.maxBytes` in `GET /health` is refused with `400` before it is read.
+         *     On Windows the open-file dialog is a real window and holds the keyboard while it is up; the keyboard is handed back afterwards. On macOS the pasteboard is put back afterwards. A file larger than `features.upload.maxBytes` in `GET /health` is refused with `400` before it is read.
          */
         post: {
             parameters: {
