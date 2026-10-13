@@ -63,7 +63,7 @@ export const contracts: readonly ContractSpec[] = [
   {
     // The KakaoTalk contract, byte-identical to nichirin's root openapi.json (kanao and kamado).
     source: "contracts/kakao.openapi.json",
-    hash: "bee36dc5d1d8afbd53721067fca06836fcc5f52e32b429ef39fa8ebd5c4ef7e3",
+    hash: "298fb1d6250181a0055779d5808cd2d8c3a4a5f4913d70f7aa2673834595ebfd",
     directory: contractDirectory,
     sse: true,
     widen(document, decoded) {
