@@ -84,6 +84,48 @@ function ThemePreview({ theme }: { theme: ThemeDefinition }) {
 
 const CHIP_SLOTS = ["wall", "bubbleSelf", "accent", "text"] as const;
 
+/** The card's picture from the catalog, or its four colours when the list has none or the picture does not load. */
+function GalleryPicture({
+  entry,
+  applied,
+}: {
+  entry: GalleryTheme;
+  applied: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const picture = entry.preview && !failed ? entry.preview : null;
+  return (
+    <span className={styles.cardPicture} aria-hidden="true">
+      {picture ? (
+        <img
+          className={styles.cardImage}
+          src={picture}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          data-ui="theme-gallery-picture"
+        />
+      ) : (
+        <span className={styles.chips} data-ui="theme-gallery-chips">
+          {CHIP_SLOTS.map((slot, index) => (
+            <span
+              key={slot}
+              className={styles.chip}
+              style={{ background: entry.colors[index] }}
+            />
+          ))}
+        </span>
+      )}
+      {applied ? (
+        <span className={styles.cardApplied} data-ui="theme-gallery-applied">
+          {THEME_COPY.galleryApplied}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 /** Ready-made themes from the remote catalog: the list is fetched when the sheet opens, a theme file when its card is pressed. */
 function ThemeGallery({
   choice,
@@ -148,49 +190,47 @@ function ThemeGallery({
           </button>
         </p>
       ) : null}
-      <ul className={styles.cards}>
-        {(Array.isArray(list) ? list : []).flatMap((character) =>
-          character.themes.map((entry) => (
-            <li key={entry.url}>
-              <button
-                type="button"
-                className={styles.card}
-                aria-label={THEME_COPY.galleryApply(entry.name)}
-                aria-current={
-                  choice === `custom:${entry.name}` ? "true" : undefined
-                }
-                aria-pressed={choice === `custom:${entry.name}`}
-                aria-busy={loading === entry.url}
-                disabled={loading !== null}
-                onClick={() => void pick(entry)}
-                data-ui="theme-gallery-card"
-                data-id={`${character.id}-${entry.mode}`}
-              >
-                <span className={styles.chips} aria-hidden="true">
-                  {CHIP_SLOTS.map((slot, index) => (
-                    <span
-                      key={slot}
-                      className={styles.chip}
-                      style={{ background: entry.colors[index] }}
-                    />
-                  ))}
-                </span>
-                <span className={styles.cardName}>{entry.name}</span>
-                <span className={styles.cardFan}>
-                  {THEME_COPY.galleryMode[entry.mode]} · {THEME_COPY.galleryFan}
-                </span>
-                {choice === `custom:${entry.name}` ? (
-                  <span
-                    className={styles.cardApplied}
-                    data-ui="theme-gallery-applied"
-                  >
-                    {THEME_COPY.galleryApplied}
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          )),
-        )}
+      <ul className={styles.groups}>
+        {(Array.isArray(list) ? list : []).map((character) => (
+          <li
+            key={character.id}
+            className={styles.group}
+            data-ui="theme-gallery-group"
+            data-id={character.id}
+          >
+            <h3 className={styles.groupName}>
+              {THEME_COPY.galleryGroup(character.name)}
+            </h3>
+            <ul className={styles.cards}>
+              {character.themes.map((entry) => {
+                const applied = choice === `custom:${entry.name}`;
+                return (
+                  <li key={entry.url}>
+                    <button
+                      type="button"
+                      className={styles.card}
+                      aria-label={THEME_COPY.galleryApply(entry.name)}
+                      aria-current={applied ? "true" : undefined}
+                      aria-pressed={applied}
+                      aria-busy={loading === entry.url}
+                      disabled={loading !== null}
+                      onClick={() => void pick(entry)}
+                      data-ui="theme-gallery-card"
+                      data-id={`${character.id}-${entry.mode}`}
+                    >
+                      <GalleryPicture entry={entry} applied={applied} />
+                      <span className={styles.cardFan}>
+                        {THEME_COPY.galleryModeShort[entry.mode]} ·{" "}
+                        {THEME_COPY.galleryFan}
+                      </span>
+                      <span className={styles.cardName}>{entry.name}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))}
       </ul>
     </section>
   );

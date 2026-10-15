@@ -233,6 +233,11 @@ no credentials or app data are sent.
 - **CSP:** the origin must be in `connect-src`. With `default-src 'self'` and no
   `connect-src`, the browser blocks the fetch and the sheet shows its "could not
   load" line. The Caddyfile example allows `https://heoooooon.github.io`.
+- **Card pictures:** a list entry may carry `preview`, a path to an SVG beside
+  the catalog, drawn on the card as an `<img>`; the client keeps it only when it
+  resolves to the catalog's own origin, so `img-src` must allow that origin too
+  (the Caddyfile example's `img-src 'self' https: data:` does). Without a
+  usable `preview` the card shows the theme's four colours instead.
 - **Another catalog:** build with `VITE_THEME_GALLERY_URL=<url of gallery.json>`
   and put that origin in `connect-src` instead. It is a public address, not a
   secret; never put a token in a `VITE_*` variable.

@@ -29,6 +29,8 @@ export const THEME_COPY = {
   galleryApplied: "적용됨",
   galleryEmpty: "지금 선택할 수 있는 테마가 없습니다.",
   galleryMode: { light: "밝은 모드", dark: "어두운 모드" },
+  galleryModeShort: { light: "밝은", dark: "어두운" },
+  galleryGroup: (name: string) => `${name} 테마`,
   galleryApply: (name: string) => `${name} 테마 저장하고 적용`,
   galleryListLoading: "테마 모음을 불러오는 중입니다.",
   galleryListFailed: "테마 모음을 불러오지 못했습니다. 연결을 확인해 주세요.",
