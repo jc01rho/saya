@@ -22,6 +22,8 @@ export type GalleryTheme = {
   colors: readonly string[];
   /** Absolute address of the theme file, on the catalog's own origin. */
   url: string;
+  /** Absolute address of the card's picture, on the catalog's own origin; absent when the list has none there. */
+  preview?: string;
 };
 
 export type GalleryCharacter = {
@@ -37,7 +39,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 function readTheme(value: unknown, catalog: URL): GalleryTheme | null {
   if (!isRecord(value)) return null;
-  const { mode, name, colors, path } = value;
+  const { mode, name, colors, path, preview } = value;
   if (mode !== "light" && mode !== "dark") return null;
   if (typeof name !== "string" || name === "") return null;
   if (
@@ -55,7 +57,21 @@ function readTheme(value: unknown, catalog: URL): GalleryTheme | null {
   }
   // A list may only point at files beside it: never another site.
   if (url.origin !== catalog.origin) return null;
-  return { mode, name, colors, url: url.href };
+  const picture = readPreview(preview, catalog);
+  return picture
+    ? { mode, name, colors, url: url.href, preview: picture }
+    : { mode, name, colors, url: url.href };
+}
+
+/** The picture is optional, and one on another origin is left out rather than failing the card. */
+function readPreview(value: unknown, catalog: URL): string | undefined {
+  if (typeof value !== "string" || value === "") return undefined;
+  try {
+    const url = new URL(value, catalog);
+    return url.origin === catalog.origin ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Missing means unbounded; anything but a real yyyy-MM-dd calendar date is invalid. */

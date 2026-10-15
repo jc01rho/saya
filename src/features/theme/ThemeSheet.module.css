@@ -59,6 +59,34 @@
   min-width: 0;
 }
 
+/* One group per character: two groups beside each other on a wide pane, one on a phone. */
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
+  gap: var(--space-16) var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.groupName {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The light and dark theme of one character, side by side. */
 .cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -74,7 +102,7 @@
   width: 100%;
   min-width: 0;
   min-height: var(--touch-min);
-  padding: var(--space-12);
+  padding: var(--space-8);
   border: var(--rule-width) solid var(--seam);
   border-radius: var(--radius-field);
   background: var(--fill-wall);
@@ -82,6 +110,10 @@
   font: inherit;
   text-align: start;
   cursor: pointer;
+}
+
+.card:hover {
+  background: var(--hover-wall);
 }
 
 .card:focus-visible {
@@ -97,9 +129,30 @@
   opacity: 0.6;
 }
 
+/* A fixed 16:10 box: the catalog's picture, or the four colours when there is none. */
+.cardPicture {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--radius-tile);
+  background: var(--field-wall);
+}
+
+.cardImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .chips {
+  position: absolute;
+  inset: 0;
   display: flex;
-  gap: var(--space-4);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
 }
 
 .chip {
@@ -111,24 +164,30 @@
 
 .cardName {
   overflow: hidden;
-  font-size: var(--text-body);
+  font-size: var(--text-meta);
   font-weight: 700;
+  line-height: var(--leading-meta);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .cardFan {
+  overflow: hidden;
   color: var(--ink-muted);
   font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .cardApplied {
-  justify-self: start;
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-8);
   padding: var(--space-4) var(--space-8);
-  border-radius: var(--radius-field);
+  border-radius: var(--radius-badge);
   background: var(--ink);
   color: var(--field-wall);
-  font-size: var(--text-meta);
+  font-size: var(--text-badge);
   font-weight: 700;
   line-height: var(--leading-meta);
   white-space: nowrap;
