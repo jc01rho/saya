@@ -1,0 +1,183 @@
+/*
+ * 작년 오늘: a small card between the header and the wall, in the notice bar's
+ * grammar — one row of label, title and quiet controls, then a few quoted
+ * lines and thumbnails. It never scrolls; the wall below keeps its own.
+ */
+.card {
+  display: grid;
+  gap: var(--space-8);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-8) 18px;
+  border-bottom: var(--rule-width) solid var(--seam);
+  background: var(--field-wall);
+  color: var(--ink);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.label {
+  flex: none;
+  padding: 2px var(--space-8);
+  border-radius: var(--radius-badge);
+  background: var(--accent-send);
+  color: var(--door-ink, var(--ink));
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.count {
+  flex: none;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.toggle,
+.close {
+  flex: none;
+  min-height: var(--space-32);
+  padding: var(--space-4) var(--space-8);
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fade) var(--ease),
+    color var(--dur-fade) var(--ease);
+}
+
+.toggle:hover,
+.close:hover {
+  background: var(--fill-wall);
+  color: var(--ink);
+}
+
+.toggle:focus-visible,
+.close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: var(--space-32);
+  padding: 0;
+}
+
+.close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.body {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.lines {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  gap: var(--space-8);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.who {
+  flex: none;
+  max-width: 10em;
+  overflow: hidden;
+  color: var(--ink-muted);
+  text-overflow: ellipsis;
+}
+
+.what {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pictures {
+  display: flex;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.picture {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--radius-field);
+  background: var(--fill-wall);
+}
+
+.picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gone {
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 767.98px) {
+  .card {
+    padding-inline: var(--space-16);
+  }
+
+  .count {
+    display: none;
+  }
+
+  .toggle,
+  .close {
+    min-height: var(--touch-min);
+  }
+
+  .close {
+    width: var(--touch-min);
+  }
+}
