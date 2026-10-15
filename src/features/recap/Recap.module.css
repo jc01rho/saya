@@ -1,0 +1,285 @@
+/*
+ * 결산: one card of counts in the sheet the other reads use. Numbers sit in
+ * filled tiles, words are chips in the self bubble's colour, the people bars
+ * and the hour grid use the accent — the same tokens the wall is drawn with,
+ * so the card reads as this theme's.
+ */
+.periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.periods legend {
+  margin-block-end: var(--space-4);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+}
+
+.coverage {
+  display: grid;
+  gap: var(--space-4);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  overflow-wrap: anywhere;
+}
+
+.card {
+  display: grid;
+  gap: var(--space-16);
+  min-width: 0;
+  padding: var(--space-16);
+  border: var(--rule-width) solid var(--seam);
+  border-radius: var(--radius-field);
+  background: var(--field-wall);
+}
+
+.cardTitle {
+  overflow: hidden;
+  font-size: var(--text-title);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: var(--leading-title);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardSub {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.number {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-12);
+  border-radius: var(--radius-field);
+  background: var(--fill-wall);
+}
+
+.numberValue {
+  overflow: hidden;
+  font-size: var(--text-title);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-title);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.numberLabel {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: var(--leading-meta);
+}
+
+.dates {
+  margin: 0;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: var(--leading-meta);
+  overflow-wrap: anywhere;
+}
+
+.section {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.sectionTitle {
+  font-size: var(--text-body);
+  font-weight: 800;
+  line-height: var(--leading-body);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  max-width: 100%;
+  padding: var(--space-4) var(--space-12);
+  border-radius: var(--radius-badge);
+  background: var(--bubble-self);
+  color: var(--bubble-self-ink, var(--ink));
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: var(--leading-meta);
+}
+
+.chipKey {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chipCount {
+  flex: none;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.emoji .chip {
+  background: var(--fill-wall);
+  color: var(--ink);
+  font-size: var(--text-title);
+}
+
+.none {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.people {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  display: grid;
+  grid-template-columns: minmax(0, 7em) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.personName {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bar {
+  height: 14px;
+  overflow: hidden;
+  border-radius: var(--radius-badge);
+  background: var(--fill-wall);
+}
+
+.barFill {
+  width: calc(var(--share) * 100%);
+  min-width: 14px;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-send);
+}
+
+.personCount {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.heat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-4) var(--space-8);
+  min-width: 0;
+}
+
+.heatDay {
+  align-self: center;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.heatRow {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.heatCell {
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 3px;
+  background: var(--fill-wall);
+}
+
+.heatCell[data-count]:not([data-count="0"]) {
+  background: color-mix(
+    in srgb,
+    var(--accent-send) calc(25% + var(--heat) * 75%),
+    var(--fill-wall)
+  );
+}
+
+.heatHours {
+  display: grid;
+  grid-column: 2;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.busiest {
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: var(--leading-meta);
+}
+
+.save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8) var(--space-12);
+}
+
+.saveHint {
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+@media (max-width: 767.98px) {
+  .numbers {
+    gap: var(--space-4);
+  }
+
+  .number {
+    padding: var(--space-8);
+  }
+
+  .person {
+    grid-template-columns: minmax(0, 6.5em) minmax(0, 1fr) auto;
+  }
+}
