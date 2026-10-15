@@ -140,6 +140,37 @@ test("cards that are malformed or point at another site are left out", async () 
   ]);
 });
 
+test("a card's picture beside the catalog is kept as an absolute address, one elsewhere is dropped while the card stays, and no picture is no picture", async () => {
+  const list = await fetchGallery(
+    CATALOG,
+    serve(
+      catalogFiles([
+        {
+          id: "sample",
+          name: "견본",
+          themes: [
+            card({ preview: "previews/cards/sample-light.svg" }),
+            card({
+              mode: "dark",
+              name: "다른 곳",
+              preview: "https://elsewhere.example.test/x.svg",
+            }),
+            card({ mode: "dark", name: "숫자", preview: 7 }),
+            card({ mode: "dark", name: "없음" }),
+          ],
+        },
+      ]),
+    ),
+  );
+  expect(list?.[0]?.themes.map((theme) => theme.preview)).toEqual([
+    "https://themes.example.test/saya-themes/previews/cards/sample-light.svg",
+    undefined,
+    undefined,
+    undefined,
+  ]);
+  expect(list?.[0]?.themes).toHaveLength(4);
+});
+
 test("offline, a missing list, a list that is not a list, or nothing usable gives no gallery instead of throwing", async () => {
   const offline = () => Promise.reject(new TypeError("Failed to fetch"));
   const html = async () => new Response("<html>", { status: 200 });
