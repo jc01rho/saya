@@ -28,10 +28,12 @@ import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
 import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
+import { HistorySource } from "../features/history/source";
 import { NoticeBar } from "../features/notice";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { useAppliedTheme } from "../features/theme";
 import { ThreadPane } from "../features/thread";
+import { YearAgo } from "../features/yearago";
 import { HttpClient } from "../transport/http";
 import { Cat, COPY, cx, RoomAvatar } from "../ui";
 import styles from "./App.module.css";
@@ -65,6 +67,8 @@ export type Session = {
   windows: ContextWindows;
   /** Orders `/context` replies against live `/stream` records for the same room. */
   reconciler: Reconciler;
+  /** A room's newest-1000 window, shared by the features that look back further than the wall. */
+  history: HistorySource;
   /**
    * Builds the `/stream` subscription: one connection for the whole browser,
    * elected across tabs. A `Coordinator` holds a Web Lock and its `stop()` is
@@ -108,6 +112,7 @@ export function createSession(): Session {
     stores: cache.stores,
     windows: new ContextWindows(reconciler, cache),
     reconciler,
+    history: new HistorySource(http),
     createCoordinator,
   };
 }
@@ -182,12 +187,14 @@ function RoomOutlet({
   stores,
   windows,
   http,
+  history,
   roomId,
   backHref,
 }: {
   stores: ClientStores;
   windows: ContextWindows;
   http: HttpClient;
+  history: HistorySource;
   roomId: string;
   /** The list this room was opened from, for the mobile way back. */
   backHref: string;
@@ -244,6 +251,7 @@ function RoomOutlet({
           </div>
         </header>
         <NoticeBar key={roomId} http={http} roomId={roomId} />
+        <YearAgo history={history} roomId={roomId} />
       </div>
       <div className={styles.lower}>
         <div className={styles.conversation}>
@@ -564,6 +572,7 @@ export function App({ session }: { session?: Session }) {
             stores={own.stores}
             windows={own.windows}
             http={own.http}
+            history={own.history}
             roomId={route.roomId}
             backHref={back}
           />
