@@ -1,18 +1,15 @@
 import {
   type CSSProperties,
-  useCallback,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
 } from "react";
-import type { ClientStores } from "../../core/stores";
+import type { components } from "../../contract/decoded";
 import { cx } from "../../ui";
-import type { HistorySource } from "../history/source";
-import { readFailureCopy, useRead } from "../reads";
+import type { ReadState } from "../reads";
 import reads from "../reads/reads.module.css";
-import { useSlice } from "../rooms";
 import { RECAP_COPY } from "./copy";
 import { downloadCanvas, paintRecap, paletteOf, recapFilename } from "./image";
 import styles from "./Recap.module.css";
@@ -24,6 +21,8 @@ import {
   recapOf,
   SENDER_LIMIT,
 } from "./stats";
+
+type Context = components["schemas"]["Context"];
 
 function Chips({ items, ui }: { items: readonly Counted[]; ui: string }) {
   if (items.length === 0)
@@ -196,17 +195,22 @@ function RecapCard({ recap, title }: { recap: Recap; title: string }) {
 /**
  * 결산 of one room: the newest window the contract offers, counted on this
  * device for 올해 or 최근 30일 — who spoke, which words and emoji, which hours —
- * and saved as a picture only through the browser's own download.
+ * and saved as a picture only through the browser's own download. The window
+ * is read by the entry (`RecapEntry`), which hands it over with the room's title.
  */
 export default function RecapSheet({
-  stores,
-  history,
   roomId,
+  title,
+  state,
+  failureCode,
+  onRetry,
   onClose,
 }: {
-  stores: ClientStores;
-  history: HistorySource;
   roomId: string;
+  title: string;
+  state: ReadState<Context>;
+  failureCode: string | null;
+  onRetry: () => void;
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -215,9 +219,6 @@ export default function RecapSheet({
   const [now] = useState(() => new Date());
   const [period, setPeriod] = useState<Period>("year");
   const [saving, setSaving] = useState<"idle" | "busy" | "failed">("idle");
-  const roomSlice = useSlice(stores, `room.${roomId}`);
-  const run = useCallback(() => history.read(roomId), [history, roomId]);
-  const [state, retry] = useRead(roomId, run);
   useEffect(() => {
     const element = dialog.current;
     if (element && !element.open) element.showModal();
@@ -226,8 +227,6 @@ export default function RecapSheet({
     state.phase === "ready" && state.data.room.id === roomId
       ? state.data
       : null;
-  const title =
-    roomSlice?.room.title ?? answer?.room.title ?? RECAP_COPY.untitled;
   const recap = useMemo(
     () =>
       answer ? recapOf(answer.messages, answer.coverage, period, now) : null,
@@ -307,11 +306,9 @@ export default function RecapSheet({
           <div className={reads.notice} role="status" data-ui="recap-failed">
             <p>
               {RECAP_COPY.failed}
-              {readFailureCopy(state.failure).code ? (
-                <code> {readFailureCopy(state.failure).code}</code>
-              ) : null}
+              {failureCode ? <code> {failureCode}</code> : null}
             </p>
-            <button type="button" className={reads.action} onClick={retry}>
+            <button type="button" className={reads.action} onClick={onRetry}>
               {RECAP_COPY.retry}
             </button>
           </div>

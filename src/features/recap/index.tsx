@@ -4,20 +4,29 @@ import {
   lazy,
   type ReactNode,
   Suspense,
+  useCallback,
   useState,
 } from "react";
 import type { ClientStores } from "../../core/stores";
 import { cx } from "../../ui";
 import styles from "../digest/DigestEntry.module.css";
 import type { HistorySource } from "../history/source";
+import { readFailureCopy, useRead } from "../reads";
+import { useSlice } from "../rooms";
 
-/** The two strings the always-loaded entry needs; everything else lives in the sheet's chunk. */
+/** The strings the always-loaded entry needs; everything else lives in the sheet's chunk. */
 const ENTRY_COPY = {
   open: "결산",
   unavailable: "결산 화면을 불러오지 못했습니다. 다시 눌러 시도하세요.",
+  untitled: "대화",
 } as const;
 
-/** The sheet, its stylesheet and the painter load on the first press, never with the shell. */
+/**
+ * The sheet, its stylesheet and the painter load on the first press, never
+ * with the shell. The read and the room title happen here, in the shell's
+ * own modules: a lazy chunk that imported `../reads` or `../rooms` would make
+ * the bundler split those shared modules into startup chunks of their own.
+ */
 const loadSheet = () => import("./RecapSheet");
 
 class SheetBoundary extends Component<
@@ -61,6 +70,15 @@ export function RecapEntry({
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
   const [Sheet, setSheet] = useState(() => lazy(loadSheet));
+  const run = useCallback(() => history.read(roomId), [history, roomId]);
+  const [state, retry] = useRead(open ? roomId : null, run);
+  const roomSlice = useSlice(stores, `room.${roomId}`);
+  const title =
+    roomSlice?.room.title ??
+    (state.phase === "ready" ? state.data.room.title : null) ??
+    ENTRY_COPY.untitled;
+  const failureCode =
+    state.phase === "failed" ? readFailureCopy(state.failure).code : null;
 
   const openSheet = () => {
     if (failed) {
@@ -104,9 +122,11 @@ export function RecapEntry({
         >
           <Suspense fallback={null}>
             <Sheet
-              stores={stores}
-              history={history}
               roomId={roomId}
+              title={title}
+              state={state}
+              failureCode={failureCode}
+              onRetry={retry}
               onClose={() => setOpen(false)}
             />
           </Suspense>
