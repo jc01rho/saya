@@ -30,6 +30,7 @@ import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
 import { HistorySource } from "../features/history/source";
 import { NoticeBar } from "../features/notice";
+import { RecapEntry } from "../features/recap";
 import { RoomsPane, useCatalog, useSlice } from "../features/rooms";
 import { useAppliedTheme } from "../features/theme";
 import { ThreadPane } from "../features/thread";
@@ -242,6 +243,7 @@ function RoomOutlet({
           </div>
           <div className={styles.actions} ref={toggle}>
             <DigestEntry stores={stores} http={http} roomId={roomId} />
+            <RecapEntry stores={stores} history={history} roomId={roomId} />
             <AttachmentsToggle
               className={icon.open}
               open={info}
