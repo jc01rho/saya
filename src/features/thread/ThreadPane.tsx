@@ -469,6 +469,7 @@ export function ThreadPane({
         <VirtualThreadTurns
           key={roomId}
           order={view.order}
+          initializing={!window.settled && window.failure === null}
           scrollRef={scroll}
           renderRow={(id) => (
             <MessageRow

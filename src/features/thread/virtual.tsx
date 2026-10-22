@@ -33,10 +33,13 @@ const onServer = () => false;
 export function VirtualThreadTurns({
   order,
   renderRow,
+  initializing = false,
   scrollRef,
 }: {
   order: readonly string[];
   renderRow: (id: string) => ReactNode;
+  /** Stream/cache rows may precede the room's first complete context window. */
+  initializing?: boolean;
   /** The wall's scroll owner, for controls outside the list that move the wall. */
   scrollRef?: MutableRefObject<ThreadScroll | null> | undefined;
 }) {
@@ -74,8 +77,8 @@ export function VirtualThreadTurns({
   const ids = client ? rendered.ids : order;
   const virtual = client && rendered.ids.length > SEMANTIC_LIMIT;
   const stale = rendered.ids !== order;
-  const state = useRef({ rendered, virtual, stale });
-  state.current = { rendered, virtual, stale };
+  const state = useRef({ rendered, virtual, stale, initializing });
+  state.current = { rendered, virtual, stale, initializing };
   const virtualizer = useVirtualizer<HTMLElement, HTMLLIElement>({
     count: rendered.ids.length,
     enabled: virtual,
@@ -128,6 +131,7 @@ export function VirtualThreadTurns({
         indexes: state.current.rendered.indexes,
         virtual: state.current.virtual,
         stale: state.current.stale,
+        initializing: state.current.initializing,
       }),
       () => setEvicted(true),
     );
