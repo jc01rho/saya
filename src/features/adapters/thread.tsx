@@ -35,6 +35,7 @@ import {
   pickable,
   StagedFile,
 } from "../attach";
+import { ImeEnterGuard } from "../composer/state";
 import { discordPlace } from "../inbox/discordPlaces";
 import { DAY_FORMAT, dayOf } from "../thread/grouping";
 import { problemSentence } from "./copy";
@@ -178,6 +179,7 @@ function Composer({
   const [staged, setStaged] = useState<File | null>(null);
   const [fileBusy, setFileBusy] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
+  const ime = useRef(new ImeEnterGuard()).current;
   const editing = mode.kind === "edit";
   // Where the adapter takes a caption, the words in the box go with the file.
   const caption =
@@ -313,11 +315,7 @@ function Composer({
     if (event.key === "Escape" && mode.kind !== "send") {
       event.preventDefault();
       onCancelMode();
-    } else if (
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      !event.nativeEvent.isComposing
-    ) {
+    } else if (ime.decide(event.nativeEvent) === "send") {
       event.preventDefault();
       void submit();
     }
@@ -408,6 +406,8 @@ function Composer({
               ? (event) => pasteImage(event, onPick)
               : undefined
           }
+          onCompositionStart={() => ime.start()}
+          onCompositionEnd={() => ime.end()}
         />
         <button
           type="button"
