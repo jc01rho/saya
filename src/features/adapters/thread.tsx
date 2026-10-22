@@ -28,7 +28,13 @@ import {
   type UploadFeature,
   uploadFile,
 } from "../../transport/adapters";
-import { ATTACH_COPY, AttachButton, pickable, StagedFile } from "../attach";
+import {
+  ATTACH_COPY,
+  AttachButton,
+  pasteImage,
+  pickable,
+  StagedFile,
+} from "../attach";
 import { discordPlace } from "../inbox/discordPlaces";
 import { DAY_FORMAT, dayOf } from "../thread/grouping";
 import { problemSentence } from "./copy";
@@ -397,6 +403,11 @@ function Composer({
               : setDraft(event.currentTarget.value)
           }
           onKeyDown={onKeyDown}
+          onPaste={
+            upload && !editing && !fileBusy
+              ? (event) => pasteImage(event, onPick)
+              : undefined
+          }
         />
         <button
           type="button"
