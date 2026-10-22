@@ -31,6 +31,37 @@ afterEach(() => {
 });
 
 describe("HTTP envelope boundary", () => {
+  test("covered text is opt-in on context and digest, never other routes", async () => {
+    const urls: URL[] = [];
+    globalThis.fetch = ((input: string | URL | Request) => {
+      urls.push(new URL(String(input), "http://fixture.invalid"));
+      return Promise.resolve(
+        response(
+          { ok: false, error: { code: "BUSY", message: "Synthetic" } },
+          503,
+        ),
+      );
+    }) as FetchStub;
+    for (const enabled of [false, true]) {
+      const client = new HttpClient(enabled);
+      for (const path of ["/context", "/digest", "/rooms"] as const) {
+        const query = new URLSearchParams({ roomId: "123", limit: "40" });
+        await client.request({ path, query, signal: controller().signal });
+        const url = urls.at(-1);
+        expect(url?.searchParams.get("showCovered")).toBe(
+          enabled && path !== "/rooms" ? "true" : null,
+        );
+        expect(url?.searchParams.get("roomId")).toBe("123");
+        expect(query.has("showCovered")).toBe(false);
+      }
+    }
+    await new HttpClient().request({
+      path: "/context",
+      signal: controller().signal,
+    });
+    expect(urls.at(-1)?.searchParams.has("showCovered")).toBe(false);
+  });
+
   test("rejects an HTML response instead of JSON", async () => {
     globalThis.fetch = (() =>
       Promise.resolve(

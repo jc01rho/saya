@@ -79,9 +79,19 @@ export function startBridge(
     events.emit({ type: "stream-close", id, path: "/stream" });
   }
 
-  function context(room: Schema["Room"], limit: number): Schema["Context"] {
+  function context(
+    room: Schema["Room"],
+    limit: number,
+    showCovered: boolean,
+  ): Schema["Context"] {
     const all = data.messages.get(room.id) ?? [];
-    const messages = all.slice(-limit);
+    const messages = all
+      .slice(-limit)
+      .map((message) =>
+        message.covered === "safebot" && !showCovered
+          ? { ...message, text: "" }
+          : message,
+      );
     const last = messages.at(-1);
     return {
       ok: true,
@@ -328,7 +338,14 @@ export function startBridge(
     );
     if (!Number.isInteger(limit) || limit < 1 || limit > 1000)
       return failure(400, "INVALID_REQUEST");
-    const window = context(room, limit);
+    const showCovered = url.searchParams.get("showCovered");
+    if (
+      showCovered !== null &&
+      showCovered !== "true" &&
+      showCovered !== "false"
+    )
+      return failure(400, "INVALID_REQUEST");
+    const window = context(room, limit, showCovered === "true");
     if (path === "/context") return checked(window, validators.validateContext);
     const span = url.searchParams.get("span") ?? "30m";
     const highlights = Number(url.searchParams.get("highlights") ?? 3);

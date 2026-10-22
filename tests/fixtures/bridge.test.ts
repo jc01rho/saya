@@ -7,6 +7,39 @@ import { FIRST_ROOM_ID, generateData } from "./data";
 const request = (url: string, init?: RequestInit) =>
   fetch(url, { ...init, signal: AbortSignal.timeout(10_000) });
 
+test("context and digest reveal synthetic covered text only for showCovered=true", async () => {
+  const bridge = startBridge();
+  try {
+    const row = bridge.data.messages.get(FIRST_ROOM_ID)?.at(-1);
+    if (!row) throw new Error("Missing synthetic row");
+    row.covered = "safebot";
+    bridge.data.messages.set(FIRST_ROOM_ID, [row]);
+    for (const path of ["/context", "/digest"]) {
+      for (const flag of ["", "&showCovered=false", "&showCovered=true"]) {
+        const response = await request(
+          `${bridge.url}${path}?roomId=${FIRST_ROOM_ID}${flag}`,
+        );
+        const result = await response.json();
+        const shown =
+          path === "/context"
+            ? result.messages[0]
+            : result.slices[0].highlights[0];
+        expect(shown.covered).toBe("safebot");
+        expect(shown.text).toBe(flag.endsWith("=true") ? row.text : "");
+      }
+      expect(
+        (
+          await request(
+            `${bridge.url}${path}?roomId=${FIRST_ROOM_ID}&showCovered=yes`,
+          )
+        ).status,
+      ).toBe(400);
+    }
+  } finally {
+    await bridge.stop();
+  }
+});
+
 test("seed seven generates reproducible large decimal string ids and bounded datasets", () => {
   const first = generateData();
   expect(first).toEqual(generateData());

@@ -118,6 +118,10 @@ export type JsonRequest<Path extends JsonRoute> = {
 export class HttpClient {
   private readonly generations = new Map<string, number>();
 
+  constructor(
+    readonly showCovered: components["parameters"]["ShowCovered"] = false,
+  ) {}
+
   async request<Path extends JsonRoute>(
     request: JsonRequest<Path>,
   ): Promise<HttpOutcome<RoutePayload[Path]>> {
@@ -284,7 +288,13 @@ export class HttpClient {
   }
 
   private urlFor<Path extends JsonRoute>(request: JsonRequest<Path>) {
-    const query = request.query?.toString();
+    const params = new URLSearchParams(request.query);
+    // These are the only routes declaring ShowCovered in the pinned contract.
+    if (request.path === "/context" || request.path === "/digest") {
+      if (this.showCovered) params.set("showCovered", "true");
+      else params.delete("showCovered");
+    }
+    const query = params.toString();
     return `/api${request.path}${query ? `?${query}` : ""}`;
   }
 }

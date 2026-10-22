@@ -22,12 +22,14 @@ const COPY = {
   tabs: "설정 항목",
   tab: {
     theme: "테마",
+    messages: "메시지",
     agent: "에이전트 도구",
     connection: "연결",
     about: "프로그램 정보",
   },
   subtitle: {
     theme: "테마와 테마 모음",
+    messages: "카카오톡 메시지 표시",
     agent: "실험 기능",
     connection: "메신저 연결",
     about: "버전과 계약",
@@ -86,6 +88,8 @@ export default function SettingsOutlet({
   onTheme,
   kakao,
   onKakaoRetry,
+  showCovered,
+  onShowCovered,
 }: {
   tab: SettingsTab;
   agent: AgentToolsState;
@@ -93,6 +97,8 @@ export default function SettingsOutlet({
   /** The KakaoTalk core's state, for its card in 연결. */
   kakao: KakaoStatus;
   onKakaoRetry: () => void;
+  showCovered: boolean;
+  onShowCovered: (enabled: boolean) => void;
 }) {
   return (
     <>
@@ -128,6 +134,32 @@ export default function SettingsOutlet({
         <CardGrid ui="settings-pane">
           {tab === "theme" ? (
             <ThemeCards onChange={onTheme} />
+          ) : tab === "messages" ? (
+            <Card title="카카오톡 메시지" ui="covered-card">
+              <label className={tabs.preference}>
+                <span>
+                  <span className={tabs.preferenceName}>
+                    세이프봇이 가린 메시지 보기
+                  </span>
+                  <span className={tabs.preferenceHint}>
+                    기본값은 꺼짐입니다. 켜면 가려진 본문을 표시하고, 세이프봇이
+                    가렸다는 표시는 유지합니다. 새 메시지는 대화 창을 다시 읽어
+                    표시합니다.
+                  </span>
+                </span>
+                <input
+                  className={tabs.preferenceToggle}
+                  data-ui="covered-toggle"
+                  type="checkbox"
+                  role="switch"
+                  aria-checked={showCovered}
+                  checked={showCovered}
+                  onChange={(event) =>
+                    onShowCovered(event.currentTarget.checked)
+                  }
+                />
+              </label>
+            </Card>
           ) : tab === "agent" ? (
             <AgentToolsCard state={agent} />
           ) : (

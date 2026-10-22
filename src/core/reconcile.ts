@@ -10,6 +10,21 @@ import { immutable } from "./stores/slices";
 
 type Context = components["schemas"]["Context"];
 type Cursor = components["schemas"]["Cursor"];
+
+/** A revealed body and the stream's empty cover are the same version, not an edit. */
+function fillsCover(
+  shown: Immutable<Message>,
+  hidden: Immutable<Message> | undefined,
+): boolean {
+  return (
+    hidden?.covered === "safebot" &&
+    shown.covered === "safebot" &&
+    hidden.text === "" &&
+    shown.text !== "" &&
+    immutable({ ...shown, text: "" }, hidden) === hidden
+  );
+}
+
 export type ReconcileGap =
   | "journal-overflow"
   | "conflicting-payload"
@@ -216,7 +231,7 @@ export class Reconciler implements ContextTransport {
       // may resolve an already disclosed conflict. A racing answer cannot.
       const resolves =
         !earlier && priorConflict && !request.journal.has(message.id);
-      if (previous && !same && !resolves) {
+      if (previous && !same && !resolves && !fillsCover(message, previous)) {
         const previousSource = earlier
           ? source
           : (state.observations.get(message.id) ?? {
@@ -236,7 +251,11 @@ export class Reconciler implements ContextTransport {
       state.observations.set(message.id, source);
     }
     for (const [id, version] of request.journal) {
-      if (!state.conflicts.has(id))
+      const fresh = merged.get(id);
+      if (
+        !state.conflicts.has(id) &&
+        !(fresh && fillsCover(fresh, version.message))
+      )
         merged.set(id, structuredClone(version.message) as Message);
     }
     state.conflictBytes = payloadBytes([...state.conflicts.values()]);
@@ -284,7 +303,11 @@ export class Reconciler implements ContextTransport {
     const previous = this.cache.stores.getSnapshot(
       `message.${message.roomId}.${message.id}`,
     );
-    if (previous && immutable(message, previous) === previous)
+    if (
+      previous &&
+      (immutable(message, previous) === previous ||
+        fillsCover(previous, message))
+    )
       return "duplicate";
     if (
       !previous &&
