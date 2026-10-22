@@ -19,7 +19,13 @@ export type ListMode =
   | { kind: "adapter"; adapterId: string };
 
 /** 설정's tabs, in the order they are drawn; 연결 is one of them. */
-export const SETTINGS_TABS = ["theme", "agent", "connection", "about"] as const;
+export const SETTINGS_TABS = [
+  "theme",
+  "messages",
+  "agent",
+  "connection",
+  "about",
+] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export const ROOMS_HASH = "#/rooms";

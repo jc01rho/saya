@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { components } from "../contract/decoded";
 import { Coordinator } from "../coordination/coordinator";
@@ -26,6 +27,10 @@ import {
 import { AttachmentsPanel, AttachmentsToggle } from "../features/attachments";
 import { Composer } from "../features/composer";
 import { ConnectionScreen } from "../features/connection";
+import {
+  COVERED_SETTING_KEY,
+  CoveredMessagesState,
+} from "../features/covered/state";
 import { DigestEntry } from "../features/digest";
 import icon from "../features/digest/DigestEntry.module.css";
 import { HistorySource } from "../features/history/source";
@@ -78,17 +83,19 @@ export type Session = {
   createCoordinator: () => Coordinator;
 };
 
-export function createSession(): Session {
-  const http = new HttpClient();
+export function createSession(showCovered = false): Session {
+  const http = new HttpClient(showCovered);
   const cache = new BoundedCache();
   // Windows load through the reconciler so a context reply can never overwrite
   // a newer row the stream already delivered.
   const reconciler = new Reconciler(cache, { http });
+  const windows = new ContextWindows(reconciler, cache);
   const createCoordinator = () =>
     new Coordinator({
       platform: browserPlatform(),
       apply(records) {
-        for (const { event } of records)
+        const refill = new Set<string>();
+        for (const { event } of records) {
           reconciler.accept(
             event.type === "oversize-gap"
               ? // A record the ring could not carry is a discarded frame by any
@@ -96,6 +103,21 @@ export function createSession(): Session {
                 { type: "discarded-frame", bytes: event.bytes }
               : event,
           );
+          if (
+            showCovered &&
+            event.type === "message" &&
+            cache.getSnapshot().activeRoomId === event.data.message.roomId &&
+            event.data.message.covered === "safebot" &&
+            event.data.message.text === "" &&
+            cache.stores.getSnapshot(
+              `message.${event.data.message.roomId}.${event.data.message.id}`,
+            )?.text === ""
+          )
+            refill.add(event.data.message.roomId);
+        }
+        // /stream has no ShowCovered parameter. Refill only the active room through
+        // their existing newest-N context window, never an invented messageId query.
+        for (const roomId of refill) windows.refresh(roomId);
       },
       // Resume by cursor, never Last-Event-ID: one `since=roomId:logId` per room.
       query() {
@@ -111,7 +133,7 @@ export function createSession(): Session {
     http,
     cache,
     stores: cache.stores,
-    windows: new ContextWindows(reconciler, cache),
+    windows,
     reconciler,
     history: new HistorySource(http),
     createCoordinator,
@@ -329,7 +351,30 @@ function modeFor(route: Route, last: ListMode): ListMode | null {
  * on it, because the adapters are separate upstreams.
  */
 export function App({ session }: { session?: Session }) {
-  const [own] = useState(() => session ?? createSession());
+  const [covered] = useState(() => new CoveredMessagesState());
+  const showCovered = useSyncExternalStore(
+    covered.subscribe,
+    covered.getSnapshot,
+    covered.getSnapshot,
+  );
+  // A preference change replaces every in-memory reader/cache together. OFF
+  // cannot keep displaying a revealed context or digest while a refresh waits.
+  const own = useMemo(
+    () =>
+      session?.http.showCovered === showCovered
+        ? session
+        : createSession(showCovered),
+    [session, showCovered],
+  );
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === COVERED_SETTING_KEY || event.key === null)
+        covered.sync();
+    };
+    window.addEventListener("storage", sync);
+    covered.sync();
+    return () => window.removeEventListener("storage", sync);
+  }, [covered]);
   const [agent] = useState(() => new AgentToolsState());
   const tools = useMemo(
     () => () => createAgentTools(agentSourceOf(own.stores, own.http)),
@@ -362,6 +407,7 @@ export function App({ session }: { session?: Session }) {
     const coordinator = own.createCoordinator();
     void coordinator.start();
     return () => {
+      own.windows.closeAll();
       void coordinator.stop();
     };
   }, [own]);
@@ -388,6 +434,8 @@ export function App({ session }: { session?: Session }) {
                 own.stores.getSnapshot("rooms.order").length,
               )}
               onKakaoRetry={reload}
+              showCovered={showCovered}
+              onShowCovered={(enabled) => covered.setEnabled(enabled)}
             />
           </Suspense>
         </main>
