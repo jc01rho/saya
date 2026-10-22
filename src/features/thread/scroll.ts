@@ -30,6 +30,8 @@ interface ScrollSource {
   virtual: boolean;
   /** True while the rendered window still describes a superseded order. */
   stale: boolean;
+  /** The room's first context answer has not arrived yet. */
+  initializing: boolean;
 }
 
 /** The ONLY correction owner. TanStack measures; native and TanStack anchoring are off. */
@@ -253,7 +255,8 @@ export class ThreadScroll {
   };
 
   private restore() {
-    const { virtualizer, indexes, virtual, stale } = this.source();
+    const { virtualizer, indexes, virtual, stale, initializing } =
+      this.source();
     // Mid-glide the browser owns the offset; correcting it would stop the glide.
     if (this.gliding) return;
     if (this.pending && !stale && indexes.has(this.pending.id)) {
@@ -263,7 +266,9 @@ export class ThreadScroll {
     }
     // A window that widens or trims under a reader who never scrolled ends the
     // landing: from here the reading position is held, not re-pinned to the tail.
-    if (this.landing && this.lastIndexes !== indexes) {
+    // Partial stream/cache orders are not the initial window. Only establish
+    // that window after context settles; a user's scroll still ends landing.
+    if (this.landing && !initializing && this.lastIndexes !== indexes) {
       if (this.lastIndexes !== null && this.lastIndexes.size > 0) {
         this.landing = false;
       }
