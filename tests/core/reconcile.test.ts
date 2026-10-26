@@ -53,6 +53,27 @@ function setup(options: ConstructorParameters<typeof Reconciler>[1] = {}) {
 }
 
 describe("snapshot and stream reconciliation", () => {
+  test("context fills a SafeBot cover without a false conflict or journal overwrite", () => {
+    const { reconcile, thread } = setup();
+    const shown = { ...message(0), covered: "safebot" as const };
+    const hidden = { ...shown, text: "" };
+    const ticket = reconcile.beginContext(ROOM);
+    reconcile.observe(hidden);
+    expect(reconcile.completeContext(ticket, context([shown])).kind).toBe(
+      "applied",
+    );
+    expect(thread().messages[shown.id]?.text).toBe(shown.text);
+    expect(thread().messages[shown.id]?.covered).toBe("safebot");
+    expect(reconcile.getSnapshot(ROOM).conflicts).toEqual([]);
+    expect(reconcile.observe(hidden)).toBe("duplicate");
+    expect(thread().messages[shown.id]?.text).toBe(shown.text);
+    // A real nonempty text edit is still a conflict, not a cover refill.
+    expect(
+      reconcile.observe({ ...shown, text: "Another synthetic body" }),
+    ).toBe("gap");
+    expect(reconcile.getSnapshot(ROOM).conflicts).toHaveLength(1);
+  });
+
   test("a stale generation cannot erase a newer observed id; current snapshot merges its journal", () => {
     const { reconcile, thread } = setup();
     const first = reconcile.beginContext(ROOM);
