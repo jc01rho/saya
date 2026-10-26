@@ -85,6 +85,7 @@ type RoomRequest = { generation: number; controller: AbortController | null };
 export class ContextWindows {
   private readonly store = new WindowStore();
   private readonly requests = new Map<string, RoomRequest>();
+  private readonly refreshes = new Set<string>();
 
   constructor(
     private readonly http: ContextTransport,
@@ -106,6 +107,16 @@ export class ContextWindows {
     this.load(roomId, this.getSnapshot(roomId).limit, "retry");
   }
 
+  /** Coalesce live refills without cancelling or settling the initial window. */
+  refresh(roomId: string): void {
+    if (this.getSnapshot(roomId).loading !== null) this.refreshes.add(roomId);
+    else this.retry(roomId);
+  }
+
+  closeAll(): void {
+    for (const roomId of this.requests.keys()) this.close(roomId);
+  }
+
   /** 40 → 200 → 1000. At the ceiling nothing is sent and false comes back: there is no older page to ask for. */
   widen(roomId: string): boolean {
     const next = nextWindowLimit(this.getSnapshot(roomId).limit);
@@ -116,6 +127,7 @@ export class ContextWindows {
 
   /** Abort what is in flight and stop calling the store's rows a settled window. The limit and the rows stay. */
   close(roomId: string): void {
+    this.refreshes.delete(roomId);
     const request = this.requests.get(roomId);
     if (request) {
       request.controller?.abort();
@@ -170,12 +182,14 @@ export class ContextWindows {
           if (outcome.kind === "failure")
             this.settle(roomId, { kind: "bridge", outcome });
           else this.apply(roomId, outcome.data);
+          if (live() && this.refreshes.delete(roomId)) this.retry(roomId);
         },
         (error: unknown) => {
           if (!live()) return;
           this.settle(roomId, {
             kind: error instanceof HttpProtocolError ? "protocol" : "network",
           });
+          if (live() && this.refreshes.delete(roomId)) this.retry(roomId);
         },
       );
   }

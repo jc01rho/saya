@@ -81,3 +81,43 @@
 .starLink:hover {
   background: color-mix(in srgb, var(--fill-wall) 84%, var(--ink));
 }
+
+.preference {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-row);
+  background: var(--fill-list);
+  cursor: pointer;
+}
+
+.preferenceName,
+.preferenceHint {
+  display: block;
+}
+
+.preferenceName {
+  font-weight: 700;
+  line-height: var(--leading-title);
+}
+
+.preferenceHint {
+  margin-top: var(--space-8);
+  color: var(--ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+}
+
+.preferenceToggle {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-inline-start: auto;
+  accent-color: var(--ink);
+}
+
+.preferenceToggle:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}

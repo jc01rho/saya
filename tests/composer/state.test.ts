@@ -106,6 +106,32 @@ describe("composer consent state", () => {
     ).toBe("send");
   });
 
+  test("composition events block Enter even when its native flags are missing", () => {
+    const ime = new ImeEnterGuard();
+    const enter = {
+      key: "Enter",
+      shiftKey: false,
+      isComposing: false,
+      keyCode: 13,
+    };
+    ime.start();
+    expect(ime.decide(enter)).toBe("ignore");
+    ime.end();
+    expect(ime.decide(enter)).toBe("send");
+  });
+
+  test("native isComposing blocks Enter without a compositionstart or 229", () => {
+    const ime = new ImeEnterGuard();
+    expect(
+      ime.decide({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: true,
+        keyCode: 13,
+      }),
+    ).toBe("ignore");
+  });
+
   test("keeps each room draft exactly and gives changes a new revision", () => {
     const state = new ComposerState();
     const first = state.setText(roomId, "  앞뒤 공백도 보냅니다  ");
